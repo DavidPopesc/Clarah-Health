@@ -18,7 +18,6 @@ Reply with only a JSON object, no other text:
   "date": "YYYY-MM-DD of the visit if known, or null",
   "summary": "1 or 2 plain sentences: the main takeaway of the visit",
   "script": ["4 to 7 short spoken paragraphs, 2 to 4 sentences each, about 200 to 350 words in total"],
-  "keyPoints": [{ "title": "plain headline", "detail": "1 or 2 sentences", "fromRecord": "1 sentence tying this to their record, with the earlier value and date, or null" }],
   "medicationChanges": [{ "name": "medicine name as said in the visit", "change": "start" | "stop" | "change" | "continue", "detail": "what the clinician said, including dose and timing if given" }],
   "nextSteps": ["things the clinician asked the patient to do: tests, appointments, habits"],
   "watchFor": ["warning signs the clinician said to call about or get help for"],

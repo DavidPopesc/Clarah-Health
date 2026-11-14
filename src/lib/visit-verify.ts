@@ -1,12 +1,6 @@
 // Types for visit recaps, and the check that turns the AI's raw reply into a safe, well-formed
 // recap. Kept free of runtime imports so it runs in the browser, the server and `node --test`.
 
-export interface VisitPoint {
-  title: string;
-  detail: string;
-  fromRecord?: string; // how this connects to the patient's own data, e.g. an earlier lab value
-}
-
 export interface MedicationChange {
   name: string;
   change: "start" | "stop" | "change" | "continue";
@@ -23,7 +17,6 @@ export interface VisitRecap {
   date?: string; // YYYY-MM-DD
   summary: string;
   script: string[]; // what Clara says out loud, one paragraph per item
-  keyPoints: VisitPoint[];
   medicationChanges: MedicationChange[];
   nextSteps: string[];
   watchFor: string[];
@@ -60,15 +53,6 @@ export function normalizeRecap(raw: unknown, transcript: string): VisitRecap {
     .filter(Boolean)
     .slice(0, 8);
 
-  const keyPoints: VisitPoint[] = list(r.keyPoints)
-    .map((p: Record<string, unknown>) => ({
-      title: str(p?.title, 140),
-      detail: str(p?.detail),
-      fromRecord: str(p?.fromRecord, 300) || undefined,
-    }))
-    .filter((p) => p.title && p.detail)
-    .slice(0, 6);
-
   const medicationChanges: MedicationChange[] = list(r.medicationChanges)
     .map((m: Record<string, unknown>) => ({
       name: str(m?.name, 80),
@@ -90,7 +74,6 @@ export function normalizeRecap(raw: unknown, transcript: string): VisitRecap {
     summary,
     // Never leave the player with nothing to say.
     script: script.length ? script : summary ? [summary] : [],
-    keyPoints,
     medicationChanges,
     nextSteps: strings(r.nextSteps, 240, 6),
     watchFor: strings(r.watchFor, 240, 5),

@@ -4,7 +4,6 @@ import { BottomNav } from "@/components/bottom-nav";
 import { AttentionList } from "@/components/home/attention-list";
 import { Documents } from "@/components/home/documents";
 import { UploadTile } from "@/components/home/upload-tile";
-import { MetricRow } from "@/components/home/result-progress";
 import { CheckIcon, RecordIcon, WatchIcon } from "@/components/icons";
 import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
@@ -110,19 +109,19 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
           {good.length > 0 && (
             <section className="order-4 lg:order-none" aria-labelledby="good-heading">
-              <div className="flex items-center justify-between border-b border-line pb-2">
+              <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
                 <h2 id="good-heading" className="clinical-label text-muted">Within expected range</h2>
-                <span className="clinical-label text-teal-dark">Reviewed</span>
+                <span className="clinical-label text-[#2f5443]">Reviewed</span>
               </div>
-              <ul className="divide-y divide-line border-x border-b border-line bg-white">
+              {/* Simple green tiles: everything here is in its expected range. */}
+              <ul className="grid grid-cols-2 gap-2 lg:grid-cols-1 xl:grid-cols-2">
                 {good.map((item) => (
-                  <li key={item.label} className="px-3.5 py-3 text-sm">
-                    <div className="flex items-center gap-3">
-                      <CheckIcon width={16} height={16} className="shrink-0 text-teal" />
-                      <span className="grow font-medium">{item.label}</span>
-                      <span className="font-mono text-xs text-subtle">{item.value}</span>
-                    </div>
-                    {item.progress && <div className="mt-2"><MetricRow progress={item.progress} /></div>}
+                  <li key={item.label} className="flex flex-col gap-1 rounded-md border border-[#c3d1bf] bg-[#eaf0e4] px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3 xl:flex-col xl:items-stretch xl:justify-start xl:gap-1">
+                    <span className="flex items-start gap-1.5 text-[12px] leading-snug font-semibold text-[#2f5443]">
+                      <CheckIcon width={13} height={13} className="mt-0.5 shrink-0" />
+                      {item.label}
+                    </span>
+                    <span className="pl-[19px] font-mono text-[15px] font-semibold text-[#22402f] lg:pl-0 xl:pl-[19px]">{item.value}</span>
                   </li>
                 ))}
               </ul>
@@ -131,15 +130,17 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
           {meds.length > 0 && (
             <section className="order-5 lg:order-none" aria-labelledby="meds-heading">
-              <div className="flex items-center justify-between border-b border-line pb-2">
+              <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
                 <h2 id="meds-heading" className="clinical-label text-muted">Active medications</h2>
-                <span className="clinical-label text-subtle">{meds.length} listed</span>
+                <span className="clinical-label text-teal-dark">{meds.length} listed</span>
               </div>
-              <ul className="divide-y divide-line border-x border-b border-line bg-white">
+              {/* Medications always use the blue accent, so they're never mistaken for results. */}
+              <ul className="flex flex-col gap-2">
                 {meds.map((medication) => (
-                  <li key={medication.name} className="grid grid-cols-[1fr_auto] gap-4 px-3.5 py-3 text-sm">
-                    <span className="font-semibold">{medication.name}</span>
-                    <span className="text-right text-subtle">{medication.dosage}</span>
+                  <li key={medication.name} className="flex items-center gap-3 rounded-md border border-[#aebde3] bg-teal-soft px-3 py-2.5">
+                    <span className="size-2.5 shrink-0 rounded-full bg-teal" aria-hidden="true" />
+                    <span className="grow text-[14px] font-semibold text-teal-dark">{medication.name}</span>
+                    <span className="text-right text-[12px] leading-snug text-body">{medication.dosage}</span>
                   </li>
                 ))}
               </ul>

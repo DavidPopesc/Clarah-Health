@@ -82,25 +82,6 @@ function Recap({ visit }: { visit: StoredVisit }) {
         </div>
       )}
 
-      {recap.keyPoints.length > 0 && (
-        <Section title="What your care team found">
-          <ul className="flex flex-col gap-2">
-            {recap.keyPoints.map((p) => (
-              <li key={p.title} className="border-l-2 border-sage bg-white px-3 py-2.5">
-                <span className="text-[14px] font-semibold">{p.title}</span>
-                <p className="mt-0.5 text-[13px] leading-snug text-body">{p.detail}</p>
-                {p.fromRecord && (
-                  <p className="mt-1 text-[12px] leading-snug text-muted">
-                    <span className="font-semibold text-ink">From your record: </span>
-                    {p.fromRecord}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
       {recap.terms.length > 0 && (
         <Section title="Words from your visit">
           <dl className="grid grid-cols-1 gap-2">
