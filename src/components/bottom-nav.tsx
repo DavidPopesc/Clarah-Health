@@ -22,7 +22,7 @@ export function BottomNav({ active }: { active: string }) {
               aria-current={current ? "page" : undefined}
               className={`relative flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold ${current ? "text-teal" : "text-subtle"}`}
             >
-              {current && <span className="absolute inset-x-5 top-0 h-[3px] bg-teal" />}
+              {current && <span className="absolute inset-x-5 top-0 h-1 rounded-b bg-linear-to-r from-[#3864c8] to-[#2a4fa8]" />}
               <Icon width={20} height={20} />
               {label}
             </Link>

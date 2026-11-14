@@ -216,9 +216,9 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
             <span className="text-[13px] text-body" role="status" aria-live="polite">{status}</span>
             <div className="flex gap-1" aria-hidden="true">
               {script.map((_, i) => (
-                <span key={i} className="h-1 grow overflow-hidden rounded-full bg-panel">
+                <span key={i} className="h-2 grow overflow-hidden rounded-full bg-[#d8dfcc]">
                   <span
-                    className="block h-full bg-teal transition-[width] duration-300"
+                    className="block h-full bg-linear-to-r from-[#3864c8] to-[#2a4fa8] transition-[width] duration-300"
                     style={{ width: state === "done" || i < index ? "100%" : i === index && active ? `${Math.round(fraction * 100)}%` : "0%" }}
                   />
                 </span>

@@ -8,7 +8,7 @@ function Icon({ children, ...props }: SVGProps<SVGSVGElement>) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={2.4}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -31,7 +31,7 @@ export const WatchIcon = (p: P) => (
   <Icon {...p}><rect x="6" y="6" width="12" height="12" rx="3" /><path d="M9 6V3h6v3M9 18v3h6v-3" /><path d="M9 12h1.5l1-2 1.5 4 1-2H15" /></Icon>
 );
 export const CheckIcon = (p: P) => (
-  <Icon strokeWidth={2.5} {...p}><path d="M20 6 9 17l-5-5" /></Icon>
+  <Icon strokeWidth={3} {...p}><path d="M20 6 9 17l-5-5" /></Icon>
 );
 export const LockIcon = (p: P) => (
   <Icon {...p}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></Icon>
@@ -91,7 +91,7 @@ export const PlayIcon = (p: P) => (
   <Icon {...p}><path d="M7 4.5v15l12-7.5z" fill="currentColor" /></Icon>
 );
 export const PauseIcon = (p: P) => (
-  <Icon {...p}><path d="M8 5v14M16 5v14" strokeWidth={3} /></Icon>
+  <Icon {...p}><path d="M8 5v14M16 5v14" strokeWidth={3.4} /></Icon>
 );
 export const RestartIcon = (p: P) => (
   <Icon {...p}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></Icon>

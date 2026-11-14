@@ -117,9 +117,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               {/* Simple green tiles: everything here is in its expected range. */}
               <ul className="grid grid-cols-2 gap-2 lg:grid-cols-1 xl:grid-cols-2">
                 {good.map((item) => (
-                  <li key={item.label} className="flex flex-col gap-1 rounded-md border border-[#c3d1bf] bg-[#eaf0e4] px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3 xl:flex-col xl:items-stretch xl:justify-start xl:gap-1">
+                  <li key={item.label} className="tint-good flex flex-col gap-1 rounded-md px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3 xl:flex-col xl:items-stretch xl:justify-start xl:gap-1">
                     <span className="flex items-start gap-1.5 text-[12px] leading-snug font-semibold text-[#2f5443]">
-                      <CheckIcon width={13} height={13} className="mt-0.5 shrink-0" />
+                      <CheckIcon width={14} height={14} className="mt-0.5 shrink-0" />
                       {item.label}
                     </span>
                     <span className="pl-[19px] font-mono text-[15px] font-semibold text-[#22402f] lg:pl-0 xl:pl-[19px]">{item.value}</span>
@@ -140,7 +140,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
                 {meds.map((medication) => {
                   const info = medInfoFor(medication.name);
                   return (
-                    <li key={medication.name} className="rounded-md border border-[#aebde3] bg-teal-soft px-3 py-2.5">
+                    <li key={medication.name} className="tint-med rounded-md px-3 py-2.5">
                       <div className="flex items-center gap-3">
                         <span className="size-2.5 shrink-0 rounded-full bg-teal" aria-hidden="true" />
                         <span className="grow text-[14px] font-semibold text-teal-dark">{medication.name}</span>

@@ -34,7 +34,7 @@ export function DesktopNav() {
                 current ? "bg-teal-soft text-teal-dark" : "text-body hover:bg-sage-soft"
               }`}
             >
-              {current && <span className="absolute inset-y-2 left-0 w-[3px] bg-teal" aria-hidden="true" />}
+              {current && <span className="absolute inset-y-2 left-0 w-1 rounded-r bg-teal" aria-hidden="true" />}
               <Icon width={19} height={19} className={current ? "text-teal" : "text-subtle"} />
               {label}
             </Link>

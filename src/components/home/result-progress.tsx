@@ -19,7 +19,7 @@ const TONE = { improving: "text-[#2f5443]", worsening: "text-amber-ink", mixed: 
 
 export function ProgressBadge({ direction, label }: { direction: keyof typeof STYLES; label: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 border px-2 py-1 text-[11px] leading-tight font-semibold ${STYLES[direction]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-sm border-[1.5px] px-2 py-1 text-[11px] leading-tight font-semibold ${STYLES[direction]}`}>
       <span aria-hidden="true">{SYMBOLS[direction]}</span>{label}
     </span>
   );
@@ -79,12 +79,12 @@ function scaleGeometry(metric: MetricKey, index: number, previous: number, curre
 function MiniBar({ metric, previous, current }: { metric: MetricKey; previous: number; current: number }) {
   const { limit, warn, prev, cur, pct, at } = scaleGeometry(metric, 0, previous, current);
   return (
-    <span className="relative mt-2.5 mb-1 block h-3.5" aria-hidden="true">
-      <span className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-ink" />
-      <span className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 rounded-full bg-[#7d9b6a]" style={{ width: at(limit) }} />
-      <span className="absolute top-1/2 right-0 h-[3px] -translate-y-1/2 rounded-full bg-[#d24a3f]" style={{ width: `${100 - pct(warn)}%` }} />
-      <span className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#8d939a] bg-[#d9dde1]" style={{ left: at(prev) }} />
-      <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" style={{ left: at(cur) }} />
+    <span className="relative mt-2.5 mb-1 block h-[18px]" aria-hidden="true">
+      <span className="absolute inset-x-0 top-1/2 h-[6px] -translate-y-1/2 rounded-full bg-[#5d6a63]" />
+      <span className="absolute top-1/2 left-0 h-[6px] -translate-y-1/2 rounded-full bg-linear-to-r from-[#5f8a4f] to-[#7fa86a]" style={{ width: at(limit) }} />
+      <span className="absolute top-1/2 right-0 h-[6px] -translate-y-1/2 rounded-full bg-linear-to-r from-[#e0614f] to-[#c43a32]" style={{ width: `${100 - pct(warn)}%` }} />
+      <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#7b848c] bg-white" style={{ left: at(prev) }} />
+      <span className="absolute top-1/2 size-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-ink shadow-[0_0_0_1.5px_#1e2824]" style={{ left: at(cur) }} />
     </span>
   );
 }
@@ -96,17 +96,17 @@ function ScaleBar({ metric, index, previous, current }: { metric: MetricKey; ind
   return (
     <div className="mt-3" role="img" aria-label={`Previous ${fmt(previous)}, latest ${fmt(current)}. Goal is ${part.healthy === "below" ? "under" : "at least"} ${part.limit}; ${highLabel.toLowerCase()} past ${part.warn}.`}>
       <div className="relative h-5 text-[10px] font-semibold text-ink">
-        <span className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap" style={{ left: at(cur) }}>Latest · {fmt(current)}<span className="h-1.5 w-px bg-ink" /></span>
+        <span className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap" style={{ left: at(cur) }}>Latest · {fmt(current)}<span className="h-1.5 w-0.5 bg-ink" /></span>
       </div>
-      <div className="relative flex h-7 overflow-hidden rounded-md border-2 border-ink bg-white text-[11px] font-semibold">
-        <div className="flex items-center justify-center border-r-2 border-ink bg-[#dbe5cf] text-[#2f5443]" style={{ width: at(limit) }}>Goal</div>
+      <div className="relative flex h-8 overflow-hidden rounded-md border-[2.5px] border-ink bg-white text-[11px] font-semibold">
+        <div className="flex items-center justify-center border-r-[2.5px] border-ink bg-linear-to-r from-[#cfe0c0] to-[#dfeacf] text-[#24432f]" style={{ width: at(limit) }}>Goal</div>
         <div className="grow" />
-        <div className="flex items-center justify-center border-l-2 border-ink bg-[#f6cfcf] text-[#8a2a2a]" style={{ width: `${100 - pct(warn)}%` }}>{highLabel}</div>
-        <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink bg-white" style={{ left: at(prev) }} />
-        <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" style={{ left: at(cur) }} />
+        <div className="flex items-center justify-center border-l-[2.5px] border-ink bg-linear-to-r from-[#f8d9d5] to-[#f2bfba] text-[#7d2222]" style={{ width: `${100 - pct(warn)}%` }}>{highLabel}</div>
+        <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-ink bg-white" style={{ left: at(prev) }} />
+        <span className="absolute top-1/2 size-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-ink shadow-[0_0_0_1.5px_#1e2824]" style={{ left: at(cur) }} />
       </div>
       <div className="relative h-5 text-[10px] text-muted">
-        <span className="absolute top-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap" style={{ left: at(prev) }}><span className="h-1.5 w-px bg-muted" />Previous · {fmt(previous)}</span>
+        <span className="absolute top-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap" style={{ left: at(prev) }}><span className="h-1.5 w-0.5 bg-muted" />Previous · {fmt(previous)}</span>
       </div>
     </div>
   );

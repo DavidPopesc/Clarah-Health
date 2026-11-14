@@ -10,7 +10,7 @@
   --color-body: #34413b;
   --color-muted: #505d56;
   --color-subtle: #616d66;
-  --color-line: #d6dccd;
+  --color-line: #c9d2bd;
   --color-panel: #e6ebdf;
   --color-teal: #2a4fa8;
   --color-teal-dark: #1a3170;
@@ -31,7 +31,7 @@
 * { border-color: var(--color-line); }
 
 body {
-  background: #e3e8db;
+  background: linear-gradient(160deg, #e3eadb 0%, #dfe6ef 100%) fixed;
   color: var(--color-ink);
 }
 
@@ -41,13 +41,28 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   outline-offset: 2px;
 }
 
+/*
+  Background: a faint, repeating health motif (a heartbeat line, small crosses, a heart) in sage,
+  over ivory. Kept very light so it never competes with the content on top.
+*/
 .app-shell {
   background-color: var(--color-ground);
-  background-image:
-    linear-gradient(rgba(60, 90, 78, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(60, 90, 78, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%233c5a4e' stroke-opacity='.075' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 70h62l9-18 12 40 11-30 7 8h119'/%3E%3Cpath d='M168 140v18M159 149h18'/%3E%3Cpath d='M30 20v10M25 25h10'/%3E%3Cpath d='M70 180c-8-5-13-10-13-15a6.5 6.5 0 0 1 13-2.5 6.5 6.5 0 0 1 13 2.5c0 5-5 10-13 15z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 220px 220px;
   box-shadow: 0 0 0 1px rgba(44, 68, 58, 0.1);
+}
+
+/*
+  Header bands: eucalyptus flowing into a deep blue-green, with a faint white heartbeat line.
+  Layered on top of the bg-eucalyptus colour wherever that's used.
+*/
+.bg-eucalyptus {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='80' viewBox='0 0 360 80'%3E%3Cpath d='M0 48h120l12-22 16 44 14-36 9 14h189' fill='none' stroke='%23ffffff' stroke-opacity='.13' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(115deg, #3c5a4e 0%, #335f55 45%, #2c5470 100%);
+  background-repeat: repeat-x, no-repeat;
+  background-position: right center, 0 0;
+  background-size: 360px 80px, 100% 100%;
 }
 
 /*
@@ -70,51 +85,63 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 .slab {
   background: #fffdf7;
-  border: 1px solid #d3dac8;
-  box-shadow: 0 1px 2px rgba(44, 68, 58, 0.07);
+  border: 1px solid #c9d2bd;
+  box-shadow: 0 1px 3px rgba(44, 68, 58, 0.08);
 }
 
 .tile-3d {
   background: #fffdf7;
-  border: 1px solid #c4cfb7;
-  box-shadow: none;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  border: 1.5px solid #b9c6aa;
+  box-shadow: 0 1px 2px rgba(44, 68, 58, 0.06);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
-.tile-3d:hover { background: #eef2e7; border-color: #9caf88; }
-.tile-3d:active { background: #e1e8d6; }
+.tile-3d:hover { background: #eef3e6; border-color: #7f9a6b; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(44, 68, 58, 0.1); }
+.tile-3d:active { background: #e1e8d6; transform: none; box-shadow: none; }
 
 .tile-teal {
-  background: var(--color-teal-soft);
-  border: 1px solid #aebde3;
+  background: linear-gradient(135deg, #e6ecf9 0%, #d8e1f4 100%);
+  border: 1.5px solid #a3b5e0;
   box-shadow: none;
 }
 
+/* Primary buttons: a royal-blue gradient that brightens and lifts slightly on hover. */
 .press {
-  background: var(--color-teal);
+  background: linear-gradient(135deg, #3864c8 0%, #2a4fa8 60%, #233f8e 100%);
   border: 1px solid var(--color-teal-dark);
-  box-shadow: none;
-  transition: background-color 150ms ease;
+  box-shadow: 0 2px 6px rgba(42, 79, 168, 0.25);
+  transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
-.press:hover { background: #223f8a; }
-.press:active { background: var(--color-teal-dark); }
-.press:disabled { background: #8d97a8; border-color: #6b7486; }
-.press-alert { background: var(--color-alert); border-color: #70141c; }
+.press:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 6px 14px rgba(42, 79, 168, 0.3); }
+.press:active { filter: brightness(0.95); transform: none; box-shadow: 0 1px 3px rgba(42, 79, 168, 0.25); }
+.press:disabled { background: #8d97a8; border-color: #6b7486; box-shadow: none; filter: none; transform: none; }
+.press-alert { background: linear-gradient(135deg, #c12d38 0%, #a5212b 100%); border-color: #70141c; box-shadow: 0 2px 6px rgba(165, 33, 43, 0.3); }
 .press-crisis { background: #6f365a; border-color: #442136; }
 
 .well {
   background: #eef1e7;
-  border: 1px solid #d6dccd;
+  border: 1.5px solid #cdd5c2;
   box-shadow: none;
 }
 
-.lift { transition: background-color 150ms ease, border-color 150ms ease; }
-.lift:hover { background: #f1f4ea; border-color: #9caf88; }
+.lift { transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.lift:hover { background: #f2f6ea; border-color: #7f9a6b; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(44, 68, 58, 0.1); }
+
+/* In-range results and medication rows on Overview. */
+.tint-good { background: linear-gradient(135deg, #eef4e8 0%, #e1ebd8 100%); border: 1.5px solid #b3c6a6; }
+.tint-med { background: linear-gradient(135deg, #e8eefa 0%, #dbe3f5 100%); border: 1.5px solid #a3b5e0; }
 
 .stage-3d {
-  background: #eaeee2;
-  background-image: linear-gradient(90deg, transparent 49.6%, rgba(42, 79, 168, 0.12) 50%, transparent 50.4%);
-  border: 1px solid #c9d3bd;
+  background: radial-gradient(ellipse at 50% 40%, #f3f6ee 0%, #e4eadb 100%);
+  background-image:
+    linear-gradient(90deg, transparent 49.5%, rgba(42, 79, 168, 0.18) 49.5%, rgba(42, 79, 168, 0.18) 50.5%, transparent 50.5%),
+    radial-gradient(ellipse at 50% 40%, #f3f6ee 0%, #e4eadb 100%);
+  border: 1.5px solid #b9c6aa;
   box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press, .tile-3d, .lift { transition: none; }
+  .press:hover, .tile-3d:hover, .lift:hover { transform: none; }
 }
 
 .tilt { transform: none !important; transition: none; }
