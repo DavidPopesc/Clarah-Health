@@ -41,14 +41,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   outline-offset: 2px;
 }
 
-/*
-  Background: a faint, repeating health motif (a heartbeat line, small crosses, a heart) in sage,
-  over ivory. Kept very light so it never competes with the content on top.
-*/
+/* The main area is plain ivory. */
 .app-shell {
   background-color: var(--color-ground);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%233c5a4e' stroke-opacity='.075' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 70h62l9-18 12 40 11-30 7 8h119'/%3E%3Cpath d='M168 140v18M159 149h18'/%3E%3Cpath d='M30 20v10M25 25h10'/%3E%3Cpath d='M70 180c-8-5-13-10-13-15a6.5 6.5 0 0 1 13-2.5 6.5 6.5 0 0 1 13 2.5c0 5-5 10-13 15z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 220px 220px;
   box-shadow: 0 0 0 1px rgba(44, 68, 58, 0.1);
 }
 
