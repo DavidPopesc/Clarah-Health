@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ResultProgress } from "@/lib/attention";
-import { METRIC_INFO, changeSentence, gapFromGoal, goalSentence, partInfo, percentChange, type MetricKey } from "@/lib/metrics";
+import { METRIC_INFO, changeSentence, gapFromGoal, partInfo, percentChange, type MetricKey } from "@/lib/metrics";
 import { ChatIcon, ChevronIcon } from "../icons";
 
 const STYLES = {
@@ -38,7 +38,6 @@ export function MetricRow({ progress, context, compact = false }: { progress: Re
   const [open, setOpen] = useState(false);
   const info = METRIC_INFO[progress.key];
   const current = progress.parts.map((part) => part.current);
-  const previous = progress.parts.map((part) => part.previous);
   const arrow = progress.parts[0].current > progress.parts[0].previous ? "↑" : progress.parts[0].current < progress.parts[0].previous ? "↓" : "→";
   return (
     <>
@@ -49,9 +48,9 @@ export function MetricRow({ progress, context, compact = false }: { progress: Re
             <span className="font-mono text-[13px] font-semibold text-ink">{info.format(current)}</span>
           </span>
           <span className={`mt-0.5 block text-[12px] font-medium ${TONE[progress.direction]}`}>
-            <span aria-hidden="true">{arrow} </span>{changeSentence(progress.key, progress.parts)} <span className="font-normal text-subtle">(was {info.format(previous)} on {dateLabel(progress.previousDate, false)})</span>
+            <span aria-hidden="true">{arrow} </span>{changeSentence(progress.key, progress.parts)}
           </span>
-          <span className="mt-0.5 block text-[11px] text-muted">Goal: {info.goalText} · {goalSentence(progress.key, current)}</span>
+          <MiniBar metric={progress.key} previous={progress.parts[0].previous} current={progress.parts[0].current} />
         </span>
         <span className="flex items-center gap-0.5 text-[11px] font-semibold text-teal">
           <span className="sr-only sm:not-sr-only">Details</span>
@@ -63,7 +62,7 @@ export function MetricRow({ progress, context, compact = false }: { progress: Re
   );
 }
 
-function ScaleBar({ metric, index, previous, current }: { metric: MetricKey; index: number; previous: number; current: number }) {
+function scaleGeometry(metric: MetricKey, index: number, previous: number, current: number) {
   const part = partInfo(metric, index);
   // Lay the scale out so "better" is always on the left: flip metrics where higher is healthier.
   const flip = part.healthy === "above" ? -1 : 1;
@@ -71,8 +70,27 @@ function ScaleBar({ metric, index, previous, current }: { metric: MetricKey; ind
   const span = Math.max(warn - limit, Math.abs(cur - limit), Math.abs(prev - limit));
   const lo = Math.min(limit - span * 0.6, prev - span * 0.15, cur - span * 0.15);
   const hi = Math.max(warn + span * 0.45, prev + span * 0.15, cur + span * 0.15);
-  const pct = (value: number) => ((value - lo) / (hi - lo)) * 100;
-  const at = (value: number) => `${Math.min(Math.max(pct(value), 0), 100)}%`;
+  const pct = (value: number) => Math.min(Math.max(((value - lo) / (hi - lo)) * 100, 0), 100);
+  const at = (value: number) => `${pct(value)}%`;
+  return { part, limit, warn, prev, cur, pct, at };
+}
+
+/** Compact goal → high line for the summary row: green goal end, red high end, ○ previous, ● latest. */
+function MiniBar({ metric, previous, current }: { metric: MetricKey; previous: number; current: number }) {
+  const { limit, warn, prev, cur, pct, at } = scaleGeometry(metric, 0, previous, current);
+  return (
+    <span className="relative mt-2.5 mb-1 block h-3.5" aria-hidden="true">
+      <span className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-ink" />
+      <span className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 rounded-full bg-[#4f9a4f]" style={{ width: at(limit) }} />
+      <span className="absolute top-1/2 right-0 h-[3px] -translate-y-1/2 rounded-full bg-[#d24a3f]" style={{ width: `${100 - pct(warn)}%` }} />
+      <span className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#8d939a] bg-[#d9dde1]" style={{ left: at(prev) }} />
+      <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" style={{ left: at(cur) }} />
+    </span>
+  );
+}
+
+function ScaleBar({ metric, index, previous, current }: { metric: MetricKey; index: number; previous: number; current: number }) {
+  const { part, limit, warn, prev, cur, pct, at } = scaleGeometry(metric, index, previous, current);
   const highLabel = part.healthy === "below" ? "High" : "Low";
   const fmt = (value: number) => (metric === "a1c" ? `${value}%` : `${value}`);
   return (
