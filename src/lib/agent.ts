@@ -4,10 +4,10 @@ import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
-import { BODY_SYSTEMS, detectBodyFocus, normalizeFocus, REGION_IDS, type BodyFocus } from "./body";
-import { findReferences, type SafetyReference } from "./safety-references";
+import { BODY_SYSTEMS, detectBodyFocus, normalizeFocus, REGION_IDS, type BodyFocus } from "./body.ts";
+import { findReferences, type SafetyReference } from "./safety-references.ts";
 import type { PatientRecord, Source, WearableSummary } from "./types";
-import { ageFrom, bpCategory, BP_LABELS } from "./vitals";
+import { ageFrom, bpCategory, BP_LABELS } from "./vitals.ts";
 
 // Gemini answers first (through Google's OpenAI-compatible endpoint). If it fails, the
 // backup provider takes over: any OpenAI-compatible endpoint, Pulpo by default.
@@ -299,11 +299,13 @@ interface RoundResult {
 }
 
 class RoundError extends Error {
-  constructor(
-    readonly cause: unknown,
-    readonly streamedText: boolean,
-  ) {
+  readonly cause: unknown;
+  readonly streamedText: boolean;
+
+  constructor(cause: unknown, streamedText: boolean) {
     super("Model round failed");
+    this.cause = cause;
+    this.streamedText = streamedText;
   }
 }
 
@@ -334,7 +336,9 @@ async function streamRound(
           emit({ type: "delta", text: delta.content });
         }
         for (const tc of delta?.tool_calls ?? []) {
-          const call = (calls[tc.index] ??= { id: "", type: "function", function: { name: "", arguments: "" } });
+          const matchingIndex = tc.id ? calls.findIndex((call) => call?.id === tc.id) : -1;
+          const index = tc.index ?? (matchingIndex >= 0 ? matchingIndex : tc.id || tc.function?.name ? calls.length : Math.max(0, calls.length - 1));
+          const call = (calls[index] ??= { id: "", type: "function", function: { name: "", arguments: "" } });
           if (tc.id) call.id = tc.id;
           if (tc.function?.name) call.function.name += tc.function.name;
           if (tc.function?.arguments) call.function.arguments += tc.function.arguments;
@@ -343,7 +347,9 @@ async function streamRound(
         }
         if (choice.finish_reason === "content_filter") filtered = true;
       }
-      return { text, calls: calls.filter(Boolean), filtered };
+      const collectedCalls = calls.filter(Boolean);
+      if (!filtered && !text.trim() && collectedCalls.length === 0) throw new Error("Model returned no answer or tool calls");
+      return { text, calls: collectedCalls, filtered };
     } catch (err) {
       // Retry an overloaded provider only when there's no backup and nothing reached the user yet.
       if (!retryOverload || !isRetryable(err) || text || attempt >= 3) throw new RoundError(err, Boolean(text));
