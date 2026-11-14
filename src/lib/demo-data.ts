@@ -18,6 +18,7 @@ export const demoRecord: PatientRecord = {
   conditions: [
     { name: "Type 2 diabetes mellitus", since: "2019-05-01" },
     { name: "Hyperlipidemia", since: "2020-02-11" },
+    { name: "Attention-deficit/hyperactivity disorder (ADHD)", since: "2012-08-20" },
   ],
   labs: [
     { name: "Hemoglobin A1c", value: 7.9, unit: "%", date: "2026-03-10" },

@@ -52,7 +52,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   await connection();
   const { error } = await searchParams;
   const [record, wearable, status] = await Promise.all([getRecord(), getWearable(), connectionStatus()]);
-  const { items, good } = assessHealth(record, wearable);
+  const { themes, good } = assessHealth(record, wearable);
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
   const meds = record.medications.filter((medication) => medication.status === "active");
@@ -74,8 +74,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               <h1 className="mt-0.5 text-[30px] leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
             </div>
             <div className="border-l border-white/25 pl-4 text-right">
-              <strong className="block text-2xl leading-none">{items.length}</strong>
-              <span className="clinical-label text-[#f3d9cc]">Open items</span>
+              <strong className="block text-2xl leading-none">{themes.length}</strong>
+              <span className="clinical-label text-[#f3d9cc]">Focus areas</span>
             </div>
           </div>
         </header>
@@ -96,12 +96,13 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
             <div className="flex items-end justify-between border-b-2 border-ink pb-2">
               <div>
-                <span className="clinical-label text-teal">Clinical review</span>
-                <h2 id="attention-heading" className="mt-1 text-xl font-semibold">What needs your attention</h2>
+                <span className="clinical-label text-teal">Connected health picture</span>
+                <h2 id="attention-heading" className="mt-1 text-xl font-semibold">Your health focus areas</h2>
               </div>
-              <span className="clinical-label text-subtle">{String(items.length).padStart(2, "0")} items</span>
+              <span className="clinical-label text-subtle">{String(themes.length).padStart(2, "0")} areas</span>
             </div>
-            <AttentionList items={items} />
+            <p className="text-[12px] leading-relaxed text-muted">Related labs, vital signs, medicines and clinician notes are grouped together. Open an area to see its subissues, evidence and overall next steps.</p>
+            <AttentionList themes={themes} />
           </section>
 
           <Documents />
