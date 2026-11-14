@@ -69,7 +69,7 @@ Reply with only a JSON object, no other text:
 
 Rules:
 - Every finding needs at least one ref. Copy each quote exactly, character for character, from the page it's on, and keep it short (usually one line with the number). Never make up or reword a quote.
-- Put "attention" findings first: values outside the reference range, worse than before, or anything the doctor plans to act on. Use "good" for reassuring results and "info" for plans and context. At most 8 findings; group minor normal results into one "good" finding.
+- Put "attention" findings first: values outside the reference range, worse than before, or anything the doctor plans to act on. Use "good" for reassuring results and "info" for plans and context. If the doctor says a result is at goal or well controlled, mark it "good" even if it's outside the lab's reference range. At most 8 findings; group minor normal results into one "good" finding.
 - Include the doctor's plan (tests to repeat, medicines being considered) as findings.
 - Never tell the patient to start, stop, or change a medication. Turn those into questions for their doctor.
 - Write at a 6th to 8th grade reading level, warm and direct. Write dates in words, like "Sep 15, 2026", never as 2026-09-15.

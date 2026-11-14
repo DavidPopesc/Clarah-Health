@@ -27,6 +27,7 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 - **Identifiers are removed first** (labelled names, dates of birth, MRNs, phone numbers, emails), on a best-effort basis.
 - **References are checked, not trusted.** The model must quote the exact line behind every finding. `src/lib/doc-verify.ts` drops any quote that doesn't appear in the PDF text and corrects wrong page numbers.
 - Scanned (image-only) PDFs can't be read yet.
+- **Test documents** for the synthetic demo patient are in `public/samples/test/` (regenerate with `node scripts/make-test-pdfs.mjs`): an urgent care visit and X-ray for a sprained ankle, annual labs with low B12 and vitamin D, an echocardiogram, a 3-month follow-up where things improved, a store receipt (should be recognized as not medical), and a scanned page with no text (should show the can't-read message).
 
 ## How Clara uses the model
 
