@@ -22,7 +22,7 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 
 ## How Clara uses the model
 
-Clara talks to any OpenAI-compatible Chat Completions endpoint. By default that's [Pulpo](https://pulpo.baby) with `claude-sonnet-5.5`; change `OPENAI_BASE_URL` and `OPENAI_MODEL` to swap providers or models.
+Clara talks to any OpenAI-compatible Chat Completions endpoint. By default that's [Pulpo](https://pulpo.baby) with `glm-5.3-flash`, a fast, inexpensive model; change `OPENAI_BASE_URL` and `OPENAI_MODEL` to swap providers or models.
 
 - **Function calling as an agent loop.** The model decides which parts of the record it needs (medications, labs, vitals, wearable data) and calls typed tools. The server runs them and returns de-identified results, looping until the model has what it needs.
 - **Grounded answers.** For any "is it safe" question, the model has to call `lookup_safety_reference`. The sources it actually used are shown under the answer.

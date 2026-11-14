@@ -1,5 +1,9 @@
 import OpenAI from "openai";
-import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
+import type {
+  ChatCompletionMessageFunctionToolCall,
+  ChatCompletionMessageParam,
+  ChatCompletionTool,
+} from "openai/resources/chat/completions";
 import { BODY_SYSTEMS, detectBodyFocus, normalizeFocus, REGION_IDS, type BodyFocus } from "./body";
 import { findReferences, type SafetyReference } from "./safety-references";
 import type { PatientRecord, Source, WearableSummary } from "./types";
@@ -7,7 +11,7 @@ import { ageFrom, bpCategory, BP_LABELS } from "./vitals";
 
 // Any OpenAI-compatible endpoint works; the default is Pulpo.
 const BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
-const MODEL = process.env.OPENAI_MODEL ?? "claude-sonnet-5.5";
+const MODEL = process.env.OPENAI_MODEL ?? "glm-5.3-flash";
 const MAX_TOOL_ROUNDS = 8;
 
 const SYSTEM_PROMPT = `You are Clara, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
@@ -15,7 +19,7 @@ const SYSTEM_PROMPT = `You are Clara, a health companion that helps one patient 
 How to work:
 - Before answering anything about the patient's own health, use the tools to look up the relevant parts of their record and wearable data. Never guess or invent their values.
 - When the patient asks whether a food, herb, supplement, fast, or religious or cultural practice is safe for them, call lookup_safety_reference with the specific terms (for example "ramadan fasting" or "st john's wort"). Base safety statements only on the references it returns combined with the patient's medications and conditions. If no relevant reference comes back, say you couldn't find a trusted source for that and suggest asking their pharmacist or doctor. Do not invent drug or herb interactions.
-- Never tell the patient to start, stop, or change a medication or dose. Turn those decisions into specific questions to bring to their care team.
+- Never tell the patient to start, stop, or change a medication, its dose, or when they take it, and don't say such changes are easy or usual unless a reference says so. Turn those decisions into specific questions to bring to their care team.
 - Respect religious and cultural practices. Help the patient do the practice as safely as possible instead of discouraging it.
 - If anything sounds like an emergency, tell them to call 911 now.
 - If the question centers on a specific body part, injury, or organ (for example a sprained ankle, knee pain, or kidney function), call show_body_focus once so the app can show that spot on a 3D body. Pick the system that fits: muscular for sprains, strains and tendons; skeletal for bones, joints and fractures; nervous for numbness or tingling; circulatory for the heart and blood vessels; organs for internal organs. Don't mention the 3D view in your answer.
@@ -192,16 +196,71 @@ function runTool(
 
 export class MissingApiKeyError extends Error {}
 
-// The provider sometimes answers 503 when overloaded; retry with backoff. 429 means a quota is
-// used up (often the daily free-tier limit), so retrying would not help.
-async function withRetry<T>(call: () => Promise<T>, attempts = 3): Promise<T> {
-  for (let i = 1; ; i++) {
+// Short status lines shown while a tool runs, before any answer text arrives.
+const TOOL_STATUS: Record<string, string> = {
+  get_profile: "Reading your profile…",
+  get_medications: "Checking your medications…",
+  get_conditions: "Checking your diagnoses…",
+  get_labs: "Reading your lab results…",
+  get_vitals: "Looking at your blood pressure…",
+  get_wearable_summary: "Reading your wearable data…",
+  lookup_safety_reference: "Checking trusted medical sources…",
+  show_body_focus: "Preparing a 3D view…",
+};
+
+export type AgentEvent =
+  | { type: "status"; text: string }
+  | { type: "delta"; text: string }
+  | { type: "reset" } // drop text streamed so far; the model went on to call tools
+  | ({ type: "done" } & Omit<AgentAnswer, "text">);
+
+const isRetryable = (err: unknown) =>
+  err instanceof OpenAI.APIError && (err.status === 503 || err.status === 500);
+
+interface RoundResult {
+  text: string;
+  calls: ChatCompletionMessageFunctionToolCall[];
+  filtered: boolean;
+}
+
+// Streams one model turn, forwarding text as it arrives and collecting tool calls.
+async function streamRound(
+  client: OpenAI,
+  messages: ChatCompletionMessageParam[],
+  emit: (e: AgentEvent) => void,
+): Promise<RoundResult> {
+  for (let attempt = 1; ; attempt++) {
+    let text = "";
     try {
-      return await call();
+      const stream = await client.chat.completions.create({
+        model: MODEL,
+        messages,
+        tools: CHAT_TOOLS,
+        stream: true,
+      });
+      const calls: ChatCompletionMessageFunctionToolCall[] = [];
+      let filtered = false;
+      for await (const chunk of stream) {
+        const choice = chunk.choices?.[0];
+        if (!choice) continue;
+        const delta = choice.delta;
+        if (delta?.content) {
+          text += delta.content;
+          emit({ type: "delta", text: delta.content });
+        }
+        for (const tc of delta?.tool_calls ?? []) {
+          const call = (calls[tc.index] ??= { id: "", type: "function", function: { name: "", arguments: "" } });
+          if (tc.id) call.id = tc.id;
+          if (tc.function?.name) call.function.name += tc.function.name;
+          if (tc.function?.arguments) call.function.arguments += tc.function.arguments;
+        }
+        if (choice.finish_reason === "content_filter") filtered = true;
+      }
+      return { text, calls: calls.filter(Boolean), filtered };
     } catch (err) {
-      const transient = err instanceof OpenAI.APIError && (err.status === 503 || err.status === 500);
-      if (!transient || i >= attempts) throw err;
-      await new Promise((r) => setTimeout(r, 800 * 2 ** (i - 1)));
+      // Only retry if nothing reached the user yet; otherwise the text would repeat.
+      if (!isRetryable(err) || text || attempt >= 3) throw err;
+      await new Promise((r) => setTimeout(r, 800 * 2 ** (attempt - 1)));
     }
   }
 }
@@ -210,7 +269,8 @@ export async function runAgent(
   history: ChatTurn[],
   record: PatientRecord,
   wearable: WearableSummary,
-): Promise<AgentAnswer> {
+  emit: (e: AgentEvent) => void,
+): Promise<void> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new MissingApiKeyError("OPENAI_API_KEY is not set");
   const client = new OpenAI({ apiKey, baseURL: BASE_URL, maxRetries: 0 });
@@ -224,34 +284,36 @@ export async function runAgent(
   const usedData = new Set<string>();
   const focus: { value?: BodyFocus } = {};
   const lastQuestion = history.at(-1)?.content ?? "";
-  const done = (text: string): AgentAnswer => ({
-    text,
-    sources: [...found.values()].map(({ id, title, url }) => ({ id, title, url })),
-    usedData: [...usedData],
-    focus: focus.value ?? detectBodyFocus(lastQuestion) ?? undefined,
-  });
+  const finish = (fallbackText?: string) => {
+    if (fallbackText) emit({ type: "delta", text: fallbackText });
+    emit({
+      type: "done",
+      sources: [...found.values()].map(({ id, title, url }) => ({ id, title, url })),
+      usedData: [...usedData],
+      focus: focus.value ?? detectBodyFocus(lastQuestion) ?? undefined,
+    });
+  };
+
+  emit({ type: "status", text: "Checking your record…" });
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const response = await withRetry(() =>
-      client.chat.completions.create({ model: MODEL, messages, tools: CHAT_TOOLS }),
-    );
+    const { text, calls, filtered } = await streamRound(client, messages, emit);
 
-    const choice = response.choices?.[0];
-    if (!choice || choice.finish_reason === "content_filter") {
-      return done("I can't help with that one. Please ask your doctor or pharmacist.");
+    if (filtered) {
+      if (text) emit({ type: "reset" });
+      return finish("I can't help with that one. Please ask your doctor or pharmacist.");
     }
-
-    const calls = (choice.message.tool_calls ?? []).filter((c) => c.type === "function");
     if (calls.length === 0) {
-      return done(
-        choice.message.content?.trim() || "Sorry, I couldn't put together an answer. Please try asking again.",
-      );
+      return finish(text.trim() ? undefined : "Sorry, I couldn't put together an answer. Please try asking again.");
     }
 
-    messages.push({ role: "assistant", content: choice.message.content ?? null, tool_calls: calls });
+    // Any "let me check" text before tool calls isn't part of the answer.
+    if (text) emit({ type: "reset" });
+    messages.push({ role: "assistant", content: text || null, tool_calls: calls });
 
     for (const call of calls) {
       const name = call.function.name;
+      if (TOOL_STATUS[name]) emit({ type: "status", text: TOOL_STATUS[name] });
       if (DATA_LABELS[name]) usedData.add(DATA_LABELS[name]);
       let result: Record<string, unknown>;
       try {
@@ -262,11 +324,8 @@ export async function runAgent(
       }
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
     }
+    emit({ type: "status", text: "Writing your answer…" });
   }
 
-  return {
-    text: "That took longer than expected. Please try asking a simpler question.",
-    sources: [],
-    usedData: [...usedData],
-  };
+  finish("That took longer than expected. Please try asking a simpler question.");
 }

@@ -18,6 +18,7 @@ interface Message {
   usedData?: string[];
   focus?: BodyFocus;
   error?: boolean;
+  streaming?: boolean;
 }
 
 const SUGGESTIONS = [
@@ -32,13 +33,14 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("Checking your record…");
   const [flag, setFlag] = useState<RedFlag | null>(null);
   const [viewer, setViewer] = useState<BodyFocus | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, status]);
 
   async function send(text: string) {
     const question = text.trim();
@@ -55,27 +57,66 @@ export function Chat() {
           messages: next.filter((m) => !m.error).map(({ role, content }) => ({ role, content })),
         }),
       });
-      const data = await res.json();
-      if (data.kind === "red_flag") {
-        setFlag(data.flag);
-        setMessages([
-          ...next,
-          { role: "assistant", content: "I showed you an urgent safety screen for this message. If you're safe now, you can keep asking questions." },
-        ]);
-      } else if (data.kind === "answer") {
-        setMessages([
-          ...next,
-          { role: "assistant", content: data.text, sources: data.sources, usedData: data.usedData, focus: data.focus },
-        ]);
-        // Pop the 3D body up when the answer is about a specific body part.
-        if (data.focus) setViewer(data.focus);
-      } else {
-        setMessages([...next, { role: "assistant", content: data.error ?? "Something went wrong.", error: true }]);
+      if (!res.headers.get("Content-Type")?.includes("ndjson")) {
+        const data = await res.json();
+        if (data.kind === "red_flag") {
+          setFlag(data.flag);
+          setMessages([
+            ...next,
+            { role: "assistant", content: "I showed you an urgent safety screen for this message. If you're safe now, you can keep asking questions." },
+          ]);
+        } else {
+          setMessages([...next, { role: "assistant", content: data.error ?? "Something went wrong.", error: true }]);
+        }
+        return;
       }
+
+      // Streamed answer: status lines, then text as it's written, then sources and focus.
+      const at = next.length;
+      const update = (patch: Partial<Message>) =>
+        setMessages((prev) => {
+          const copy = [...prev];
+          const base: Message = copy[at] ?? { role: "assistant", content: "", streaming: true };
+          copy[at] = { ...base, ...patch };
+          return copy;
+        });
+      let content = "";
+      let focus: BodyFocus | undefined;
+      let failed = false;
+
+      const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+          if (event.type === "status") setStatus(event.text);
+          else if (event.type === "delta") update({ content: (content += event.text) });
+          else if (event.type === "reset") {
+            content = "";
+            setMessages((prev) => prev.slice(0, at));
+          } else if (event.type === "done") {
+            focus = event.focus;
+            update({ content, streaming: false, sources: event.sources, usedData: event.usedData, focus });
+          } else if (event.type === "error") {
+            failed = true;
+            update({ content: event.error, error: true, streaming: false });
+          }
+        }
+      }
+      if (!failed && !content) update({ content: "Something went wrong. Please try again.", error: true, streaming: false });
+      // Pop the 3D body up when the answer is about a specific body part.
+      if (!failed && focus) setViewer(focus);
     } catch {
       setMessages([...next, { role: "assistant", content: "Couldn't reach Clara. Check your connection and try again.", error: true }]);
     } finally {
       setLoading(false);
+      setStatus("Checking your record…");
     }
   }
 
@@ -91,7 +132,7 @@ export function Chat() {
         </div>
       </header>
 
-      <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4" aria-live="polite">
+      <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4" aria-live="polite" aria-busy={loading}>
         {messages.length === 0 && (
           <div className="flex flex-col gap-3">
             <p className="text-[15px] leading-normal text-muted">
@@ -137,8 +178,9 @@ export function Chat() {
                   ))}
                 </div>
               )}
-              <div className="answer text-[15px] leading-normal text-body">
+              <div className={`answer text-[15px] leading-normal text-body ${m.streaming ? "is-streaming" : ""}`}>
                 <ReactMarkdown>{m.content}</ReactMarkdown>
+                {m.streaming && <span className="stream-caret" aria-hidden="true" />}
               </div>
               {m.focus && (
                 <button
@@ -173,10 +215,10 @@ export function Chat() {
           ),
         )}
 
-        {loading && (
+        {loading && !messages[messages.length - 1]?.streaming && (
           <div className="slab flex items-center gap-2 self-start rounded-[18px] px-4 py-3 text-sm text-subtle">
             <span className="size-2 animate-pulse rounded-full bg-teal" />
-            Checking your record…
+            {status}
           </div>
         )}
         <div ref={endRef} />

@@ -137,7 +137,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise, .sheet-3d { animation: none; }
+  .rise, .sheet-3d, .stream-caret { animation: none; }
   .tilt { transform: none; }
   .lift:hover, .lift:active, .press:active, .tile-3d:active { transform: none; }
 }
@@ -146,4 +146,17 @@ body {
 .answer p:last-child { margin-bottom: 0; }
 .answer ul { margin: 0.25rem 0 0.6rem; padding-left: 1.1rem; list-style: disc; }
 .answer li { margin: 0.15rem 0; }
+/* Keep the caret on the same line as the text being written. */
+.answer.is-streaming > p:last-child { display: inline; }
+.stream-caret {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  border-radius: 2px;
+  background: var(--color-teal);
+  animation: caret 1s steps(2, start) infinite;
+}
+@keyframes caret { to { visibility: hidden; } }
 .answer strong { font-weight: 600; color: var(--color-ink); }
