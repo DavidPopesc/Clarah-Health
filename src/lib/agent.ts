@@ -9,9 +9,12 @@ import { findReferences, type SafetyReference } from "./safety-references";
 import type { PatientRecord, Source, WearableSummary } from "./types";
 import { ageFrom, bpCategory, BP_LABELS } from "./vitals";
 
-// Any OpenAI-compatible endpoint works; the default is Pulpo.
-const BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
-const MODEL = process.env.OPENAI_MODEL ?? "glm-5.3-flash";
+// Gemini answers first (through Google's OpenAI-compatible endpoint). If it fails, the
+// backup provider takes over: any OpenAI-compatible endpoint, Pulpo by default.
+const GEMINI_BASE_URL = process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta/openai/";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
+const BACKUP_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
+const BACKUP_MODEL = process.env.OPENAI_MODEL ?? "glm-5.3-flash";
 const MAX_TOOL_ROUNDS = 8;
 
 const SYSTEM_PROMPT = `You are Clara, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
@@ -217,28 +220,78 @@ export type AgentEvent =
 const isRetryable = (err: unknown) =>
   err instanceof OpenAI.APIError && (err.status === 503 || err.status === 500);
 
+interface Provider {
+  name: "gemini" | "backup";
+  client: OpenAI;
+  model: string;
+}
+
+function providers(): Provider[] {
+  const list: Provider[] = [];
+  if (process.env.GEMINI_API_KEY) {
+    list.push({
+      name: "gemini",
+      // Short timeout so a slow or stuck Gemini hands over to the backup quickly.
+      client: new OpenAI({ apiKey: process.env.GEMINI_API_KEY, baseURL: GEMINI_BASE_URL, maxRetries: 0, timeout: 15_000 }),
+      model: GEMINI_MODEL,
+    });
+  }
+  if (process.env.OPENAI_API_KEY) {
+    list.push({
+      name: "backup",
+      client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY, baseURL: BACKUP_BASE_URL, maxRetries: 0, timeout: 60_000 }),
+      model: BACKUP_MODEL,
+    });
+  }
+  if (!list.length) throw new MissingApiKeyError("Set GEMINI_API_KEY and/or OPENAI_API_KEY");
+  return list;
+}
+
+// Gemini attaches "thought signatures" to tool calls (extra_content) and needs them sent back.
+// Other providers don't know the field, so strip it before handing the conversation over.
+type ToolCall = ChatCompletionMessageFunctionToolCall & { extra_content?: unknown };
+
+function forProvider(messages: ChatCompletionMessageParam[], provider: Provider): ChatCompletionMessageParam[] {
+  if (provider.name === "gemini") return messages;
+  return messages.map((m) =>
+    m.role === "assistant" && m.tool_calls
+      ? { ...m, tool_calls: m.tool_calls.map((c) => ({ ...c, extra_content: undefined })) }
+      : m,
+  );
+}
+
 interface RoundResult {
   text: string;
-  calls: ChatCompletionMessageFunctionToolCall[];
+  calls: ToolCall[];
   filtered: boolean;
+}
+
+class RoundError extends Error {
+  constructor(
+    readonly cause: unknown,
+    readonly streamedText: boolean,
+  ) {
+    super("Model round failed");
+  }
 }
 
 // Streams one model turn, forwarding text as it arrives and collecting tool calls.
 async function streamRound(
-  client: OpenAI,
+  provider: Provider,
   messages: ChatCompletionMessageParam[],
   emit: (e: AgentEvent) => void,
+  retryOverload: boolean,
 ): Promise<RoundResult> {
   for (let attempt = 1; ; attempt++) {
     let text = "";
     try {
-      const stream = await client.chat.completions.create({
-        model: MODEL,
-        messages,
+      const stream = await provider.client.chat.completions.create({
+        model: provider.model,
+        messages: forProvider(messages, provider),
         tools: CHAT_TOOLS,
         stream: true,
       });
-      const calls: ChatCompletionMessageFunctionToolCall[] = [];
+      const calls: ToolCall[] = [];
       let filtered = false;
       for await (const chunk of stream) {
         const choice = chunk.choices?.[0];
@@ -253,13 +306,15 @@ async function streamRound(
           if (tc.id) call.id = tc.id;
           if (tc.function?.name) call.function.name += tc.function.name;
           if (tc.function?.arguments) call.function.arguments += tc.function.arguments;
+          const extra = (tc as { extra_content?: unknown }).extra_content;
+          if (extra) call.extra_content = extra;
         }
         if (choice.finish_reason === "content_filter") filtered = true;
       }
       return { text, calls: calls.filter(Boolean), filtered };
     } catch (err) {
-      // Only retry if nothing reached the user yet; otherwise the text would repeat.
-      if (!isRetryable(err) || text || attempt >= 3) throw err;
+      // Retry an overloaded provider only when there's no backup and nothing reached the user yet.
+      if (!retryOverload || !isRetryable(err) || text || attempt >= 3) throw new RoundError(err, Boolean(text));
       await new Promise((r) => setTimeout(r, 800 * 2 ** (attempt - 1)));
     }
   }
@@ -271,9 +326,8 @@ export async function runAgent(
   wearable: WearableSummary,
   emit: (e: AgentEvent) => void,
 ): Promise<void> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new MissingApiKeyError("OPENAI_API_KEY is not set");
-  const client = new OpenAI({ apiKey, baseURL: BASE_URL, maxRetries: 0 });
+  const chain = providers();
+  let active = 0;
 
   const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -297,7 +351,20 @@ export async function runAgent(
   emit({ type: "status", text: "Checking your record…" });
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const { text, calls, filtered } = await streamRound(client, messages, emit);
+    let result: RoundResult;
+    try {
+      result = await streamRound(chain[active], messages, emit, active === chain.length - 1);
+    } catch (err) {
+      if (!(err instanceof RoundError)) throw err;
+      if (active === chain.length - 1) throw err.cause;
+      // Hand over to the backup and redo this round there; the rest of the answer stays with it.
+      console.warn(`${chain[active].name} failed, switching to ${chain[active + 1].name}:`, err.cause instanceof Error ? err.cause.message : err.cause);
+      if (err.streamedText) emit({ type: "reset" });
+      active++;
+      round--;
+      continue;
+    }
+    const { text, calls, filtered } = result;
 
     if (filtered) {
       if (text) emit({ type: "reset" });

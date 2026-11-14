@@ -22,7 +22,7 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 
 ## How Clara uses the model
 
-Clara talks to any OpenAI-compatible Chat Completions endpoint. By default that's [Pulpo](https://pulpo.baby) with `glm-5.3-flash`, a fast, inexpensive model; change `OPENAI_BASE_URL` and `OPENAI_MODEL` to swap providers or models.
+Clara asks **Gemini** first (`gemini-3.5-flash-lite`, small and fast, through Google's OpenAI-compatible endpoint). If Gemini errors, runs out of quota or credit, or doesn't respond within 15 seconds, the same question goes to the **backup**: any OpenAI-compatible endpoint, by default [Pulpo](https://pulpo.baby) with `glm-5.3-flash`. Answers stream either way. Set `GEMINI_API_KEY` and/or `OPENAI_API_KEY`; `GEMINI_MODEL`, `OPENAI_BASE_URL` and `OPENAI_MODEL` are optional overrides.
 
 - **Function calling as an agent loop.** The model decides which parts of the record it needs (medications, labs, vitals, wearable data) and calls typed tools. The server runs them and returns de-identified results, looping until the model has what it needs.
 - **Grounded answers.** For any "is it safe" question, the model has to call `lookup_safety_reference`. The sources it actually used are shown under the answer.
@@ -47,12 +47,12 @@ Epic FHIR R4 (`MedicationRequest`, `Condition`, `Observation`) and Fitbit respon
 
 ```bash
 npm install
-cp .env.example .env.local   # add OPENAI_API_KEY at minimum
+cp .env.example .env.local   # add GEMINI_API_KEY and/or OPENAI_API_KEY
 npm run dev                  # http://localhost:3000
 npm test                     # red-flag and body-detection tests
 ```
 
-Only `OPENAI_API_KEY` is required. Without Epic or Fitbit credentials, Clara uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
+Only one AI key is required: `GEMINI_API_KEY`, `OPENAI_API_KEY`, or both for automatic fallback. Without Epic or Fitbit credentials, Clara uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
 
 **Epic sandbox:** create a non-production app at [fhir.epic.com](https://fhir.epic.com) as a patient-facing app. Select the R4 APIs Patient.Read, MedicationRequest.Search, Condition.Search and Observation.Search, and set the redirect URI to `http://localhost:3000/api/auth/epic/callback`. Sign in with one of Epic's [sandbox test patients](https://fhir.epic.com/Documentation?docId=testpatients). New client IDs can take a while to activate.
 
