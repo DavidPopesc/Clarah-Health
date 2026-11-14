@@ -4,7 +4,8 @@ import { BottomNav } from "@/components/bottom-nav";
 import { AttentionList } from "@/components/home/attention-list";
 import { Documents } from "@/components/home/documents";
 import { UploadTile } from "@/components/home/upload-tile";
-import { CheckIcon, HeartIcon, RecordIcon, WatchIcon } from "@/components/icons";
+import { MetricRow } from "@/components/home/result-progress";
+import { CheckIcon, RecordIcon, WatchIcon } from "@/components/icons";
 import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
 
@@ -17,35 +18,30 @@ const ERRORS: Record<string, string> = {
 
 function ConnectRow({
   name,
-  detail,
   Icon,
   linked,
   href,
 }: {
   name: string;
-  detail: string;
   Icon: typeof RecordIcon;
   linked: boolean;
   href: string;
 }) {
   const content = (
     <>
-      <span className="tile-teal flex size-10 shrink-0 items-center justify-center rounded-md text-teal">
-        <Icon width={20} height={20} />
+      <span className="flex items-center gap-1.5 text-teal">
+        <Icon width={15} height={15} />
+        <span className="text-xs font-semibold text-ink">{name}</span>
       </span>
-      <span className="flex min-w-0 grow flex-col">
-        <span className="text-sm font-semibold text-ink">{name}</span>
-        <span className="text-xs text-subtle">{linked ? "Read-only connection active" : detail}</span>
-      </span>
-      <span className={`clinical-label flex items-center gap-1 ${linked ? "text-teal-dark" : "text-teal"}`}>
-        {linked && <CheckIcon width={14} height={14} strokeWidth={3} />}
+      <span className={`flex items-center gap-1 text-[11px] ${linked ? "text-teal-dark" : "text-subtle"}`}>
+        {linked && <CheckIcon width={12} height={12} strokeWidth={3} />}
         {linked ? "Linked" : "Connect"}
       </span>
     </>
   );
 
-  const className = "slab lift flex min-h-16 items-center gap-3 rounded-md px-3.5 py-3 text-left";
-  return linked ? <div className={className}>{content}</div> : <a href={href} className={className}>{content}</a>;
+  const className = "slab lift flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-md px-2 py-2";
+  return linked ? <div className={className} aria-label={`${name}: read-only connection active`}>{content}</div> : <a href={href} className={className} aria-label={`Connect ${name}`}>{content}</a>;
 }
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
@@ -54,43 +50,39 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const [record, wearable, status] = await Promise.all([getRecord(), getWearable(), connectionStatus()]);
   const { themes, good } = assessHealth(record, wearable);
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const meds = record.medications.filter((medication) => medication.status === "active");
 
   return (
     <>
-      <main className="flex grow flex-col gap-7 pb-7">
-        <header className="bg-[#783120] px-5 pt-10 pb-6 text-white">
-          <div className="mb-6 flex items-center justify-between border-b border-white/20 pb-3">
+      <main className="flex grow flex-col gap-5 pb-7">
+        <header className="bg-[#783120] px-5 py-4 text-white">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <span className="clinical-label text-[#f3d9cc]">Clara health record</span>
-            <span className="flex size-9 items-center justify-center border border-white/30 bg-white/10" aria-hidden="true">
-              <HeartIcon width={19} height={19} />
-            </span>
+            <span className="text-[11px] text-[#f3d9cc]">{today}{record.source === "demo" && " · Demo"}</span>
           </div>
-          <p className="clinical-label mb-2 text-[#f3d9cc]">{today}{record.source === "demo" && " · Demo record"}</p>
           <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm text-white/70">Patient overview</p>
-              <h1 className="mt-0.5 text-[30px] leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
-            </div>
-            <div className="border-l border-white/25 pl-4 text-right">
-              <strong className="block text-2xl leading-none">{themes.length}</strong>
+            <h1 className="min-w-0 text-2xl leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
+            <div className="shrink-0 border-l border-white/25 pl-3 text-right">
+              <strong className="block text-xl leading-none">{themes.length}</strong>
               <span className="clinical-label text-[#f3d9cc]">Focus areas</span>
             </div>
           </div>
         </header>
 
         <div className="flex flex-col gap-7 px-5">
-          <section className="flex flex-col gap-2.5" aria-labelledby="sources-heading">
+          <section className="flex flex-col gap-2" aria-labelledby="sources-heading">
             <div className="flex items-center justify-between border-b border-line pb-2">
               <h2 id="sources-heading" className="clinical-label text-muted">Data sources</h2>
               <Link href="/connections" className="text-xs font-semibold text-teal">Manage access</Link>
             </div>
-            <UploadTile />
-            <ConnectRow name="MyChart" detail="Link medications, labs, and diagnoses" Icon={RecordIcon} linked={status.epic} href="/api/auth/epic/login" />
-            <ConnectRow name="Fitbit" detail="Link sleep, activity, and heart rate" Icon={WatchIcon} linked={status.fitbit} href="/api/auth/fitbit/login" />
+            <div className="grid grid-cols-3 gap-2">
+              <UploadTile />
+              <ConnectRow name="MyChart" Icon={RecordIcon} linked={status.epic} href="/api/auth/epic/login" />
+              <ConnectRow name="Fitbit" Icon={WatchIcon} linked={status.fitbit} href="/api/auth/fitbit/login" />
+            </div>
             {errorText && <p role="alert" className="border-l-4 border-amber bg-amber-soft px-3 py-2.5 text-[13px] text-amber-ink">{errorText}</p>}
-            {!status.epic && !status.fitbit && !errorText && <p className="text-xs text-subtle">Demo data stays active until a source is linked.</p>}
+            {!status.epic && !status.fitbit && !errorText && <p className="text-[11px] text-subtle">Using demo data until you link a source.</p>}
           </section>
 
           <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
@@ -101,7 +93,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               </div>
               <span className="clinical-label text-subtle">{String(themes.length).padStart(2, "0")} areas</span>
             </div>
-            <p className="text-[12px] leading-relaxed text-muted">Related labs, vital signs, medicines and clinician notes are grouped together. Open an area to see its subissues, evidence and overall next steps.</p>
+            <p className="text-[12px] leading-relaxed text-muted">See what improved since your previous results and what still needs follow-up. Open an area for dated comparisons and next steps. Progress uses common ranges; your care team may set different goals.</p>
             <AttentionList themes={themes} />
           </section>
 
@@ -115,10 +107,13 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               </div>
               <ul className="divide-y divide-line border-x border-b border-line bg-white">
                 {good.map((item) => (
-                  <li key={item.label} className="flex items-center gap-3 px-3.5 py-3 text-sm">
-                    <CheckIcon width={16} height={16} className="text-teal" />
-                    <span className="grow font-medium">{item.label}</span>
-                    <span className="font-mono text-xs text-subtle">{item.value}</span>
+                  <li key={item.label} className="px-3.5 py-3 text-sm">
+                    <div className="flex items-center gap-3">
+                      <CheckIcon width={16} height={16} className="shrink-0 text-teal" />
+                      <span className="grow font-medium">{item.label}</span>
+                      <span className="font-mono text-xs text-subtle">{item.value}</span>
+                    </div>
+                    {item.progress && <div className="mt-2"><MetricRow progress={item.progress} /></div>}
                   </li>
                 ))}
               </ul>

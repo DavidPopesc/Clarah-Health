@@ -2,8 +2,21 @@ import type { BodyFocus } from "./body";
 import type { DocFinding } from "./documents";
 import type { PatientRecord, WearableSummary } from "./types";
 import { BP_LABELS, bpCategory, labHistory, latest } from "./vitals.ts";
+import { METRIC_INFO, type MetricKey, type MetricPart } from "./metrics.ts";
 
 export type AttentionLevel = "urgent" | "attention" | "watch";
+
+export interface ResultProgress {
+  direction: "improving" | "worsening" | "unchanged" | "mixed";
+  label: string;
+  key: MetricKey;
+  metric: string;
+  parts: MetricPart[];
+  previousValue: string;
+  currentValue: string;
+  previousDate: string;
+  currentDate: string;
+}
 
 export type HealthThemeId =
   | "cardiometabolic"
@@ -32,6 +45,7 @@ export interface AttentionItem {
   source: string;
   ask: string;
   evidence: HealthEvidence[];
+  progress?: ResultProgress;
   focus?: BodyFocus;
 }
 
@@ -59,6 +73,7 @@ export interface DocumentThemeMatch {
 export interface GoodItem {
   label: string;
   value: string;
+  progress?: ResultProgress;
 }
 
 interface ThemeDefinition {
@@ -128,6 +143,46 @@ const fmt = (iso: string) =>
 
 const rank: Record<AttentionLevel, number> = { urgent: 0, attention: 1, watch: 2 };
 
+export function summarizeProgress(items: AttentionItem[]) {
+  const comparisons = items.flatMap((item) => item.progress ? [item.progress] : []);
+  const improving = comparisons.filter((progress) => progress.direction === "improving").length;
+  const worsening = comparisons.filter((progress) => progress.direction === "worsening").length;
+  if (comparisons.some((progress) => progress.direction === "mixed") || (improving && worsening)) return { direction: "mixed", label: "Mixed progress" } as const;
+  if (worsening) return { direction: "worsening", label: "Further from goal" } as const;
+  if (improving) return { direction: "improving", label: "Making progress" } as const;
+  if (comparisons.length) return { direction: "unchanged", label: "Holding steady" } as const;
+  return { direction: "unknown", label: "New" } as const;
+}
+
+function compareResults(
+  key: MetricKey,
+  current: { date: string; values: number[]; display: string },
+  previous: { date: string; values: number[]; display: string } | undefined,
+  ranges: { min: number; max: number }[],
+): ResultProgress | undefined {
+  if (!previous || previous.date >= current.date || [...current.values, ...previous.values].some((value) => !Number.isFinite(value))) return undefined;
+  const distance = (value: number, range: { min: number; max: number }) => Math.max(range.min - value, value - range.max, 0);
+  const changes = current.values.map((value, index) => distance(value, ranges[index]) - distance(previous.values[index], ranges[index]));
+  const improved = changes.some((change) => change < 0);
+  const worsened = changes.some((change) => change > 0);
+  const direction = improved && worsened ? "mixed" : improved ? "improving" : worsened ? "worsening" : "unchanged";
+  const inRange = current.values.every((value, index) => distance(value, ranges[index]) === 0);
+  const label = direction === "mixed" ? "Mixed changes" : direction === "improving" ? inRange ? "Reached expected range" : "Closer to goal" : direction === "worsening" ? "Further from goal" : inRange ? "Within expected range" : "Unchanged";
+  const parts = current.values.map((value, index) => ({ label: METRIC_INFO[key].parts[index].label, previous: previous.values[index], current: value }));
+  return { direction, label, key, metric: METRIC_INFO[key].name, parts, previousValue: previous.display, currentValue: current.display, previousDate: previous.date, currentDate: current.date };
+}
+
+function compareLabs(labs: PatientRecord["labs"], key: MetricKey, range: { min: number; max: number }): ResultProgress | undefined {
+  const current = latest(labs);
+  if (!current) return undefined;
+  const previous = latest(labs.filter((lab) => lab.date < current.date && lab.unit === current.unit));
+  return compareResults(key,
+    { date: current.date, values: [current.value], display: `${current.value}${current.unit === "%" ? "" : " "}${current.unit}` },
+    previous ? { date: previous.date, values: [previous.value], display: `${previous.value}${previous.unit === "%" ? "" : " "}${previous.unit}` } : undefined,
+    [range],
+  );
+}
+
 function makeThemes(items: AttentionItem[]): HealthTheme[] {
   const groups = new Map<HealthThemeId, AttentionItem[]>();
   for (const item of items) groups.set(item.themeId, [...(groups.get(item.themeId) ?? []), item]);
@@ -187,11 +242,17 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
   if (bp) {
     const category = bpCategory(bp.systolic, bp.diastolic);
     const previous = record.bloodPressure.filter((reading) => reading.date < bp.date).sort((a, b) => a.date.localeCompare(b.date)).at(-1);
-    const trend = previous ? `, ${bp.systolic + bp.diastolic > previous.systolic + previous.diastolic ? "up" : "down"} from ${previous.systolic}/${previous.diastolic} on ${fmt(previous.date)}` : "";
+    const progress = compareResults("bp",
+      { date: bp.date, values: [bp.systolic, bp.diastolic], display: `${bp.systolic}/${bp.diastolic} mmHg` },
+      previous ? { date: previous.date, values: [previous.systolic, previous.diastolic], display: `${previous.systolic}/${previous.diastolic} mmHg` } : undefined,
+      [{ min: 90, max: 119 }, { min: 60, max: 79 }],
+    );
+    const trend = previous ? `; previously ${previous.systolic}/${previous.diastolic} on ${fmt(previous.date)}` : "";
     if (category === "crisis" || category === "stage2" || category === "stage1") {
       items.push({
         id: "bp",
         themeId: "cardiometabolic",
+        progress,
         level: category === "crisis" ? "urgent" : "attention",
         title: category === "crisis" ? "Dangerously high blood pressure" : "Blood pressure above the healthy range",
         detail: `${bp.systolic}/${bp.diastolic} on ${fmt(bp.date)} is ${BP_LABELS[category].toLowerCase()}${trend}.`,
@@ -200,38 +261,40 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
           ? "If it is still above 180/120 when you recheck, contact your care team now. Call 911 with chest pain, trouble breathing, weakness or trouble speaking."
           : "Check it at home a few times a week and bring the readings to your next visit.",
         source: `${from} · ${fmt(bp.date)}`,
-        ask: "My blood pressure has been going up. What does that mean for me and what can I do?",
+        ask: "How has my blood pressure changed since the previous reading, and what should I do next?",
         evidence: [{ id: `bp-${bp.date}`, kind: "vital", label: "Blood pressure", value: `${bp.systolic}/${bp.diastolic}`, source: `${from} · ${fmt(bp.date)}` }],
         focus: { region: "heart", system: "circulatory", label: "Heart", reason: `Latest blood pressure ${bp.systolic}/${bp.diastolic}.` },
       });
     } else {
-      good.push({ label: "Blood pressure", value: `${bp.systolic}/${bp.diastolic}` });
+      good.push({ label: "Blood pressure", value: `${bp.systolic}/${bp.diastolic}`, progress });
     }
   }
 
   const a1c = labHistory(record.labs, "Hemoglobin A1c");
   const a1cNow = a1c.at(-1);
-  const a1cPrevious = a1c.at(-2);
+  const a1cPrevious = a1cNow ? latest(a1c.filter((lab) => lab.date < a1cNow.date && lab.unit === a1cNow.unit)) : undefined;
+  const a1cProgress = compareLabs(a1c, "a1c", { min: 4, max: 6.99 });
   const fasting = record.labs.filter((lab) => /glucose/i.test(lab.name)).sort((a, b) => a.date.localeCompare(b.date)).at(-1);
   if (a1cNow && a1cNow.value >= 7) {
     const better = Boolean(a1cPrevious && a1cNow.value < a1cPrevious.value);
-    const evidence: HealthEvidence[] = [{ id: `a1c-${a1cNow.date}`, kind: "lab", label: "Hemoglobin A1c", value: `${a1cNow.value}%`, source: `${from} · ${fmt(a1cNow.date)}` }];
+    const evidence: HealthEvidence[] = [{ id: `a1c-${a1cNow.date}`, kind: "lab", label: "Average blood sugar (A1c test)", value: `${a1cNow.value}%`, source: `${from} · ${fmt(a1cNow.date)}` }];
     if (fasting && fasting.value > 130) evidence.push({ id: `glucose-${fasting.date}`, kind: "lab", label: "Fasting glucose", value: `${fasting.value} ${fasting.unit}`, source: `${from} · ${fmt(fasting.date)}` });
     items.push({
       id: "a1c",
+      progress: a1cProgress,
       themeId: "cardiometabolic",
       level: a1cNow.value >= 9 ? "attention" : "watch",
       title: better ? "Blood sugar is improving but still above goal" : "Average blood sugar is above goal",
-      detail: `A1c ${a1cNow.value}% on ${fmt(a1cNow.date)}${a1cPrevious ? ` (was ${a1cPrevious.value}%)` : ""}. A common goal is under 7%.${fasting && fasting.value > 130 ? ` Fasting glucose was ${fasting.value} (goal 80–130).` : ""}`,
+      detail: `Your 3-month average blood sugar was ${a1cNow.value}% on ${fmt(a1cNow.date)}${a1cPrevious ? ` (was ${a1cPrevious.value}%)` : ""}. A common goal is under 7%.${fasting && fasting.value > 130 ? ` Fasting glucose was ${fasting.value} (goal 80–130).` : ""}`,
       why: "Keeping blood sugar near goal lowers the risk of damage to the eyes, kidneys, nerves and heart.",
-      todo: better ? "Keep doing what is working and ask what A1c goal is right for you." : "Talk with your care team about the plan to bring it down.",
+      todo: better ? "Keep doing what is working and ask what blood sugar goal is right for you." : "Talk with your care team about the plan to bring it down.",
       source: `${from} · ${fmt(a1cNow.date)}`,
-      ask: "What does my A1c mean and how can I keep bringing it down?",
+      ask: "What does my 3-month average blood sugar (A1c) mean, and how can I keep bringing it down?",
       evidence,
-      focus: { region: "pancreas", system: "organs", label: "Pancreas", reason: `Latest A1c ${a1cNow.value}%.` },
+      focus: { region: "pancreas", system: "organs", label: "Pancreas", reason: `3-month average blood sugar ${a1cNow.value}%.` },
     });
   } else if (a1cNow) {
-    good.push({ label: "A1c", value: `${a1cNow.value}%` });
+    good.push({ label: "Average blood sugar", value: `${a1cNow.value}%`, progress: a1cProgress });
   }
 
   const sulfonylurea = record.medications.find((medication) => medication.status === "active" && /glipizide|glimepiride|glyburide|gliclazide|insulin/i.test(medication.name));
@@ -250,45 +313,51 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
     });
   }
 
-  const ldl = record.labs.filter((lab) => /ldl/i.test(lab.name)).sort((a, b) => a.date.localeCompare(b.date)).at(-1);
+  const ldlLabs = record.labs.filter((lab) => /ldl/i.test(lab.name));
+  const ldl = latest(ldlLabs);
+  const ldlProgress = compareLabs(ldlLabs, "ldl", { min: 0, max: hasDiabetes ? 99.99 : 129.99 });
   if (ldl) {
     if (ldl.value >= (hasDiabetes ? 100 : 130)) {
       items.push({
         id: "ldl",
+        progress: ldlProgress,
         themeId: "cardiometabolic",
         level: "watch",
-        title: "LDL cholesterol is above goal",
-        detail: `LDL ${ldl.value} mg/dL on ${fmt(ldl.date)}. With diabetes, a common goal is under 100.`,
+        title: "Bad cholesterol (LDL) is above goal",
+        detail: `Bad cholesterol (LDL) was ${ldl.value} on ${fmt(ldl.date)}. With diabetes, a common goal is under 100.`,
         why: "High LDL can build up in blood vessels and raise the chance of heart attack and stroke.",
         todo: "Ask whether your cholesterol plan needs a change.",
         source: `${from} · ${fmt(ldl.date)}`,
         ask: "Is my cholesterol where it should be?",
-        evidence: [{ id: `ldl-${ldl.date}`, kind: "lab", label: "LDL cholesterol", value: `${ldl.value} ${ldl.unit}`, source: `${from} · ${fmt(ldl.date)}` }],
+        evidence: [{ id: `ldl-${ldl.date}`, kind: "lab", label: "Bad cholesterol (LDL)", value: `${ldl.value} ${ldl.unit}`, source: `${from} · ${fmt(ldl.date)}` }],
         focus: { region: "heart", system: "circulatory", label: "Heart", reason: `LDL ${ldl.value} mg/dL.` },
       });
     } else {
-      good.push({ label: "LDL cholesterol", value: `${ldl.value}` });
+      good.push({ label: "Bad cholesterol (LDL)", value: `${ldl.value}`, progress: ldlProgress });
     }
   }
 
-  const egfr = labHistory(record.labs, "eGFR").at(-1);
+  const egfrLabs = labHistory(record.labs, "eGFR");
+  const egfr = egfrLabs.at(-1);
+  const egfrProgress = compareLabs(egfrLabs, "egfr", { min: 60, max: Infinity });
   if (egfr) {
     if (egfr.value < 60) {
       items.push({
         id: "egfr",
+        progress: egfrProgress,
         themeId: "kidney",
         level: "attention",
         title: "Kidneys are filtering less than normal",
-        detail: `eGFR ${egfr.value} on ${fmt(egfr.date)}. Below 60 for 3 months or more can mean kidney disease.`,
+        detail: `Kidney filtering score (eGFR) was ${egfr.value} on ${fmt(egfr.date)}. Below 60 for 3 months or more can mean kidney disease.`,
         why: "Kidneys clean the blood, and some medicines need different doses when kidney function slows down.",
         todo: "Ask about the kidney trend and how it affects your medicines.",
         source: `${from} · ${fmt(egfr.date)}`,
-        ask: "What does my eGFR mean for my kidneys?",
-        evidence: [{ id: `egfr-${egfr.date}`, kind: "lab", label: "eGFR", value: `${egfr.value} ${egfr.unit}`, source: `${from} · ${fmt(egfr.date)}` }],
+        ask: "What does my kidney filtering score (eGFR) mean?",
+        evidence: [{ id: `egfr-${egfr.date}`, kind: "lab", label: "Kidney filtering score (eGFR)", value: `${egfr.value}`, source: `${from} · ${fmt(egfr.date)}` }],
         focus: { region: "kidneys", system: "organs", label: "Kidneys", reason: `eGFR ${egfr.value}.` },
       });
     } else {
-      good.push({ label: "Kidney function", value: `eGFR ${egfr.value}` });
+      good.push({ label: "Kidney filtering", value: `${egfr.value}`, progress: egfrProgress });
     }
   }
 

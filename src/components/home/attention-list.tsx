@@ -8,17 +8,19 @@ import type { DocFinding } from "@/lib/documents";
 import {
   classifyDocumentFinding,
   createDocumentOnlyTheme,
+  summarizeProgress,
   type AttentionItem,
   type HealthTheme,
   type HealthThemeId,
 } from "@/lib/attention";
 import { BodyViewer } from "../anatomy/body-viewer";
 import { ChatIcon, ChevronIcon, CubeIcon, FileIcon } from "../icons";
+import { MetricRow, ProgressBadge } from "./result-progress";
 
 const LEVEL = {
   urgent: { label: "Act now", rail: "border-l-alert", text: "text-alert", badge: "bg-[#f8d7d9] text-alert" },
-  attention: { label: "Needs attention", rail: "border-l-amber", text: "text-amber-ink", badge: "bg-amber-soft text-amber-ink" },
-  watch: { label: "Keep working on", rail: "border-l-teal", text: "text-teal-dark", badge: "bg-teal-soft text-teal-dark" },
+  attention: { label: "Review with care team", rail: "border-l-amber", text: "text-amber-ink" },
+  watch: { label: "Ongoing care", rail: "border-l-teal", text: "text-teal-dark" },
 };
 
 const DOCUMENT_SUBISSUE_TITLES: Record<string, string> = {
@@ -91,15 +93,17 @@ function EvidenceList({ item, documents }: { item: AttentionItem; documents: Doc
 
 function ConcernCard({ item, documents, onView }: { item: AttentionItem; documents: DocumentEvidence[]; onView: (focus: BodyFocus) => void }) {
   const level = LEVEL[item.level];
+  const hasDocumentComparison = documents.some((document) => document.finding.comparison);
   return (
     <article className={`border border-line border-l-4 bg-white ${level.rail}`}>
       <div className="p-3.5">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className={`clinical-label ${level.text}`}>{level.label}</span>
-          <span className="font-mono text-[10px] text-subtle">{item.source}</span>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <ProgressBadge direction={item.progress?.direction ?? "unknown"} label={item.progress?.label ?? (hasDocumentComparison ? "Comparison in notes" : "New")} />
+          <span className={`text-[10px] font-semibold ${level.text}`}>{level.label}</span>
         </div>
         <h3 className="text-[16px] leading-snug font-semibold">{item.title}</h3>
         <p className="mt-1.5 text-[13px] leading-relaxed text-body">{item.detail}</p>
+        {item.progress ? <div className="mt-3"><MetricRow progress={item.progress} context={item} /></div> : <p className="mt-2 text-[11px] text-subtle">{hasDocumentComparison ? "See the document comparison below." : "First time this shows up in your record. Clara will show how it changed after your next visit or test."}</p>}
       </div>
       <EvidenceList item={item} documents={documents} />
       <dl className="grid text-[12px] leading-relaxed sm:grid-cols-2">
@@ -126,7 +130,7 @@ function DocumentOnlyConcern({ itemId, documents }: { itemId: string; documents:
       <div className="p-3.5">
         <span className="clinical-label text-teal-dark">From an uploaded document</span>
         <h3 className="mt-1 text-[16px] font-semibold">{DOCUMENT_SUBISSUE_TITLES[itemId] ?? "Related finding"}</h3>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">This subissue came from a lab report or clinician note and is grouped here with related health information.</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">This topic came from a lab report or clinician note and is grouped here with related health information.</p>
       </div>
       <ul className="flex flex-col gap-2 border-t border-line bg-[#f6eadc] p-3">{documents.map((evidence) => <DocumentFindingRow key={evidence.id} evidence={evidence} />)}</ul>
     </article>
@@ -172,8 +176,10 @@ export function AttentionList({ themes }: { themes: HealthTheme[] }) {
       <ol className="flex flex-col gap-3">
         {displayThemes.map((theme, index) => {
           const level = LEVEL[theme.level];
+          const progress = summarizeProgress(theme.items);
           const isOpen = openTheme === theme.id;
           const themeDocuments = documentEvidence.filter((evidence) => evidence.themeId === theme.id);
+          const progressLabel = progress.direction === "unknown" && themeDocuments.some((document) => document.finding.comparison) ? "Comparison in notes" : progress.label;
           const itemIds = new Set(theme.items.map((item) => item.id));
           const documentOnlyGroups = new Map<string, DocumentEvidence[]>();
           for (const evidence of themeDocuments) {
@@ -188,22 +194,31 @@ export function AttentionList({ themes }: { themes: HealthTheme[] }) {
                 <button type="button" onClick={() => setOpenTheme(isOpen ? null : theme.id)} aria-expanded={isOpen} aria-controls={`health-theme-details-${theme.id}`} className="flex w-full items-start gap-3 p-4 text-left hover:bg-[#fffaf2]">
                   <span className="font-mono text-[12px] font-semibold text-subtle">{String(index + 1).padStart(2, "0")}</span>
                   <span className="min-w-0 grow">
-                    <span className="flex items-center justify-between gap-3">
-                      <span className={`clinical-label ${level.text}`}>{level.label}</span>
-                      <span className="font-mono text-[10px] text-subtle">{subissueCount} subissue{subissueCount === 1 ? "" : "s"}</span>
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                      <ProgressBadge direction={progress.direction} label={progressLabel} />
+                      {theme.level === "urgent" && <span className="clinical-label text-alert">Act now</span>}
+                      <span className="font-mono text-[10px] text-subtle">{subissueCount} topic{subissueCount === 1 ? "" : "s"}</span>
                     </span>
                     <strong className="mt-1.5 block text-[18px] leading-tight text-ink">{theme.title}</strong>
                     <span className="mt-1.5 block text-[13px] leading-relaxed text-body">{theme.description}</span>
-                    {theme.relationships.length > 0 && (
-                      <span className="mt-3 flex flex-wrap gap-1.5">
-                        {theme.relationships.slice(0, 3).map((relationship) => (
-                          <span key={`${theme.id}-${relationship.themeId}`} className="border border-[#d5a791] bg-teal-soft px-2 py-1 text-[10px] font-semibold text-teal-dark">Related: {relationship.label}</span>
-                        ))}
-                      </span>
-                    )}
                   </span>
                   <span className="tile-3d flex size-9 shrink-0 items-center justify-center rounded-md text-teal"><ChevronIcon width={17} height={17} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} /></span>
                 </button>
+
+                {theme.items.some((item) => item.progress) && (
+                  <div className="mx-4 mb-3 ml-11 flex flex-col divide-y divide-line border-t border-line">
+                    <span className="pt-2 text-[10px] text-subtle">Since your last visit · tap a result to learn more</span>
+                    {theme.items.flatMap((item) => item.progress ? [<MetricRow key={item.id} progress={item.progress} context={item} compact />] : [])}
+                  </div>
+                )}
+
+                {theme.relationships.length > 0 && (
+                  <div className="mx-4 mb-4 ml-11 flex flex-wrap gap-1.5">
+                    {theme.relationships.slice(0, 3).map((relationship) => (
+                      <span key={`${theme.id}-${relationship.themeId}`} className="border border-[#d5a791] bg-teal-soft px-2 py-1 text-[10px] font-semibold text-teal-dark">Related: {relationship.label}</span>
+                    ))}
+                  </div>
+                )}
 
                 {isOpen && (
                   <div id={`health-theme-details-${theme.id}`} className="border-t border-line bg-[#fbf4e8] p-3.5">
