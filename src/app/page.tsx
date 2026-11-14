@@ -1,0 +1,140 @@
+import Link from "next/link";
+import { AnonIcon, CheckIcon, HeartIcon, LockIcon, RecordIcon, TrashIcon, WatchIcon } from "@/components/icons";
+import { connectionStatus } from "@/lib/data";
+import { epicEnabled } from "@/lib/epic";
+import { fitbitEnabled } from "@/lib/fitbit";
+
+const ERRORS: Record<string, string> = {
+  epic_not_configured: "MyChart isn't configured yet. Add EPIC_CLIENT_ID to use the Epic sandbox. Clara is using the demo patient for now.",
+  epic_auth_failed: "We couldn't link MyChart. Please try again.",
+  fitbit_not_configured: "Fitbit isn't configured yet. Add FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET. Clara is using demo wearable data for now.",
+  fitbit_auth_failed: "We couldn't link Fitbit. Please try again.",
+};
+
+function ConnectionCard({
+  title,
+  detail,
+  Icon,
+  linked,
+  enabled,
+  href,
+}: {
+  title: string;
+  detail: string;
+  Icon: typeof RecordIcon;
+  linked: boolean;
+  enabled: boolean;
+  href: string;
+}) {
+  return (
+    <div className="flex items-center gap-3.5 rounded-2xl border border-line bg-white p-4">
+      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-teal-soft text-teal">
+        <Icon width={22} height={22} />
+      </div>
+      <div className="flex grow flex-col gap-0.5">
+        <span className="text-[15px] font-semibold">{title}</span>
+        <span className="text-[13px] text-muted">{detail}</span>
+      </div>
+      {linked ? (
+        <span className="flex items-center gap-1 text-[13px] font-semibold text-teal">
+          <CheckIcon width={16} height={16} /> Linked
+        </span>
+      ) : enabled ? (
+        <a
+          href={href}
+          className="flex min-h-11 items-center rounded-full border-[1.5px] border-teal px-4 text-sm font-semibold text-teal"
+        >
+          Connect
+        </a>
+      ) : (
+        <span className="rounded-full bg-panel px-2.5 py-1 text-[12px] font-medium text-muted">Demo data</span>
+      )}
+    </div>
+  );
+}
+
+export default async function ConnectPage({ searchParams }: PageProps<"/">) {
+  const { error } = await searchParams;
+  const status = await connectionStatus();
+  const errorText = typeof error === "string" ? ERRORS[error] : undefined;
+
+  return (
+    <main className="flex grow flex-col gap-6 px-6 pt-14 pb-8">
+      <div className="flex items-center gap-2.5">
+        <div className="flex size-9 items-center justify-center rounded-xl bg-teal text-white">
+          <HeartIcon />
+        </div>
+        <span className="font-display text-xl font-semibold">Clara</span>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h1 className="font-display text-[30px] leading-[1.15] font-semibold">
+          Answers about your health, from your own data.
+        </h1>
+        <p className="text-[15px] leading-normal text-muted">
+          Connect your records and your watch so Clara can explain your numbers in plain language and check whether something is safe for you.
+        </p>
+      </div>
+
+      {errorText && (
+        <p role="alert" className="rounded-xl bg-amber-soft p-3 text-sm text-amber-ink">
+          {errorText}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3">
+        <ConnectionCard
+          title="MyChart (Epic)"
+          detail="Meds, labs, diagnoses · read-only"
+          Icon={RecordIcon}
+          linked={status.epic}
+          enabled={epicEnabled()}
+          href="/api/auth/epic/login"
+        />
+        <ConnectionCard
+          title="Fitbit"
+          detail="Heart rate, sleep, activity"
+          Icon={WatchIcon}
+          linked={status.fitbit}
+          enabled={fitbitEnabled()}
+          href="/api/auth/fitbit/login"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2.5 rounded-2xl bg-panel p-4">
+        <span className="text-[13px] font-semibold">How your data is handled</span>
+        {[
+          { Icon: LockIcon, text: "Read-only access. Clara can never change your records." },
+          { Icon: AnonIcon, text: "Your name and ID numbers are removed before anything reaches the AI." },
+          { Icon: TrashIcon, text: "Disconnect and delete everything at any time." },
+        ].map(({ Icon, text }) => (
+          <div key={text} className="flex items-start gap-2.5 text-[13px] leading-snug text-muted">
+            <Icon width={16} height={16} className="mt-0.5 shrink-0" />
+            <span>{text}</span>
+          </div>
+        ))}
+        {(status.epic || status.fitbit) && (
+          <form action="/api/disconnect" method="post">
+            <button type="submit" className="min-h-11 text-[13px] font-semibold text-alert underline">
+              Disconnect all accounts
+            </button>
+          </form>
+        )}
+      </div>
+
+      <div className="grow" />
+
+      <div className="flex flex-col gap-3">
+        <Link
+          href="/today"
+          className="flex min-h-[52px] items-center justify-center rounded-[14px] bg-teal text-base font-semibold text-white hover:bg-teal-dark"
+        >
+          Continue
+        </Link>
+        <p className="text-center text-xs leading-snug text-subtle">
+          Clara explains and informs. It does not diagnose or replace your care team.
+        </p>
+      </div>
+    </main>
+  );
+}
