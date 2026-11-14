@@ -4,7 +4,8 @@ import { BottomNav } from "@/components/bottom-nav";
 import { AttentionList } from "@/components/home/attention-list";
 import { Documents } from "@/components/home/documents";
 import { UploadTile } from "@/components/home/upload-tile";
-import { CheckIcon, RecordIcon, WatchIcon } from "@/components/icons";
+import { CheckIcon, ChevronIcon, RecordIcon, WatchIcon } from "@/components/icons";
+import { medInfoFor, medlinePlusSearch } from "@/lib/med-info";
 import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
 
@@ -136,14 +137,39 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               </div>
               {/* Medications always use the blue accent, so they're never mistaken for results. */}
               <ul className="flex flex-col gap-2">
-                {meds.map((medication) => (
-                  <li key={medication.name} className="flex items-center gap-3 rounded-md border border-[#aebde3] bg-teal-soft px-3 py-2.5">
-                    <span className="size-2.5 shrink-0 rounded-full bg-teal" aria-hidden="true" />
-                    <span className="grow text-[14px] font-semibold text-teal-dark">{medication.name}</span>
-                    <span className="text-right text-[12px] leading-snug text-body">{medication.dosage}</span>
-                  </li>
-                ))}
+                {meds.map((medication) => {
+                  const info = medInfoFor(medication.name);
+                  return (
+                    <li key={medication.name} className="rounded-md border border-[#aebde3] bg-teal-soft px-3 py-2.5">
+                      <div className="flex items-center gap-3">
+                        <span className="size-2.5 shrink-0 rounded-full bg-teal" aria-hidden="true" />
+                        <span className="grow text-[14px] font-semibold text-teal-dark">{medication.name}</span>
+                        <span className="text-right text-[12px] leading-snug text-body">{medication.dosage}</span>
+                      </div>
+                      <details className="group mt-1 pl-[22px]">
+                        <summary className="flex w-fit cursor-pointer list-none items-center gap-1 text-[12px] font-semibold text-teal [&::-webkit-details-marker]:hidden">
+                          What is it?
+                          <ChevronIcon width={13} height={13} className="transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="mt-1.5 flex flex-col gap-1.5 rounded border border-[#c8d3ee] bg-white px-2.5 py-2 text-[12px] leading-snug text-body">
+                          {info ? (
+                            <>
+                              <p><span className="font-semibold text-ink">{info.what}</span> {info.does}</p>
+                              <p><span className="font-semibold text-ink">Possible side effects:</span> {info.sideEffects.join(" · ")}</p>
+                            </>
+                          ) : (
+                            <p>Clara doesn&apos;t have a summary for this medicine yet. Your pharmacist can explain what it does.</p>
+                          )}
+                          <a href={medlinePlusSearch(medication.name)} target="_blank" rel="noreferrer" className="w-fit text-[11px] font-semibold text-teal underline-offset-2 hover:underline">
+                            More on MedlinePlus
+                          </a>
+                        </div>
+                      </details>
+                    </li>
+                  );
+                })}
               </ul>
+              <p className="mt-1.5 text-[10px] leading-snug text-subtle">General information, not advice for you. Ask your pharmacist about other side effects.</p>
             </section>
           )}
 
