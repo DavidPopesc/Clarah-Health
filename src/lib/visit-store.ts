@@ -11,6 +11,7 @@ export interface StoredVisit {
   addedAt: string;
   recap: VisitRecap;
   transcript: string;
+  done?: string[]; // "What to do next" steps the patient has ticked off, by their text
 }
 
 const DB_NAME = "clara-visits";
@@ -76,6 +77,18 @@ export async function saveVisit(recap: VisitRecap, transcript: string): Promise<
   await tx(VISITS, "readwrite", (s) => s.put(visit));
   emit([visit, ...visits]);
   return visit;
+}
+
+// Ticks a "What to do next" step on or off, and saves it so it stays ticked on this device.
+export async function setStepDone(id: string, step: string, isDone: boolean) {
+  const visit = visits.find((v) => v.id === id);
+  if (!visit) return;
+  const done = new Set(visit.done ?? []);
+  if (isDone) done.add(step);
+  else done.delete(step);
+  const updated: StoredVisit = { ...visit, done: [...done] };
+  emit(visits.map((v) => (v.id === id ? updated : v)));
+  await tx(VISITS, "readwrite", (s) => s.put(updated)).catch((err) => console.error("Couldn't save step", err));
 }
 
 export async function removeVisit(id: string) {

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { SAMPLE_VISIT } from "@/lib/sample-visit";
-import { removeVisit, saveVisit, visitStore, type StoredVisit } from "@/lib/visit-store";
+import { removeVisit, saveVisit, setStepDone, visitStore, type StoredVisit } from "@/lib/visit-store";
 import { toNextStep, type NextStep } from "@/lib/visit-verify";
-import { ChevronIcon, MicIcon, TrashIcon } from "../icons";
+import { CheckIcon, ChevronIcon, MicIcon, TrashIcon } from "../icons";
 import { fmtVisitDate, VisitPlayer } from "./player";
 
 // On desktop the detail sections flow into two balanced columns; each stays in one piece.
@@ -24,6 +24,8 @@ function Recap({ visit }: { visit: StoredVisit }) {
   const { recap } = visit;
   const [showConversation, setShowConversation] = useState(false);
   const steps = recap.nextSteps.map(toNextStep).filter((s): s is NextStep => s !== null);
+  const done = new Set(visit.done ?? []);
+  const doneCount = steps.filter((s) => done.has(s.step)).length;
 
   return (
     <article className="flex flex-col gap-5">
@@ -37,19 +39,46 @@ function Recap({ visit }: { visit: StoredVisit }) {
 
       <div className="flex flex-col gap-5 xl:block xl:columns-2 xl:gap-x-6">
       {steps.length > 0 && (
-        <Section title="What to do next">
-          <ol className="flex flex-col gap-2.5">
-            {steps.map((s, i) => (
-              <li key={s.step} className="flex gap-2.5 text-[14px] leading-snug text-body">
-                <span className="font-mono text-[12px] font-semibold text-teal">{String(i + 1).padStart(2, "0")}</span>
-                <span className="flex flex-col gap-0.5">
-                  <span className="font-medium text-ink">{s.step}</span>
-                  {s.why && <span className="text-[13px] text-muted">Why: {s.why}</span>}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </Section>
+        <section className={`flex flex-col gap-2 ${COLUMN_ITEM}`}>
+          <div className="flex items-center justify-between border-b border-line pb-1.5">
+            <h3 className="clinical-label text-muted">What to do next</h3>
+            <span className={`clinical-label ${doneCount === steps.length ? "text-[#2f5443]" : "text-subtle"}`} aria-live="polite">
+              {doneCount === steps.length ? "All done" : `${doneCount} of ${steps.length} done`}
+            </span>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {steps.map((s) => {
+              const isDone = done.has(s.step);
+              return (
+                <li key={s.step}>
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={isDone}
+                    onClick={() => void setStepDone(visit.id, s.step, !isDone)}
+                    className={`flex w-full items-start gap-3 rounded-md border-[1.5px] px-3 py-2.5 text-left transition-colors ${
+                      isDone ? "border-[#b3c6a6] bg-[#eef4e8]" : "border-line bg-white hover:border-teal hover:bg-[#f6f8fd]"
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-[2.5px] transition-colors ${
+                        isDone ? "border-teal bg-teal text-white" : "border-[#8b98b8] bg-white text-transparent"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <CheckIcon width={14} height={14} />
+                    </span>
+                    <span className="flex flex-col gap-0.5 text-[14px] leading-snug">
+                      <span className={`font-medium ${isDone ? "text-muted line-through decoration-2" : "text-ink"}`}>{s.step}</span>
+                      {s.why && <span className={`text-[13px] text-muted ${isDone ? "line-through" : ""}`}>Why: {s.why}</span>}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-[11px] text-subtle">Tap a step to mark it done. Saved on this device.</p>
+        </section>
       )}
 
       {recap.questions.length > 0 && (

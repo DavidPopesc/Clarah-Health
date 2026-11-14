@@ -177,6 +177,31 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   100% { box-shadow: 0 0 0 1px #c9d3bd, 0 0 0 12px rgba(42, 79, 168, 0); }
 }
 
+/* Clara's face: an uneven open-close rhythm while she talks, and a blink every few seconds. */
+.clara-mouth-talk {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: clara-talk 0.95s ease-in-out infinite;
+}
+@keyframes clara-talk {
+  0%, 100% { transform: scaleY(0.3); }
+  14% { transform: scaleY(1); }
+  28% { transform: scaleY(0.45); }
+  40% { transform: scaleY(0.9); }
+  54% { transform: scaleY(0.25); }
+  68% { transform: scaleY(1.05); }
+  82% { transform: scaleY(0.55); }
+}
+.clara-eyes {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: clara-blink 4.2s ease-in-out infinite;
+}
+@keyframes clara-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sheet-3d, .stream-caret, .clara-speaking { animation: none; }
+  .sheet-3d, .stream-caret, .clara-speaking, .clara-mouth-talk, .clara-eyes { animation: none; }
 }

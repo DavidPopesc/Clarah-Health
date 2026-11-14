@@ -1,8 +1,9 @@
 import { useId } from "react";
 
 // Clara as a friendly nurse: cap with a blue cross, eucalyptus scrubs and a stethoscope, in the
-// site's palette. A soft ring pulses around her while she's speaking.
-export function ClaraAvatar({ speaking = false, size = 56 }: { speaking?: boolean; size?: number }) {
+// site's palette. She blinks now and then and smiles; while her voice plays, her mouth moves as
+// she talks and a soft ring pulses around her. Animations live in globals.css (.clara-*).
+export function ClaraAvatar({ speaking = false, size = 64 }: { speaking?: boolean; size?: number }) {
   const clip = useId();
   return (
     <span
@@ -31,11 +32,22 @@ export function ClaraAvatar({ speaking = false, size = 56 }: { speaking?: boolea
           {/* face */}
           <ellipse cx="32" cy="30.5" rx="10.5" ry="12" fill="#f1d3bd" />
           <path d="M21.5 28c1.5-6 5.5-9.5 10.5-9.5s9 3.5 10.5 9.5c-4.5-1.5-8-3.5-10.5-6.5-2.5 3-6 5-10.5 6.5z" fill="#4a3428" />
-          <circle cx="28" cy="31" r="1.3" fill="#2b211c" />
-          <circle cx="36" cy="31" r="1.3" fill="#2b211c" />
-          <circle cx="25.6" cy="34.6" r="1.8" fill="#e8a99a" opacity=".55" />
-          <circle cx="38.4" cy="34.6" r="1.8" fill="#e8a99a" opacity=".55" />
-          <path d="M28.6 35.6c1.9 1.7 4.9 1.7 6.8 0" fill="none" stroke="#9a5a4a" strokeWidth="1.8" strokeLinecap="round" />
+          <g className="clara-eyes">
+            <circle cx="28" cy="31" r="1.4" fill="#2b211c" />
+            <circle cx="36" cy="31" r="1.4" fill="#2b211c" />
+          </g>
+          <circle cx="25.6" cy="34.6" r="1.9" fill="#e8a99a" opacity={speaking ? 0.5 : 0.7} />
+          <circle cx="38.4" cy="34.6" r="1.9" fill="#e8a99a" opacity={speaking ? 0.5 : 0.7} />
+          {speaking ? (
+            // An open, smiling mouth that opens and closes as she talks.
+            <g className="clara-mouth-talk">
+              <path d="M28.2 35c2 3.6 5.6 3.6 7.6 0z" fill="#7a3b33" stroke="#9a5a4a" strokeWidth="1" strokeLinejoin="round" />
+              <path d="M30.4 37.1c1 .6 2.2.6 3.2 0" fill="none" stroke="#d98579" strokeWidth="1.1" strokeLinecap="round" />
+            </g>
+          ) : (
+            // A warm closed smile when she's not speaking.
+            <path d="M28 35.2c2.2 2.4 5.8 2.4 8 0" fill="none" stroke="#9a5a4a" strokeWidth="1.9" strokeLinecap="round" />
+          )}
           {/* nurse's cap with a blue cross */}
           <path d="M20.5 20.5 22.5 11.5h19l2 9c-3.8-1.6-7.6-2.3-11.5-2.3s-7.7.7-11.5 2.3z" fill="#fffdf7" stroke="#a9b89a" strokeWidth="1.4" strokeLinejoin="round" />
           <path d="M32 12.9v5.4M29.3 15.6h5.4" stroke="#2a4fa8" strokeWidth="2.4" strokeLinecap="round" />
