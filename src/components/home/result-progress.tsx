@@ -7,15 +7,15 @@ import { METRIC_INFO, changeSentence, gapFromGoal, partInfo, percentChange, type
 import { ChatIcon, ChevronIcon } from "../icons";
 
 const STYLES = {
-  improving: "border-[#b9cddd] bg-[#edf3f8] text-[#27516e]",
+  improving: "border-[#c3d1bf] bg-[#eaf0e4] text-[#2f5443]",
   worsening: "border-[#e3c899] bg-amber-soft text-amber-ink",
   mixed: "border-[#e3c899] bg-amber-soft text-amber-ink",
-  unchanged: "border-line bg-[#f6eadc] text-muted",
-  unknown: "border-line bg-[#fffaf2] text-subtle",
+  unchanged: "border-line bg-sage-soft text-muted",
+  unknown: "border-line bg-[#fffdf7] text-subtle",
 };
 
 const SYMBOLS = { improving: "↗", worsening: "!", mixed: "↔", unchanged: "→", unknown: "★" };
-const TONE = { improving: "text-[#27516e]", worsening: "text-amber-ink", mixed: "text-amber-ink", unchanged: "text-muted" };
+const TONE = { improving: "text-[#2f5443]", worsening: "text-amber-ink", mixed: "text-amber-ink", unchanged: "text-muted" };
 
 export function ProgressBadge({ direction, label }: { direction: keyof typeof STYLES; label: string }) {
   return (
@@ -41,7 +41,7 @@ export function MetricRow({ progress, context, compact = false }: { progress: Re
   const arrow = progress.parts[0].current > progress.parts[0].previous ? "↑" : progress.parts[0].current < progress.parts[0].previous ? "↓" : "→";
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={`group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 text-left hover:bg-[#fffaf2] ${compact ? "py-2" : "border border-line bg-white px-3 py-2.5"}`}>
+      <button type="button" onClick={() => setOpen(true)} className={`group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 text-left hover:bg-[#fffdf7] ${compact ? "py-2" : "border border-line bg-white px-3 py-2.5"}`}>
         <span className="min-w-0">
           <span className="flex items-baseline justify-between gap-2">
             <span className="text-[13px] font-semibold text-ink">{info.name}</span>
@@ -81,7 +81,7 @@ function MiniBar({ metric, previous, current }: { metric: MetricKey; previous: n
   return (
     <span className="relative mt-2.5 mb-1 block h-3.5" aria-hidden="true">
       <span className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-ink" />
-      <span className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 rounded-full bg-[#4f9a4f]" style={{ width: at(limit) }} />
+      <span className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 rounded-full bg-[#7d9b6a]" style={{ width: at(limit) }} />
       <span className="absolute top-1/2 right-0 h-[3px] -translate-y-1/2 rounded-full bg-[#d24a3f]" style={{ width: `${100 - pct(warn)}%` }} />
       <span className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#8d939a] bg-[#d9dde1]" style={{ left: at(prev) }} />
       <span className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" style={{ left: at(cur) }} />
@@ -99,7 +99,7 @@ function ScaleBar({ metric, index, previous, current }: { metric: MetricKey; ind
         <span className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center whitespace-nowrap" style={{ left: at(cur) }}>Latest · {fmt(current)}<span className="h-1.5 w-px bg-ink" /></span>
       </div>
       <div className="relative flex h-7 overflow-hidden rounded-md border-2 border-ink bg-white text-[11px] font-semibold">
-        <div className="flex items-center justify-center border-r-2 border-ink bg-[#cfe8cf] text-[#2f5d34]" style={{ width: at(limit) }}>Goal</div>
+        <div className="flex items-center justify-center border-r-2 border-ink bg-[#dbe5cf] text-[#2f5443]" style={{ width: at(limit) }}>Goal</div>
         <div className="grow" />
         <div className="flex items-center justify-center border-l-2 border-ink bg-[#f6cfcf] text-[#8a2a2a]" style={{ width: `${100 - pct(warn)}%` }}>{highLabel}</div>
         <span className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink bg-white" style={{ left: at(prev) }} />
@@ -129,8 +129,8 @@ function MetricSheet({ progress, context, onClose }: { progress: ResultProgress;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-labelledby="metric-sheet-title" onClick={(event) => event.stopPropagation()} className="max-h-[88vh] w-full max-w-md overflow-y-auto border-t-4 border-teal bg-[#fffaf2] sm:border">
-        <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-line bg-[#fffaf2] px-4 py-3">
+      <div role="dialog" aria-modal="true" aria-labelledby="metric-sheet-title" onClick={(event) => event.stopPropagation()} className="max-h-[88vh] w-full max-w-md overflow-y-auto border-t-4 border-teal bg-[#fffdf7] sm:border">
+        <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-line bg-[#fffdf7] px-4 py-3">
           <div>
             <h2 id="metric-sheet-title" className="text-[18px] leading-tight font-semibold text-ink">{info.name}</h2>
             <p className="mt-0.5 text-[11px] text-subtle">Medical name: {info.medicalName}</p>

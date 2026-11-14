@@ -132,15 +132,15 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
 
   return (
     <div className="flex h-dvh flex-col bg-ground">
-      <header className="relative z-10 flex items-center gap-3 border-b border-[#9d5b49] bg-[#783120] px-4 pt-10 pb-4 text-white">
+      <header className="relative z-10 flex items-center gap-3 border-b border-eucalyptus-dark bg-eucalyptus px-4 pt-10 pb-4 text-white">
         <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
           <BackIcon width={22} height={22} />
         </Link>
         <div className="flex grow flex-col">
-          <span className="clinical-label text-[#f3d9cc]">Secure health exchange</span>
+          <span className="clinical-label text-[#dfe8d8]">Secure health exchange</span>
           <h1 className="text-[18px] font-semibold">Ask Clara</h1>
         </div>
-        <span className="clinical-label border border-white/25 px-2 py-1 text-[#f3d9cc]">Record on</span>
+        <span className="clinical-label border border-white/25 px-2 py-1 text-[#dfe8d8]">Record on</span>
       </header>
 
       <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4" aria-live="polite" aria-busy={loading}>
@@ -173,7 +173,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           m.role === "user" ? (
             <div
               key={i}
-              className="rise max-w-[84%] self-end border border-[#7c2f1e] bg-[#9f402b] px-3.5 py-3 text-[15px] leading-snug text-white"
+              className="rise max-w-[84%] self-end border border-teal-dark bg-teal px-3.5 py-3 text-[15px] leading-snug text-white"
             >
               {m.content}
             </div>
@@ -187,7 +187,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
               {m.usedData && m.usedData.length > 0 && (
                 <div className="flex flex-wrap gap-1.5" aria-label="Data used">
                   {m.usedData.map((d) => (
-                    <span key={d} className="clinical-label border border-[#d5a791] bg-teal-soft px-2 py-1 text-teal-dark">
+                    <span key={d} className="clinical-label border border-[#aebde3] bg-teal-soft px-2 py-1 text-teal-dark">
                       {d}
                     </span>
                   ))}

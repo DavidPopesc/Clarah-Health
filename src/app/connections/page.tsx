@@ -70,12 +70,12 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
   return (
     <>
       <main className="flex grow flex-col gap-6 pb-8">
-        <div className="flex items-center gap-3 bg-[#783120] px-5 pt-10 pb-5 text-white">
+        <div className="flex items-center gap-3 bg-eucalyptus px-5 pt-10 pb-5 text-white">
           <div className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
             <HeartIcon />
           </div>
           <div>
-            <span className="clinical-label block text-[#f3d9cc]">Data access</span>
+            <span className="clinical-label block text-[#dfe8d8]">Data access</span>
             <span className="text-xl font-semibold">Clara connections</span>
           </div>
         </div>

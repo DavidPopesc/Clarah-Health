@@ -34,7 +34,7 @@ export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () =
         aria-labelledby="body-viewer-title"
         aria-describedby="body-viewer-desc"
         onClick={(e) => e.stopPropagation()}
-        className="sheet-3d mt-auto flex h-[82dvh] w-full max-w-[460px] flex-col overflow-hidden border-t-4 border-teal bg-[#fffaf2] shadow-[0_-12px_30px_rgba(91,57,47,0.25)]"
+        className="sheet-3d mt-auto flex h-[82dvh] w-full max-w-[460px] flex-col overflow-hidden border-t-4 border-teal bg-[#fffdf7] shadow-[0_-12px_30px_rgba(44,68,58,0.25)]"
       >
         <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-2">

@@ -131,11 +131,11 @@ function Platform() {
     <group position={[x, -0.012, z]}>
       <mesh receiveShadow>
         <cylinderGeometry args={[0.42, 0.45, 0.02, 64]} />
-        <meshStandardMaterial color="#f0dfd0" roughness={0.8} />
+        <meshStandardMaterial color="#f3f0e6" roughness={0.8} />
       </mesh>
       <mesh position={[0, 0.011, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.4, 0.415, 64]} />
-        <meshBasicMaterial color="#b44e34" transparent opacity={0.55} />
+        <meshBasicMaterial color="#2a4fa8" transparent opacity={0.55} />
       </mesh>
     </group>
   );
@@ -215,9 +215,9 @@ export default function AnatomyScene({
   return (
     <>
       <Canvas camera={{ fov: 35, near: 0.01, far: 50, position: [0.8, 1.2, 3] }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-        <hemisphereLight args={["#fffaf2", "#d9b9a5", 1.15]} />
+        <hemisphereLight args={["#fffdf7", "#c9d3bd", 1.15]} />
         <directionalLight position={[2, 3, 2.5]} intensity={1.5} />
-        <directionalLight position={[-2, 1.5, -1.5]} intensity={0.6} color="#f0c8b6" />
+        <directionalLight position={[-2, 1.5, -1.5]} intensity={0.6} color="#dfe6f5" />
 
         <Suspense fallback={null}>
           <Body system={system} lit={lit} reducedMotion={reducedMotion} />

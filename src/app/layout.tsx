@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "A health companion that explains your records and checks whether everyday choices are safe with your medicines.",
 };
 
-export const viewport: Viewport = { themeColor: "#783120" };
+export const viewport: Viewport = { themeColor: "#3c5a4e" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -8,7 +8,7 @@ import { ChevronIcon, FileIcon, TrashIcon } from "../icons";
 const STATUS = {
   attention: { label: "Needs attention", dot: "bg-amber", ring: "border-amber/30 bg-amber-soft" },
   info: { label: "Good to know", dot: "bg-teal", ring: "border-line bg-white" },
-  good: { label: "Looks good", dot: "bg-[#9b5e4a]", ring: "border-line bg-white" },
+  good: { label: "Looks good", dot: "bg-[#6f8a5c]", ring: "border-line bg-white" },
 };
 
 const fmtDate = (iso?: string) =>

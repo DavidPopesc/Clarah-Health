@@ -50,7 +50,7 @@ function DocumentFindingRow({ evidence }: { evidence: DocumentEvidence }) {
   const ref = evidence.finding.refs[0];
   const href = evidence.url && ref ? `${evidence.url}#page=${ref.page}` : evidence.url;
   return (
-    <li className="border-l-2 border-teal bg-[#fffaf2] px-3 py-2.5">
+    <li className="border-l-2 border-teal bg-[#fffdf7] px-3 py-2.5">
       <div className="flex items-start gap-2">
         <FileIcon width={15} height={15} className="mt-0.5 shrink-0 text-teal" />
         <div className="min-w-0 grow">
@@ -73,7 +73,7 @@ function DocumentFindingRow({ evidence }: { evidence: DocumentEvidence }) {
 
 function EvidenceList({ item, documents }: { item: AttentionItem; documents: DocumentEvidence[] }) {
   return (
-    <div className="border-y border-line bg-[#f6eadc]">
+    <div className="border-y border-line bg-sage-soft">
       <div className="flex items-center justify-between border-b border-line px-3 py-2">
         <span className="clinical-label text-muted">Evidence in your record</span>
         <span className="font-mono text-[10px] text-subtle">{item.evidence.length + documents.length} source{item.evidence.length + documents.length === 1 ? "" : "s"}</span>
@@ -132,7 +132,7 @@ function DocumentOnlyConcern({ itemId, documents }: { itemId: string; documents:
         <h3 className="mt-1 text-[16px] font-semibold">{DOCUMENT_SUBISSUE_TITLES[itemId] ?? "Related finding"}</h3>
         <p className="mt-1 text-[12px] leading-relaxed text-muted">This topic came from a lab report or clinician note and is grouped here with related health information.</p>
       </div>
-      <ul className="flex flex-col gap-2 border-t border-line bg-[#f6eadc] p-3">{documents.map((evidence) => <DocumentFindingRow key={evidence.id} evidence={evidence} />)}</ul>
+      <ul className="flex flex-col gap-2 border-t border-line bg-sage-soft p-3">{documents.map((evidence) => <DocumentFindingRow key={evidence.id} evidence={evidence} />)}</ul>
     </article>
   );
 }
@@ -191,7 +191,7 @@ export function AttentionList({ themes }: { themes: HealthTheme[] }) {
           return (
             <li key={theme.id} id={`health-theme-${theme.id}`} className="scroll-mt-4">
               <article className={`border border-line border-l-4 bg-white ${level.rail}`}>
-                <button type="button" onClick={() => setOpenTheme(isOpen ? null : theme.id)} aria-expanded={isOpen} aria-controls={`health-theme-details-${theme.id}`} className="flex w-full items-start gap-3 p-4 text-left hover:bg-[#fffaf2]">
+                <button type="button" onClick={() => setOpenTheme(isOpen ? null : theme.id)} aria-expanded={isOpen} aria-controls={`health-theme-details-${theme.id}`} className="flex w-full items-start gap-3 p-4 text-left hover:bg-[#fffdf7]">
                   <span className="font-mono text-[12px] font-semibold text-subtle">{String(index + 1).padStart(2, "0")}</span>
                   <span className="min-w-0 grow">
                     <span className="flex flex-wrap items-center justify-between gap-2">
@@ -215,13 +215,13 @@ export function AttentionList({ themes }: { themes: HealthTheme[] }) {
                 {theme.relationships.length > 0 && (
                   <div className="mx-4 mb-4 ml-11 flex flex-wrap gap-1.5">
                     {theme.relationships.slice(0, 3).map((relationship) => (
-                      <span key={`${theme.id}-${relationship.themeId}`} className="border border-[#d5a791] bg-teal-soft px-2 py-1 text-[10px] font-semibold text-teal-dark">Related: {relationship.label}</span>
+                      <span key={`${theme.id}-${relationship.themeId}`} className="border border-[#aebde3] bg-teal-soft px-2 py-1 text-[10px] font-semibold text-teal-dark">Related: {relationship.label}</span>
                     ))}
                   </div>
                 )}
 
                 {isOpen && (
-                  <div id={`health-theme-details-${theme.id}`} className="border-t border-line bg-[#fbf4e8] p-3.5">
+                  <div id={`health-theme-details-${theme.id}`} className="border-t border-line bg-ground p-3.5">
                     <div className="mb-3 border-l-2 border-teal bg-white px-3 py-2.5">
                       <span className="clinical-label text-teal">Overall plan</span>
                       <p className="mt-1 text-[13px] leading-relaxed text-body">{theme.action}</p>

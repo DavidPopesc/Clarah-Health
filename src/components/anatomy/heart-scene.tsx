@@ -46,9 +46,9 @@ function Heart({ reducedMotion }: { reducedMotion: boolean }) {
 export default function HeartScene({ reducedMotion = false }: { reducedMotion?: boolean }) {
   return (
     <Canvas camera={{ fov: 30, position: [0, 0.1, 4.2] }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-      <hemisphereLight args={["#fffaf2", "#d9b9a5", 1.1]} />
+      <hemisphereLight args={["#fffdf7", "#c9d3bd", 1.1]} />
       <directionalLight position={[2.5, 3, 3]} intensity={2} />
-      <directionalLight position={[-3, -1, 2]} intensity={0.6} color="#f0c8b6" />
+      <directionalLight position={[-3, -1, 2]} intensity={0.6} color="#dfe6f5" />
       <Float speed={reducedMotion ? 0 : 1.6} rotationIntensity={reducedMotion ? 0 : 0.25} floatIntensity={reducedMotion ? 0 : 0.6}>
         <Heart reducedMotion={reducedMotion} />
       </Float>

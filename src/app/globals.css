@@ -1,16 +1,24 @@
 @import "tailwindcss";
 
+/*
+  Palette: sage / eucalyptus green, warm white / ivory, royal blue.
+  Token names are historical: "teal" is the primary accent (royal blue).
+*/
 @theme inline {
-  --color-ground: #fbf4e8;
-  --color-ink: #33221f;
-  --color-body: #4e3732;
-  --color-muted: #71544d;
-  --color-subtle: #80665f;
-  --color-line: #ddcdbd;
-  --color-panel: #eaded0;
-  --color-teal: #b44e34;
-  --color-teal-dark: #783120;
-  --color-teal-soft: #f3d9cc;
+  --color-ground: #faf7ef;
+  --color-ink: #1e2824;
+  --color-body: #34413b;
+  --color-muted: #505d56;
+  --color-subtle: #616d66;
+  --color-line: #d6dccd;
+  --color-panel: #e6ebdf;
+  --color-teal: #2a4fa8;
+  --color-teal-dark: #1a3170;
+  --color-teal-soft: #dfe6f5;
+  --color-sage: #9caf88;
+  --color-sage-soft: #e7ecdf;
+  --color-eucalyptus: #3c5a4e;
+  --color-eucalyptus-dark: #2c443a;
   --color-amber: #a85d0b;
   --color-amber-ink: #6f3900;
   --color-amber-soft: #f9e8c7;
@@ -23,44 +31,43 @@
 * { border-color: var(--color-line); }
 
 body {
-  background: #e8d9c8;
+  background: #e3e8db;
   color: var(--color-ink);
 }
 
 button, a, input { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, input:focus-visible {
-  outline: 3px solid #d88369;
+  outline: 3px solid #6f8fd8;
   outline-offset: 2px;
 }
 
 .app-shell {
   background-color: var(--color-ground);
   background-image:
-    linear-gradient(rgba(102, 63, 52, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(102, 63, 52, 0.025) 1px, transparent 1px);
+    linear-gradient(rgba(60, 90, 78, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(60, 90, 78, 0.03) 1px, transparent 1px);
   background-size: 24px 24px;
-  box-shadow: 0 0 0 1px rgba(91, 57, 47, 0.1);
+  box-shadow: 0 0 0 1px rgba(44, 68, 58, 0.1);
 }
 
 .slab {
-  background: #fffaf2;
-  border: 1px solid #d8c5b3;
-  box-shadow: 0 1px 2px rgba(91, 57, 47, 0.07);
+  background: #fffdf7;
+  border: 1px solid #d3dac8;
+  box-shadow: 0 1px 2px rgba(44, 68, 58, 0.07);
 }
 
 .tile-3d {
-  background: #fffaf2;
-  border: 1px solid #cdb6a1;
+  background: #fffdf7;
+  border: 1px solid #c4cfb7;
   box-shadow: none;
   transition: background-color 150ms ease, border-color 150ms ease;
 }
-.tile-3d:hover { background: #f5e7d8; border-color: #b89278; }
-.tile-3d:active { background: #ead4c2; }
+.tile-3d:hover { background: #eef2e7; border-color: #9caf88; }
+.tile-3d:active { background: #e1e8d6; }
 
 .tile-teal {
   background: var(--color-teal-soft);
-  background: #f2d6c8;
-  border: 1px solid #d5a791;
+  border: 1px solid #aebde3;
   box-shadow: none;
 }
 
@@ -70,25 +77,25 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   box-shadow: none;
   transition: background-color 150ms ease;
 }
-.press:hover { background: #963d28; }
+.press:hover { background: #223f8a; }
 .press:active { background: var(--color-teal-dark); }
-.press:disabled { background: #aa8b80; border-color: #806a62; }
+.press:disabled { background: #8d97a8; border-color: #6b7486; }
 .press-alert { background: var(--color-alert); border-color: #70141c; }
 .press-crisis { background: #6f365a; border-color: #442136; }
 
 .well {
-  background: #f1e5d7;
-  border: 1px solid #dfccba;
+  background: #eef1e7;
+  border: 1px solid #d6dccd;
   box-shadow: none;
 }
 
 .lift { transition: background-color 150ms ease, border-color 150ms ease; }
-.lift:hover { background: #f7eadc; border-color: #bc947b; }
+.lift:hover { background: #f1f4ea; border-color: #9caf88; }
 
 .stage-3d {
-  background: #efe1d3;
-  background-image: linear-gradient(90deg, transparent 49.6%, rgba(180, 78, 52, 0.13) 50%, transparent 50.4%);
-  border: 1px solid #d0baa6;
+  background: #eaeee2;
+  background-image: linear-gradient(90deg, transparent 49.6%, rgba(42, 79, 168, 0.12) 50%, transparent 50.4%);
+  border: 1px solid #c9d3bd;
   box-shadow: none;
 }
 

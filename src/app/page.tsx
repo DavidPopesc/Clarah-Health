@@ -56,16 +56,16 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   return (
     <>
       <main className="flex grow flex-col gap-5 pb-7">
-        <header className="bg-[#783120] px-5 py-4 text-white">
+        <header className="bg-eucalyptus px-5 py-4 text-white">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <span className="clinical-label text-[#f3d9cc]">Clara health record</span>
-            <span className="text-[11px] text-[#f3d9cc]">{today}{record.source === "demo" && " · Demo"}</span>
+            <span className="clinical-label text-[#dfe8d8]">Clara health record</span>
+            <span className="text-[11px] text-[#dfe8d8]">{today}{record.source === "demo" && " · Demo"}</span>
           </div>
           <div className="flex items-end justify-between gap-4">
             <h1 className="min-w-0 text-2xl leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
             <div className="shrink-0 border-l border-white/25 pl-3 text-right">
               <strong className="block text-xl leading-none">{themes.length}</strong>
-              <span className="clinical-label text-[#f3d9cc]">Focus areas</span>
+              <span className="clinical-label text-[#dfe8d8]">Focus areas</span>
             </div>
           </div>
         </header>
