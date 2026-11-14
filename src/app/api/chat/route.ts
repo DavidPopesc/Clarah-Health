@@ -1,4 +1,4 @@
-import { ApiError } from "@google/genai";
+import { APIError } from "openai";
 import { MissingApiKeyError, runAgent, type ChatTurn } from "@/lib/agent";
 import { getRecord, getWearable } from "@/lib/data";
 import { screenMessage } from "@/lib/red-flags";
@@ -23,14 +23,14 @@ export async function POST(request: Request) {
     return Response.json({ kind: "answer", ...answer });
   } catch (err) {
     console.error("Agent error", err);
-    const badKey = err instanceof ApiError && (err.status === 401 || err.status === 403);
+    const badKey = err instanceof APIError && (err.status === 401 || err.status === 403);
     if (err instanceof MissingApiKeyError || badKey) {
       return Response.json(
-        { error: "Clara isn't set up yet: set a valid GEMINI_API_KEY (.env.local locally, or the project's Environment Variables on Vercel)." },
+        { error: "Clara isn't set up yet: set a valid OPENAI_API_KEY (.env.local locally, or the project's Environment Variables on Vercel)." },
         { status: 500 },
       );
     }
-    if (err instanceof ApiError && (err.status === 429 || err.status === 503)) {
+    if (err instanceof APIError && (err.status === 429 || err.status === 503)) {
       return Response.json({ error: "Clara is busy right now. Try again in a moment." }, { status: 429 });
     }
     return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });

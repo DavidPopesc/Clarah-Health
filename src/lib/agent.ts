@@ -1,18 +1,13 @@
-import {
-  ApiError,
-  FinishReason,
-  GoogleGenAI,
-  ThinkingLevel,
-  type Content,
-  type FunctionDeclaration,
-  type Part,
-} from "@google/genai";
+import OpenAI from "openai";
+import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
 import { BODY_SYSTEMS, detectBodyFocus, normalizeFocus, REGION_IDS, type BodyFocus } from "./body";
 import { findReferences, type SafetyReference } from "./safety-references";
 import type { PatientRecord, Source, WearableSummary } from "./types";
 import { ageFrom, bpCategory, BP_LABELS } from "./vitals";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-4-hydrogen";
+// Any OpenAI-compatible endpoint works; the default is Pulpo.
+const BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
+const MODEL = process.env.OPENAI_MODEL ?? "claude-sonnet-5.5";
 const MAX_TOOL_ROUNDS = 8;
 
 const SYSTEM_PROMPT = `You are Clara, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
@@ -32,8 +27,13 @@ How to answer:
 - Then, only if useful, add short sections with bold labels and bullet points, such as **What this means for you**, **Get help right away if**, and **Ask your doctor**.
 - Keep it under about 200 words. Do not add a sources list or links; the app shows sources separately.`;
 
-// Tools with no arguments leave out `parameters`.
-const TOOLS: FunctionDeclaration[] = [
+interface ToolSpec {
+  name: string;
+  description: string;
+  parameters?: Record<string, unknown>;
+}
+
+const TOOLS: ToolSpec[] = [
   {
     name: "get_profile",
     description: "Get the patient's age, sex, and where their data comes from.",
@@ -62,7 +62,7 @@ const TOOLS: FunctionDeclaration[] = [
     name: "lookup_safety_reference",
     description:
       "Search trusted, citable references (NIH, FDA, AHA, ADA, IDF-DAR) about whether a food, herb, supplement, fast, or practice is safe, and about what health numbers mean. Use specific terms.",
-    parametersJsonSchema: {
+    parameters: {
       type: "object",
       properties: {
         query: { type: "string", description: "Terms to search, e.g. 'ramadan fasting glipizide'" },
@@ -75,7 +75,7 @@ const TOOLS: FunctionDeclaration[] = [
     name: "show_body_focus",
     description:
       "Highlight one body part on the app's 3D anatomy model when the question is about a specific body part, injury, or organ.",
-    parametersJsonSchema: {
+    parameters: {
       type: "object",
       properties: {
         region: { type: "string", enum: REGION_IDS },
@@ -88,6 +88,13 @@ const TOOLS: FunctionDeclaration[] = [
     },
   },
 ];
+
+const NO_ARGS = { type: "object", properties: {}, additionalProperties: false };
+
+const CHAT_TOOLS: ChatCompletionTool[] = TOOLS.map(({ name, description, parameters }) => ({
+  type: "function",
+  function: { name, description, parameters: parameters ?? NO_ARGS },
+}));
 
 const DATA_LABELS: Record<string, string> = {
   get_medications: "Medications",
@@ -185,14 +192,14 @@ function runTool(
 
 export class MissingApiKeyError extends Error {}
 
-// Gemini sometimes answers 503 when overloaded; retry with backoff. 429 means a quota is
+// The provider sometimes answers 503 when overloaded; retry with backoff. 429 means a quota is
 // used up (often the daily free-tier limit), so retrying would not help.
 async function withRetry<T>(call: () => Promise<T>, attempts = 3): Promise<T> {
   for (let i = 1; ; i++) {
     try {
       return await call();
     } catch (err) {
-      const transient = err instanceof ApiError && (err.status === 503 || err.status === 500);
+      const transient = err instanceof OpenAI.APIError && (err.status === 503 || err.status === 500);
       if (!transient || i >= attempts) throw err;
       await new Promise((r) => setTimeout(r, 800 * 2 ** (i - 1)));
     }
@@ -204,14 +211,14 @@ export async function runAgent(
   record: PatientRecord,
   wearable: WearableSummary,
 ): Promise<AgentAnswer> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new MissingApiKeyError("GEMINI_API_KEY is not set");
-  const ai = new GoogleGenAI({ apiKey });
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new MissingApiKeyError("OPENAI_API_KEY is not set");
+  const client = new OpenAI({ apiKey, baseURL: BASE_URL, maxRetries: 0 });
 
-  const contents: Content[] = history.map((turn) => ({
-    role: turn.role === "assistant" ? "model" : "user",
-    parts: [{ text: redactIdentifiers(turn.content, record) }],
-  }));
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...history.map((turn) => ({ role: turn.role, content: redactIdentifiers(turn.content, record) })),
+  ];
 
   const found = new Map<string, SafetyReference>();
   const usedData = new Set<string>();
@@ -225,43 +232,36 @@ export async function runAgent(
   });
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const response = await withRetry(() => ai.models.generateContent({
-      model: MODEL,
-      contents,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        tools: [{ functionDeclarations: TOOLS }],
-        thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
-      },
-    }));
+    const response = await withRetry(() =>
+      client.chat.completions.create({ model: MODEL, messages, tools: CHAT_TOOLS }),
+    );
 
-    const candidate = response.candidates?.[0];
-    if (!candidate?.content || candidate.finishReason === FinishReason.SAFETY) {
+    const choice = response.choices?.[0];
+    if (!choice || choice.finish_reason === "content_filter") {
       return done("I can't help with that one. Please ask your doctor or pharmacist.");
     }
 
-    const calls = response.functionCalls ?? [];
+    const calls = (choice.message.tool_calls ?? []).filter((c) => c.type === "function");
     if (calls.length === 0) {
       return done(
-        response.text?.trim() || "Sorry, I couldn't put together an answer. Please try asking again.",
+        choice.message.content?.trim() || "Sorry, I couldn't put together an answer. Please try asking again.",
       );
     }
 
-    // Send the model's turn back unchanged so its thought signatures stay valid.
-    contents.push(candidate.content);
+    messages.push({ role: "assistant", content: choice.message.content ?? null, tool_calls: calls });
 
-    const results: Part[] = calls.map((call) => {
-      const name = call.name ?? "";
+    for (const call of calls) {
+      const name = call.function.name;
       if (DATA_LABELS[name]) usedData.add(DATA_LABELS[name]);
-      let response: Record<string, unknown>;
+      let result: Record<string, unknown>;
       try {
-        response = { result: runTool(name, call.args ?? {}, record, wearable, found, focus) };
+        const args = call.function.arguments ? JSON.parse(call.function.arguments) : {};
+        result = { result: runTool(name, args, record, wearable, found, focus) };
       } catch (err) {
-        response = { error: err instanceof Error ? err.message : "Tool failed" };
+        result = { error: err instanceof Error ? err.message : "Tool failed" };
       }
-      return { functionResponse: { id: call.id, name, response } };
-    });
-    contents.push({ role: "user", parts: results });
+      messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
+    }
   }
 
   return {
