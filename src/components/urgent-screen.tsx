@@ -11,7 +11,7 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
       aria-modal="true"
       aria-labelledby="urgent-title"
       aria-describedby="urgent-message"
-      className="fixed inset-0 z-50 mx-auto flex w-full max-w-[460px] flex-col overflow-y-auto bg-white"
+      className="fixed inset-0 z-50 mx-auto flex w-full max-w-[460px] flex-col overflow-y-auto bg-white lg:inset-y-10 lg:max-w-2xl lg:rounded-md lg:shadow-[0_0_0_100vmax_rgba(30,40,36,0.6)]"
     >
       <div className={`flex flex-col gap-3.5 px-6 pt-16 pb-7 text-white ${headerColor}`}>
         <div className="flex size-[52px] items-center justify-center rounded-2xl bg-white text-alert shadow-[inset_0_-3px_0_rgba(0,0,0,0.12),0_10px_20px_-8px_rgba(0,0,0,0.45)]">

@@ -132,28 +132,31 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
 
   return (
     <div className="flex h-dvh flex-col bg-ground">
-      <header className="relative z-10 flex items-center gap-3 border-b border-eucalyptus-dark bg-eucalyptus px-4 pt-10 pb-4 text-white">
-        <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
-          <BackIcon width={22} height={22} />
-        </Link>
-        <div className="flex grow flex-col">
-          <span className="clinical-label text-[#dfe8d8]">Secure health exchange</span>
-          <h1 className="text-[18px] font-semibold">Ask Clara</h1>
+      <header className="relative z-10 border-b border-eucalyptus-dark bg-eucalyptus px-4 pt-10 pb-4 text-white lg:pt-6">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
+          <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
+            <BackIcon width={22} height={22} />
+          </Link>
+          <div className="flex grow flex-col">
+            <span className="clinical-label text-[#dfe8d8]">Secure health exchange</span>
+            <h1 className="text-[18px] font-semibold lg:text-[22px]">Ask Clara</h1>
+          </div>
+          <span className="clinical-label border border-white/25 px-2 py-1 text-[#dfe8d8]">Record on</span>
         </div>
-        <span className="clinical-label border border-white/25 px-2 py-1 text-[#dfe8d8]">Record on</span>
       </header>
 
-      <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4" aria-live="polite" aria-busy={loading}>
+      <div className="flex grow flex-col overflow-y-auto p-4 lg:px-10 lg:py-8" aria-live="polite" aria-busy={loading}>
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-3.5">
         {messages.length === 0 && (
           <div className="flex flex-col gap-4">
             <div className="border-l-4 border-teal bg-white px-4 py-3">
               <span className="clinical-label text-teal">Start a review</span>
-              <h2 className="mt-1 text-xl font-semibold">What would you like to understand?</h2>
+              <h2 className="mt-1 text-xl font-semibold lg:text-2xl">What would you like to understand?</h2>
             </div>
             <p className="text-[15px] leading-normal text-muted">
               Ask about your numbers, your diagnosis, or whether something is safe for you, like a fast, an herb, or a food.
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -237,6 +240,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           </div>
         )}
         <div ref={endRef} />
+        </div>
       </div>
 
       <form
@@ -244,8 +248,9 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           e.preventDefault();
           send(input);
         }}
-        className="relative z-10 flex items-center gap-2 border-t border-line bg-white px-4 pt-3 pb-6"
+        className="relative z-10 border-t border-line bg-white px-4 pt-3 pb-6 lg:px-10 lg:pb-5"
       >
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-2">
         <label htmlFor="ask-input" className="sr-only">
           Ask a health question
         </label>
@@ -265,6 +270,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
         >
           <SendIcon />
         </button>
+        </div>
       </form>
 
       {viewer && !flag && <BodyViewer focus={viewer} onClose={() => setViewer(null)} />}

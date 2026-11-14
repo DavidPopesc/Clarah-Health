@@ -122,19 +122,23 @@ export function VisitRecorder() {
   const ready = transcript.trim().length >= 40;
 
   return (
-    <main className="flex grow flex-col gap-6 pb-8">
-      <header className="flex items-center gap-3 bg-eucalyptus px-4 pt-10 pb-4 text-white">
-        <Link href="/visits" aria-label="Back to visits" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
-          <BackIcon width={22} height={22} />
-        </Link>
-        <div className="flex flex-col">
-          <span className="clinical-label text-[#dfe8d8]">For the care team</span>
-          <h1 className="text-[18px] font-semibold">Record a visit</h1>
+    <main className="flex grow flex-col gap-6 pb-8 lg:gap-8">
+      <header className="bg-eucalyptus px-4 pt-10 pb-4 text-white lg:py-7">
+        <div className="desk flex items-center gap-3">
+          <Link href="/visits" aria-label="Back to visits" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
+            <BackIcon width={22} height={22} />
+          </Link>
+          <div className="flex flex-col">
+            <span className="clinical-label text-[#dfe8d8]">For the care team</span>
+            <h1 className="text-[18px] font-semibold lg:text-[26px]">Record a visit</h1>
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-col gap-6 px-5">
-        <p className="text-[14px] leading-normal text-muted">
+      {/* Desktop: consent and recording on the left, the transcript and explanation on the right. */}
+      <div className="desk flex flex-col gap-6 px-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
+        <div className="flex flex-col gap-6">
+        <p className="text-[14px] leading-normal text-muted lg:text-[15px]">
           Record your conversation with the patient. Clara transcribes it, pairs it with their record, and reads them a plain-English explanation they can replay at home.
         </p>
 
@@ -189,7 +193,9 @@ export function VisitRecorder() {
             )}
           </p>
         </section>
+        </div>
 
+        <div className="flex flex-col gap-6">
         <section className="flex flex-col gap-2" aria-labelledby="transcript-heading">
           <div className="flex items-center justify-between border-b border-line pb-2">
             <h2 id="transcript-heading" className="clinical-label text-muted">3 · Check the transcript</h2>
@@ -207,7 +213,7 @@ export function VisitRecorder() {
             disabled={busy || phase === "recording"}
             rows={10}
             placeholder={"The transcript appears here after recording. You can also type or paste the conversation, for example:\nClinician: Your A1c is 7.1…\nPatient: …"}
-            className="well min-h-48 w-full rounded-md p-3 font-mono text-[12px] leading-relaxed text-ink outline-teal"
+            className="well min-h-48 w-full rounded-md p-3 font-mono text-[12px] leading-relaxed text-ink outline-teal lg:min-h-96"
           />
           <label className="flex items-center justify-between gap-3 text-[13px] text-body">
             <span className="font-semibold">Visit date</span>
@@ -240,6 +246,7 @@ export function VisitRecorder() {
         <p className="text-[11px] leading-snug text-subtle">
           The audio is sent to the AI only to be transcribed and isn&apos;t saved. The patient&apos;s name and ID numbers are removed from the transcript before Clara explains it. The explanation is saved only on this device.
         </p>
+        </div>
       </div>
     </main>
   );

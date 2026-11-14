@@ -15,9 +15,12 @@ const CHANGE = {
   continue: { label: "Keep taking", className: "border-[#c3d1bf] bg-[#eaf0e4] text-[#2f5443]" },
 } satisfies Record<MedicationChange["change"], { label: string; className: string }>;
 
+// On desktop the detail sections flow into two balanced columns; each stays in one piece.
+const COLUMN_ITEM = "xl:mb-6 xl:break-inside-avoid";
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-2">
+    <section className={`flex flex-col gap-2 ${COLUMN_ITEM}`}>
       <h3 className="clinical-label border-b border-line pb-1.5 text-muted">{title}</h3>
       {children}
     </section>
@@ -32,12 +35,13 @@ function Recap({ visit }: { visit: StoredVisit }) {
     <article className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <span className="clinical-label text-subtle">{fmtVisitDate(recap.date) || "Visit recap"}</span>
-        <h2 className="text-xl leading-snug font-semibold">{recap.title}</h2>
-        {recap.summary && <p className="text-[14px] leading-normal text-body">{recap.summary}</p>}
+        <h2 className="text-xl leading-snug font-semibold lg:text-[26px]">{recap.title}</h2>
+        {recap.summary && <p className="text-[14px] leading-normal text-body lg:text-[15px]">{recap.summary}</p>}
       </div>
 
       <VisitPlayer key={visit.id} id={visit.id} recap={recap} />
 
+      <div className="flex flex-col gap-5 xl:block xl:columns-2 xl:gap-x-6">
       {recap.medicationChanges.length > 0 && (
         <Section title="Your medicines">
           <ul className="flex flex-col gap-2">
@@ -68,7 +72,7 @@ function Recap({ visit }: { visit: StoredVisit }) {
       )}
 
       {recap.watchFor.length > 0 && (
-        <div className="border-l-4 border-amber bg-amber-soft p-3.5">
+        <div className={`border-l-4 border-amber bg-amber-soft p-3.5 ${COLUMN_ITEM}`}>
           <h3 className="clinical-label mb-1.5 text-amber-ink">Call your care team if</h3>
           <ul className="flex list-disc flex-col gap-1 pl-4 text-[13px] leading-snug text-amber-ink">
             {recap.watchFor.map((w) => (
@@ -119,6 +123,7 @@ function Recap({ visit }: { visit: StoredVisit }) {
           </ul>
         </Section>
       )}
+      </div>
 
       <div className="flex flex-col gap-2 border-t border-line pt-3">
         <button
@@ -169,8 +174,11 @@ export function VisitsView() {
     }
   }
 
+  // Phones: one column. Desktop: the recap and player on the left, the list of recaps and the
+  // care team's recording link on the right.
   return (
-    <div className="flex flex-col gap-6 px-5">
+    <div className="desk flex flex-col gap-6 px-5 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-10">
+      <div className="flex flex-col gap-6">
       {current ? (
         <Recap key={current.id} visit={current} />
       ) : (
@@ -201,7 +209,9 @@ export function VisitsView() {
           )}
         </div>
       )}
+      </div>
 
+      <aside className="flex flex-col gap-6 lg:sticky lg:top-6">
       {visits.length > 1 && (
         <section className="flex flex-col gap-2" aria-labelledby="past-visits">
           <h2 id="past-visits" className="clinical-label border-b border-line pb-2 text-muted">All visit recaps</h2>
@@ -238,6 +248,7 @@ export function VisitsView() {
       <p className="text-[11px] leading-snug text-subtle">
         Clara explains what your care team said; it doesn&apos;t add advice of its own or replace your care team. Recaps are saved only on this device.
       </p>
+      </aside>
     </div>
   );
 }

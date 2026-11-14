@@ -56,22 +56,45 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   return (
     <>
       <main className="flex grow flex-col gap-5 pb-7">
-        <header className="bg-eucalyptus px-5 py-4 text-white">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <span className="clinical-label text-[#dfe8d8]">Clara health record</span>
-            <span className="text-[11px] text-[#dfe8d8]">{today}{record.source === "demo" && " · Demo"}</span>
-          </div>
-          <div className="flex items-end justify-between gap-4">
-            <h1 className="min-w-0 text-2xl leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
-            <div className="shrink-0 border-l border-white/25 pl-3 text-right">
-              <strong className="block text-xl leading-none">{themes.length}</strong>
-              <span className="clinical-label text-[#dfe8d8]">Focus areas</span>
+        <header className="bg-eucalyptus px-5 py-4 text-white lg:py-8">
+          <div className="desk">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <span className="clinical-label text-[#dfe8d8]">Clara health record</span>
+              <span className="text-[11px] text-[#dfe8d8]">{today}{record.source === "demo" && " · Demo"}</span>
+            </div>
+            <div className="flex items-end justify-between gap-4">
+              <h1 className="min-w-0 text-2xl leading-tight font-semibold lg:text-[34px]">Hello, {record.identity.givenName}</h1>
+              <div className="shrink-0 border-l border-white/25 pl-3 text-right lg:pl-5">
+                <strong className="block text-xl leading-none lg:text-3xl">{themes.length}</strong>
+                <span className="clinical-label text-[#dfe8d8]">Focus areas</span>
+              </div>
             </div>
           </div>
         </header>
 
-        <div className="flex flex-col gap-7 px-5">
-          <section className="flex flex-col gap-2" aria-labelledby="sources-heading">
+        {/* Phones: one column in the order below (CSS order). Desktop: the main column holds focus
+            areas and documents; the side column holds sources, results in range, meds and Ask. */}
+        <div className="desk flex flex-col gap-7 px-5 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-10 lg:pt-3">
+          <div className="contents lg:flex lg:flex-col lg:gap-9">
+          <section className="order-2 flex flex-col gap-3 lg:order-none" aria-labelledby="attention-heading">
+            <div className="flex items-end justify-between border-b-2 border-ink pb-2">
+              <div>
+                <span className="clinical-label text-teal">Connected health picture</span>
+                <h2 id="attention-heading" className="mt-1 text-xl font-semibold lg:text-2xl">Your health focus areas</h2>
+              </div>
+              <span className="clinical-label text-subtle">{String(themes.length).padStart(2, "0")} areas</span>
+            </div>
+            <p className="text-[12px] leading-relaxed text-muted lg:text-[13px]">See what improved since your previous results and what still needs follow-up. Open an area for dated comparisons and next steps. Progress uses common ranges; your care team may set different goals.</p>
+            <AttentionList themes={themes} />
+          </section>
+
+          <div className="order-3 lg:order-none">
+            <Documents />
+          </div>
+          </div>
+
+          <div className="contents lg:flex lg:flex-col lg:gap-7">
+          <section className="order-1 flex flex-col gap-2 lg:order-none" aria-labelledby="sources-heading">
             <div className="flex items-center justify-between border-b border-line pb-2">
               <h2 id="sources-heading" className="clinical-label text-muted">Data sources</h2>
               <Link href="/connections" className="text-xs font-semibold text-teal">Manage access</Link>
@@ -85,22 +108,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
             {!status.epic && !status.fitbit && !errorText && <p className="text-[11px] text-subtle">Using demo data until you link a source.</p>}
           </section>
 
-          <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
-            <div className="flex items-end justify-between border-b-2 border-ink pb-2">
-              <div>
-                <span className="clinical-label text-teal">Connected health picture</span>
-                <h2 id="attention-heading" className="mt-1 text-xl font-semibold">Your health focus areas</h2>
-              </div>
-              <span className="clinical-label text-subtle">{String(themes.length).padStart(2, "0")} areas</span>
-            </div>
-            <p className="text-[12px] leading-relaxed text-muted">See what improved since your previous results and what still needs follow-up. Open an area for dated comparisons and next steps. Progress uses common ranges; your care team may set different goals.</p>
-            <AttentionList themes={themes} />
-          </section>
-
-          <Documents />
-
           {good.length > 0 && (
-            <section aria-labelledby="good-heading">
+            <section className="order-4 lg:order-none" aria-labelledby="good-heading">
               <div className="flex items-center justify-between border-b border-line pb-2">
                 <h2 id="good-heading" className="clinical-label text-muted">Within expected range</h2>
                 <span className="clinical-label text-teal-dark">Reviewed</span>
@@ -121,7 +130,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           )}
 
           {meds.length > 0 && (
-            <section aria-labelledby="meds-heading">
+            <section className="order-5 lg:order-none" aria-labelledby="meds-heading">
               <div className="flex items-center justify-between border-b border-line pb-2">
                 <h2 id="meds-heading" className="clinical-label text-muted">Active medications</h2>
                 <span className="clinical-label text-subtle">{meds.length} listed</span>
@@ -137,10 +146,11 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
             </section>
           )}
 
-          <Link href="/ask" className="press flex min-h-14 items-center justify-between rounded-md px-4 text-[15px] font-semibold text-white">
+          <Link href="/ask" className="press order-6 flex min-h-14 items-center justify-between rounded-md px-4 text-[15px] font-semibold text-white lg:order-none">
             <span>Ask Clara about this record</span>
             <span aria-hidden="true">→</span>
           </Link>
+          </div>
         </div>
       </main>
       <BottomNav active="/" />

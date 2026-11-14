@@ -27,16 +27,16 @@ export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () =
   }, []);
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-center bg-ink/55" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex justify-center bg-ink/55 lg:items-center lg:p-8" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="body-viewer-title"
         aria-describedby="body-viewer-desc"
         onClick={(e) => e.stopPropagation()}
-        className="sheet-3d mt-auto flex h-[82dvh] w-full max-w-[460px] flex-col overflow-hidden border-t-4 border-teal bg-[#fffdf7] shadow-[0_-12px_30px_rgba(44,68,58,0.25)]"
+        className="sheet-3d mt-auto flex h-[82dvh] w-full max-w-[460px] flex-col overflow-hidden border-t-4 border-teal bg-[#fffdf7] shadow-[0_-12px_30px_rgba(44,68,58,0.25)] lg:mt-0 lg:h-[min(86dvh,820px)] lg:max-w-4xl lg:rounded-md lg:shadow-[0_20px_50px_rgba(30,40,36,0.35)]"
       >
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line" aria-hidden="true" />
+        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line lg:hidden" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-2">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-semibold tracking-wide text-teal uppercase">3D body view</span>

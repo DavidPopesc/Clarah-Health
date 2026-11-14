@@ -69,38 +69,44 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
 
   return (
     <>
-      <main className="flex grow flex-col gap-6 pb-8">
-        <div className="flex items-center gap-3 bg-eucalyptus px-5 pt-10 pb-5 text-white">
-          <div className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
-            <HeartIcon />
-          </div>
-          <div>
-            <span className="clinical-label block text-[#dfe8d8]">Data access</span>
-            <span className="text-xl font-semibold">Clara connections</span>
+      <main className="flex grow flex-col gap-6 pb-8 lg:gap-8">
+        <div className="bg-eucalyptus px-5 pt-10 pb-5 text-white lg:py-7">
+          <div className="desk flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
+              <HeartIcon />
+            </div>
+            <div>
+              <span className="clinical-label block text-[#dfe8d8]">Data access</span>
+              <span className="text-xl font-semibold lg:text-[26px]">Clara connections</span>
+            </div>
           </div>
         </div>
 
-        <div className="mx-5 rise">
+        {/* Desktop: the content is centred, with the 3D heart beside the intro. */}
+        <div className="desk flex grow flex-col gap-6 lg:gap-8">
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:gap-10">
+        <div className="mx-5 rise lg:mx-0 lg:[&>div]:h-[300px]">
           <HeroHeart />
         </div>
 
-        <div className="mx-5 flex flex-col gap-2 border-b-2 border-ink pb-4">
+        <div className="mx-5 flex flex-col gap-2 border-b-2 border-ink pb-4 lg:mx-0">
           <span className="clinical-label text-teal">Private by design</span>
-          <h1 className="text-[28px] leading-[1.15] font-semibold">
+          <h1 className="text-[28px] leading-[1.15] font-semibold lg:text-[38px]">
             Answers about your health, from your own data.
           </h1>
-          <p className="text-[15px] leading-normal text-muted">
+          <p className="text-[15px] leading-normal text-muted lg:text-[16px]">
             Connect your records and your watch so Clara can explain your numbers in plain language and check whether something is safe for you.
           </p>
         </div>
+        </div>
 
         {errorText && (
-          <p role="alert" className="mx-5 border-l-4 border-amber bg-amber-soft p-3 text-sm text-amber-ink">
+          <p role="alert" className="mx-5 border-l-4 border-amber bg-amber-soft p-3 text-sm text-amber-ink lg:mx-0">
             {errorText}
           </p>
         )}
 
-        <div className="mx-5 flex flex-col gap-3">
+        <div className="mx-5 flex flex-col gap-3 lg:mx-0 lg:grid lg:grid-cols-2">
           <ConnectionCard
             title="MyChart (Epic)"
             detail="Meds, labs, diagnoses · read-only"
@@ -121,7 +127,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
           />
         </div>
 
-        <div className="well mx-5 flex flex-col gap-2.5 rounded-md p-4">
+        <div className="well mx-5 flex flex-col gap-2.5 rounded-md p-4 lg:mx-0 lg:p-5">
           <span className="clinical-label text-muted">How your data is handled</span>
           {[
             { Icon: LockIcon, text: "Read-only access. Clara can never change your records." },
@@ -144,16 +150,17 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
 
         <div className="grow" />
 
-        <div className="mx-5 flex flex-col gap-3">
+        <div className="mx-5 flex flex-col gap-3 lg:mx-0 lg:flex-row-reverse lg:items-center lg:justify-between lg:gap-6">
           <Link
             href="/"
-            className="press flex min-h-[52px] items-center justify-center rounded-md text-base font-semibold text-white"
+            className="press flex min-h-[52px] items-center justify-center rounded-md text-base font-semibold text-white lg:w-56"
           >
             Done
           </Link>
-          <p className="text-center text-xs leading-snug text-subtle">
+          <p className="text-center text-xs leading-snug text-subtle lg:text-left">
             Clara explains and informs. It does not diagnose or replace your care team.
           </p>
+        </div>
         </div>
       </main>
       <BottomNav active="/connections" />

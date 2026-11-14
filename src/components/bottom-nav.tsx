@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { ChatIcon, HomeIcon, LinkIcon, VisitIcon } from "./icons";
 
-const ITEMS = [
+export const NAV_ITEMS = [
   { href: "/", label: "Overview", Icon: HomeIcon },
   { href: "/ask", label: "Ask Clara", Icon: ChatIcon },
   { href: "/visits", label: "Visits", Icon: VisitIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
 ];
 
+// Phone navigation. On a computer the sidebar (DesktopNav) replaces it.
 export function BottomNav({ active }: { active: string }) {
   return (
-    <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4">
+    <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4 lg:hidden">
       <div className="grid grid-cols-4">
-        {ITEMS.map(({ href, label, Icon }) => {
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
           const current = href === active;
           return (
             <Link
