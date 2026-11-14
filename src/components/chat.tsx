@@ -79,7 +79,7 @@ export function Chat() {
         </Link>
         <div className="flex flex-col">
           <h1 className="font-display text-[17px] font-semibold">Ask Clara</h1>
-          <span className="text-xs text-subtle">Using your meds, labs and wearable data</span>
+          <span className="text-xs text-subtle">Using your meds, labs and wearable data · Powered by Gemini</span>
         </div>
       </header>
 

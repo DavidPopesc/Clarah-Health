@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { runAgent, type ChatTurn } from "@/lib/agent";
+import { ApiError } from "@google/genai";
+import { MissingApiKeyError, runAgent, type ChatTurn } from "@/lib/agent";
 import { getRecord, getWearable } from "@/lib/data";
 import { screenMessage } from "@/lib/red-flags";
 
@@ -23,15 +23,14 @@ export async function POST(request: Request) {
     return Response.json({ kind: "answer", ...answer });
   } catch (err) {
     console.error("Agent error", err);
-    const missingCredentials =
-      err instanceof Error && err.message.includes("Could not resolve authentication method");
-    if (err instanceof Anthropic.AuthenticationError || missingCredentials) {
+    const badKey = err instanceof ApiError && (err.status === 401 || err.status === 403);
+    if (err instanceof MissingApiKeyError || badKey) {
       return Response.json(
-        { error: "Clara isn't set up yet: add ANTHROPIC_API_KEY to .env.local." },
+        { error: "Clara isn't set up yet: add a valid GEMINI_API_KEY to .env.local." },
         { status: 500 },
       );
     }
-    if (err instanceof Anthropic.RateLimitError) {
+    if (err instanceof ApiError && err.status === 429) {
       return Response.json({ error: "Clara is busy right now. Try again in a moment." }, { status: 429 });
     }
     return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });

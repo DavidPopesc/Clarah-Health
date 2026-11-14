@@ -1,15 +1,16 @@
-import Anthropic from "@anthropic-ai/sdk";
-import type {
-  BetaMessageParam,
-  BetaTool,
-  BetaToolResultBlockParam,
-  BetaToolUseBlock,
-} from "@anthropic-ai/sdk/resources/beta/messages";
+import {
+  FinishReason,
+  GoogleGenAI,
+  ThinkingLevel,
+  type Content,
+  type FunctionDeclaration,
+  type Part,
+} from "@google/genai";
 import { findReferences, type SafetyReference } from "./safety-references";
 import type { PatientRecord, Source, WearableSummary } from "./types";
 import { ageFrom, bpCategory, BP_LABELS } from "./vitals";
 
-const MODEL = "claude-opus-5-5";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-4-hydrogen";
 const MAX_TOOL_ROUNDS = 8;
 
 const SYSTEM_PROMPT = `You are Clara, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
@@ -28,55 +29,37 @@ How to answer:
 - Then, only if useful, add short sections with bold labels and bullet points, such as **What this means for you**, **Get help right away if**, and **Ask your doctor**.
 - Keep it under about 200 words. Do not add a sources list or links; the app shows sources separately.`;
 
-const emptySchema = {
-  type: "object" as const,
-  properties: {},
-  required: [],
-  additionalProperties: false,
-};
-
-const TOOLS: BetaTool[] = [
+// Tools with no arguments leave out `parameters`.
+const TOOLS: FunctionDeclaration[] = [
   {
     name: "get_profile",
     description: "Get the patient's age, sex, and where their data comes from.",
-    input_schema: emptySchema,
-    strict: true,
   },
   {
     name: "get_medications",
     description: "Get the patient's current medication list with doses.",
-    input_schema: emptySchema,
-    strict: true,
   },
   {
     name: "get_conditions",
     description: "Get the patient's diagnoses from their problem list.",
-    input_schema: emptySchema,
-    strict: true,
   },
   {
     name: "get_labs",
     description: "Get the patient's lab results (such as A1c, glucose, cholesterol, kidney function), oldest to newest.",
-    input_schema: emptySchema,
-    strict: true,
   },
   {
     name: "get_vitals",
     description: "Get the patient's clinic blood pressure readings with their AHA category, oldest to newest.",
-    input_schema: emptySchema,
-    strict: true,
   },
   {
     name: "get_wearable_summary",
     description: "Get the last 7 days of wearable data: resting heart rate, sleep, and steps, plus averages.",
-    input_schema: emptySchema,
-    strict: true,
   },
   {
     name: "lookup_safety_reference",
     description:
       "Search trusted, citable references (NIH, FDA, AHA, ADA, IDF-DAR) about whether a food, herb, supplement, fast, or practice is safe, and about what health numbers mean. Use specific terms.",
-    input_schema: {
+    parametersJsonSchema: {
       type: "object",
       properties: {
         query: { type: "string", description: "Terms to search, e.g. 'ramadan fasting glipizide'" },
@@ -84,7 +67,6 @@ const TOOLS: BetaTool[] = [
       required: ["query"],
       additionalProperties: false,
     },
-    strict: true,
   },
 ];
 
@@ -174,80 +156,68 @@ function runTool(
   }
 }
 
+export class MissingApiKeyError extends Error {}
+
 export async function runAgent(
   history: ChatTurn[],
   record: PatientRecord,
   wearable: WearableSummary,
 ): Promise<AgentAnswer> {
-  const client = new Anthropic();
-  const messages: BetaMessageParam[] = history.map((turn) => ({
-    role: turn.role,
-    content: redactIdentifiers(turn.content, record),
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new MissingApiKeyError("GEMINI_API_KEY is not set");
+  const ai = new GoogleGenAI({ apiKey });
+
+  const contents: Content[] = history.map((turn) => ({
+    role: turn.role === "assistant" ? "model" : "user",
+    parts: [{ text: redactIdentifiers(turn.content, record) }],
   }));
 
   const found = new Map<string, SafetyReference>();
   const usedData = new Set<string>();
+  const done = (text: string): AgentAnswer => ({
+    text,
+    sources: [...found.values()].map(({ id, title, url }) => ({ id, title, url })),
+    usedData: [...usedData],
+  });
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const response = await client.beta.messages.create({
+    const response = await ai.models.generateContent({
       model: MODEL,
-      max_tokens: 16000,
-      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-      tools: TOOLS,
-      messages,
-      output_config: { effort: "medium" },
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      contents,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        tools: [{ functionDeclarations: TOOLS }],
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+      },
     });
 
-    if (response.stop_reason === "refusal") {
-      return {
-        text: "I can't help with that one. Please ask your doctor or pharmacist.",
-        sources: [],
-        usedData: [...usedData],
-      };
+    const candidate = response.candidates?.[0];
+    if (!candidate?.content || candidate.finishReason === FinishReason.SAFETY) {
+      return done("I can't help with that one. Please ask your doctor or pharmacist.");
     }
 
-    messages.push({ role: "assistant", content: response.content });
-
-    const toolUses = response.content.filter(
-      (b): b is BetaToolUseBlock => b.type === "tool_use",
-    );
-
-    if (response.stop_reason !== "tool_use" || toolUses.length === 0) {
-      const text = response.content
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("\n")
-        .trim();
-      return {
-        text: text || "Sorry, I couldn't put together an answer. Please try asking again.",
-        sources: [...found.values()].map(({ id, title, url }) => ({ id, title, url })),
-        usedData: [...usedData],
-      };
+    const calls = response.functionCalls ?? [];
+    if (calls.length === 0) {
+      return done(
+        response.text?.trim() || "Sorry, I couldn't put together an answer. Please try asking again.",
+      );
     }
 
-    const results: BetaToolResultBlockParam[] = toolUses.map((tool) => {
-      if (DATA_LABELS[tool.name]) usedData.add(DATA_LABELS[tool.name]);
+    // Send the model's turn back unchanged so its thought signatures stay valid.
+    contents.push(candidate.content);
+
+    const results: Part[] = calls.map((call) => {
+      const name = call.name ?? "";
+      if (DATA_LABELS[name]) usedData.add(DATA_LABELS[name]);
+      let response: Record<string, unknown>;
       try {
-        const output = runTool(
-          tool.name,
-          tool.input as Record<string, unknown>,
-          record,
-          wearable,
-          found,
-        );
-        return { type: "tool_result", tool_use_id: tool.id, content: JSON.stringify(output) };
+        response = { result: runTool(name, call.args ?? {}, record, wearable, found) };
       } catch (err) {
-        return {
-          type: "tool_result",
-          tool_use_id: tool.id,
-          content: err instanceof Error ? err.message : "Tool failed",
-          is_error: true,
-        };
+        response = { error: err instanceof Error ? err.message : "Tool failed" };
       }
+      return { functionResponse: { id: call.id, name, response } };
     });
-    messages.push({ role: "user", content: results });
+    contents.push({ role: "user", parts: results });
   }
 
   return {

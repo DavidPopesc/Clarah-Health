@@ -1,6 +1,6 @@
 # Clara
 
-**Answers about your health, from your own data.** EmoryHacks 2026 · Healthcare track
+**Answers about your health, from your own data.** EmoryHacks 2026 · Healthcare track · Powered by Google Gemini
 
 Clara is an AI health companion. It reads a patient's MyChart (Epic) record and Fitbit data, explains their numbers in plain language, and answers "is it safe for me to…?" questions, like fasting for Ramadan on diabetes medicine or taking an herbal supplement, using the patient's own medications and trusted, cited sources.
 
@@ -19,6 +19,13 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 - **De-identified.** The model gets age, not birth date, and never the name or MRN. Those are also redacted from the user's own messages.
 - **Read-only, scoped access** to Epic and Fitbit, with one-tap disconnect.
 
+## How Clara uses Gemini
+
+- **Function calling as an agent loop.** Gemini decides which parts of the record it needs (medications, labs, vitals, wearable data) and calls typed tools. The server runs them and returns de-identified results, looping until Gemini has what it needs.
+- **Grounded answers.** For any "is it safe" question, Gemini has to call `lookup_safety_reference`. The sources it actually used are shown under the answer.
+- **Thinking.** It runs at medium thinking level, a balance between careful reasoning about medication interactions and fast enough replies for a chat.
+- **Thought signatures kept.** The model's turns are passed back unchanged, so multi-step tool use stays consistent.
+
 ## Architecture
 
 ```
@@ -26,7 +33,7 @@ Next.js 16 (App Router)
 ├─ /            Connect (Epic + Fitbit OAuth with PKCE, demo fallback)
 ├─ /today       Server-rendered summary from the normalized record
 ├─ /ask         Chat UI → POST /api/chat
-└─ /api/chat    red-flag screen → Claude agent (claude-opus-5-5) with tools:
+└─ /api/chat    red-flag screen → Gemini agent (gemini-4-hydrogen) with tools:
                 get_profile, get_medications, get_conditions, get_labs,
                 get_vitals, get_wearable_summary, lookup_safety_reference
 ```
@@ -37,12 +44,12 @@ Epic FHIR R4 (`MedicationRequest`, `Condition`, `Observation`) and Fitbit respon
 
 ```bash
 npm install
-cp .env.example .env.local   # add ANTHROPIC_API_KEY at minimum
+cp .env.example .env.local   # add GEMINI_API_KEY at minimum
 npm run dev                  # http://localhost:3000
 npm test                     # red-flag rule tests
 ```
 
-Only `ANTHROPIC_API_KEY` is required. Without Epic or Fitbit credentials, Clara uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
+Only `GEMINI_API_KEY` is required. Without Epic or Fitbit credentials, Clara uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
 
 **Epic sandbox:** create a non-production app at [fhir.epic.com](https://fhir.epic.com) as a patient-facing app. Select the R4 APIs Patient.Read, MedicationRequest.Search, Condition.Search and Observation.Search, and set the redirect URI to `http://localhost:3000/api/auth/epic/callback`. Sign in with one of Epic's [sandbox test patients](https://fhir.epic.com/Documentation?docId=testpatients). New client IDs can take a while to activate.
 
