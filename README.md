@@ -6,11 +6,12 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 
 ## Demo flow
 
-1. **Connect:** link MyChart (Epic sandbox, read-only) and Fitbit, or use the built-in demo patient.
-2. **Today:** blood pressure on the AHA scale, resting heart rate, A1c trend, and medications, each explained.
-3. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clara looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
-4. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body built from real anatomy data slides up and zooms to the left ankle, with the bones, tendons and muscles around it lit. The Today page also shows the organs behind your numbers in 3D.
-5. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clara skips the AI and shows a full-screen "Call 911".
+1. **Home:** upload a PDF, link MyChart (Epic sandbox, read-only) or link Fitbit from the top of the page; linked accounts show as connected. Without them, Clara uses a built-in demo patient.
+2. **What needs your attention:** instead of a wall of numbers, the home page lists the few things worth acting on (rising blood pressure, A1c above goal, low-blood-sugar risk from glipizide, short sleep), each with why it matters, what to do, an "Ask Clara" shortcut and a 3D view. Normal results collapse into "Looking good".
+3. **Upload a document:** tap "Try a sample lab report" (or upload any lab or visit PDF). Clara compares it with your history and explains it in plain English: urine protein is new and high, A1c improved from 7.4 to 7.1, LDL rose from 96 to 108, and the doctor may start lisinopril. Every finding quotes the original line with its page number, and tapping it opens the PDF at that page.
+4. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clara looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
+5. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body built from real anatomy data slides up and zooms to the left ankle, with the bones, tendons and muscles around it lit. The Today page also shows the organs behind your numbers in 3D.
+6. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clara skips the AI and shows a full-screen "Call 911".
 
 ## Safety design
 
@@ -19,6 +20,13 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 - **No medication changes.** Clara turns dose decisions into questions for the care team.
 - **De-identified.** The model gets age, not birth date, and never the name or MRN. Those are also redacted from the user's own messages.
 - **Read-only, scoped access** to Epic and Fitbit, with one-tap disconnect.
+
+## Document summaries
+
+- **The PDF stays on the device.** The browser extracts the text (`unpdf`) and keeps the file and summary in IndexedDB. Only the text goes to `/api/documents`, which stores nothing.
+- **Identifiers are removed first** (labelled names, dates of birth, MRNs, phone numbers, emails), on a best-effort basis.
+- **References are checked, not trusted.** The model must quote the exact line behind every finding. `src/lib/doc-verify.ts` drops any quote that doesn't appear in the PDF text and corrects wrong page numbers.
+- Scanned (image-only) PDFs can't be read yet.
 
 ## How Clara uses the model
 

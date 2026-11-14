@@ -2,6 +2,7 @@ import { Chat } from "@/components/chat";
 
 export const metadata = { title: "Ask Clara" };
 
-export default function AskPage() {
-  return <Chat />;
+export default async function AskPage({ searchParams }: PageProps<"/ask">) {
+  const { q } = await searchParams;
+  return <Chat initialQuestion={typeof q === "string" ? q.slice(0, 500) : undefined} />;
 }

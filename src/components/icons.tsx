@@ -72,3 +72,12 @@ export const CloseIcon = (p: P) => (
 export const CubeIcon = (p: P) => (
   <Icon {...p}><path d="m21 16-9 5-9-5V8l9-5 9 5z" /><path d="m3.3 7.5 8.7 5 8.7-5M12 22V12.5" /></Icon>
 );
+export const UploadIcon = (p: P) => (
+  <Icon {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3" /></Icon>
+);
+export const FileIcon = (p: P) => (
+  <Icon {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></Icon>
+);
+export const ChevronIcon = (p: P) => (
+  <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>
+);

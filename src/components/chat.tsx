@@ -29,7 +29,7 @@ const SUGGESTIONS = [
   "I sprained my left ankle. Can I take ibuprofen for the pain?",
 ];
 
-export function Chat() {
+export function Chat({ initialQuestion }: { initialQuestion?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,6 +37,7 @@ export function Chat() {
   const [flag, setFlag] = useState<RedFlag | null>(null);
   const [viewer, setViewer] = useState<BodyFocus | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const askedInitial = useRef(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -120,10 +121,19 @@ export function Chat() {
     }
   }
 
+  // Questions handed over from the home page ("Ask Clara" on an attention item) send right away.
+  useEffect(() => {
+    if (!initialQuestion || askedInitial.current) return;
+    askedInitial.current = true;
+    window.history.replaceState(null, "", "/ask");
+    void send(initialQuestion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, [initialQuestion]);
+
   return (
     <div className="flex h-dvh flex-col">
       <header className="relative z-10 flex items-center gap-2 border-b border-line/70 bg-white/80 px-4 pt-12 pb-3 shadow-[0_8px_20px_-14px_rgba(10,79,73,0.35)] backdrop-blur-md">
-        <Link href="/today" aria-label="Back to Today" className="tile-3d flex size-11 items-center justify-center rounded-full">
+        <Link href="/" aria-label="Back to home" className="tile-3d flex size-11 items-center justify-center rounded-full">
           <BackIcon width={22} height={22} />
         </Link>
         <div className="flex flex-col">

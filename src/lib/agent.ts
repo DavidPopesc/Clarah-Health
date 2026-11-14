@@ -247,6 +247,38 @@ function providers(): Provider[] {
   return list;
 }
 
+// One non-streaming completion with the same Gemini-first, backup-second order.
+export async function completeWithFallback(
+  messages: ChatCompletionMessageParam[],
+  { json = false, timeoutMs = 60_000 }: { json?: boolean; timeoutMs?: number } = {},
+): Promise<string> {
+  const chain = providers();
+  let lastError: unknown;
+  for (const [i, provider] of chain.entries()) {
+    try {
+      const res = await provider.client.chat.completions.create(
+        {
+          model: provider.model,
+          messages,
+          // Gemini supports JSON mode; other providers just follow the prompt.
+          ...(json && provider.name === "gemini" ? { response_format: { type: "json_object" as const } } : {}),
+        },
+        { timeout: timeoutMs },
+      );
+      const text = res.choices?.[0]?.message?.content?.trim();
+      if (text) return text;
+      lastError = new Error("Empty response");
+    } catch (err) {
+      lastError = err;
+    }
+    if (i < chain.length - 1) {
+      const reason = lastError instanceof Error ? lastError.message : String(lastError);
+      console.warn(`${provider.name} failed, switching to ${chain[i + 1].name}:`, reason);
+    }
+  }
+  throw lastError;
+}
+
 // Gemini attaches "thought signatures" to tool calls (extra_content) and needs them sent back.
 // Other providers don't know the field, so strip it before handing the conversation over.
 type ToolCall = ChatCompletionMessageFunctionToolCall & { extra_content?: unknown };

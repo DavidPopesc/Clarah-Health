@@ -5,5 +5,5 @@ import { clearSession, EPIC_COOKIE, FITBIT_COOKIE } from "@/lib/session";
 export async function POST(request: Request) {
   await clearSession(EPIC_COOKIE);
   await clearSession(FITBIT_COOKIE);
-  return NextResponse.redirect(new URL("/", request.url), 303);
+  return NextResponse.redirect(new URL("/connections", request.url), 303);
 }

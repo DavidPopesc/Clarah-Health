@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ChatIcon, HomeIcon, LinkIcon } from "./icons";
 
 const ITEMS = [
-  { href: "/today", label: "Today", Icon: HomeIcon },
+  { href: "/", label: "Home", Icon: HomeIcon },
   { href: "/ask", label: "Ask", Icon: ChatIcon },
-  { href: "/", label: "Connections", Icon: LinkIcon },
+  { href: "/connections", label: "Connections", Icon: LinkIcon },
 ];
 
 export function BottomNav({ active }: { active: string }) {
