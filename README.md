@@ -12,6 +12,16 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 4. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clara looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
 5. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body built from real anatomy data slides up and zooms to the left ankle, with the bones, tendons and muscles around it lit. The Today page also shows the organs behind your numbers in 3D.
 6. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clara skips the AI and shows a full-screen "Call 911".
+7. **Visit recap:** open **Visits** and tap "Hear a sample visit" (or, as the care team, "Record a visit"). Clara turns the doctor–patient conversation into plain English, ties it to the record (A1c 7.4 → 7.1, blood pressure trend), and reads it aloud. Tap "Show transcript" to read along, copy or download it.
+
+## Visit recaps
+
+- **Care team records, patient listens.** On `/visits/new` the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clara explains it.
+- **Transcription.** The browser converts the recording to 16 kHz mono WAV in 4-minute chunks (`src/lib/wav.ts`); `/api/visits/transcribe` sends each to Gemini (`gemini-3.5-flash`) for a word-for-word transcript labelled Clinician / Patient. The audio isn't stored.
+- **Explanation.** `/api/visits` removes the patient's name and ID numbers, pairs the transcript with their record, and asks the model for a spoken script plus medicine changes, next steps, warning signs, and a glossary (`src/lib/visits.ts`). It may only relay what the clinician said; a medicine change is dropped unless that medicine was actually named in the conversation (`src/lib/visit-verify.ts`).
+- **Clara's voice.** The player reads the script one paragraph at a time with Gemini text-to-speech (`gemini-3.8-flash-tts`, voice "Sulafat") through `/api/visits/speech`, fetching the next paragraph while one plays and caching the audio on the device. It's one-way speech, not a conversation. If the AI voice is unavailable, the device's own voice reads instead.
+- **Device only.** Recaps, transcripts and voice audio are kept in the browser's IndexedDB, like uploaded documents.
+- Recording and the AI voice need `GEMINI_API_KEY`; the backup provider has no audio. `GEMINI_TRANSCRIBE_MODEL`, `GEMINI_TTS_MODEL` and `GEMINI_TTS_VOICE` are optional overrides.
 
 ## Safety design
 

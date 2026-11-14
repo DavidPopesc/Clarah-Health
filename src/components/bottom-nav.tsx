@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { ChatIcon, HomeIcon, LinkIcon } from "./icons";
+import { ChatIcon, HomeIcon, LinkIcon, VisitIcon } from "./icons";
 
 const ITEMS = [
   { href: "/", label: "Overview", Icon: HomeIcon },
   { href: "/ask", label: "Ask Clara", Icon: ChatIcon },
+  { href: "/visits", label: "Visits", Icon: VisitIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
 ];
 
 export function BottomNav({ active }: { active: string }) {
   return (
     <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4">
-      <div className="grid grid-cols-3">
+      <div className="grid grid-cols-4">
         {ITEMS.map(({ href, label, Icon }) => {
           const current = href === active;
           return (

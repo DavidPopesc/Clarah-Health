@@ -81,3 +81,27 @@ export const FileIcon = (p: P) => (
 export const ChevronIcon = (p: P) => (
   <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>
 );
+export const MicIcon = (p: P) => (
+  <Icon {...p}><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" /></Icon>
+);
+export const StopIcon = (p: P) => (
+  <Icon {...p}><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" /></Icon>
+);
+export const PlayIcon = (p: P) => (
+  <Icon {...p}><path d="M7 4.5v15l12-7.5z" fill="currentColor" /></Icon>
+);
+export const PauseIcon = (p: P) => (
+  <Icon {...p}><path d="M8 5v14M16 5v14" strokeWidth={3} /></Icon>
+);
+export const RestartIcon = (p: P) => (
+  <Icon {...p}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></Icon>
+);
+export const DownloadIcon = (p: P) => (
+  <Icon {...p}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></Icon>
+);
+export const CopyIcon = (p: P) => (
+  <Icon {...p}><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></Icon>
+);
+export const VisitIcon = (p: P) => (
+  <Icon {...p}><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></Icon>
+);
