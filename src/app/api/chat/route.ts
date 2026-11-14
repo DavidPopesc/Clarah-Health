@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const badKey = err instanceof ApiError && (err.status === 401 || err.status === 403);
     if (err instanceof MissingApiKeyError || badKey) {
       return Response.json(
-        { error: "Clara isn't set up yet: add a valid GEMINI_API_KEY to .env.local." },
+        { error: "Clara isn't set up yet: set a valid GEMINI_API_KEY (.env.local locally, or the project's Environment Variables on Vercel)." },
         { status: 500 },
       );
     }
