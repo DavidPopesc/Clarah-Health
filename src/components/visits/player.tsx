@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { getAudio, putAudio } from "@/lib/visit-store";
 import { recapToText, type VisitRecap } from "@/lib/visit-verify";
 import { CopyIcon, DownloadIcon, PauseIcon, PlayIcon, RestartIcon } from "../icons";
+import { ClaraAvatar } from "./clara-avatar";
 
 type State = "idle" | "loading" | "playing" | "paused" | "done";
 type Voice = "ai" | "device";
@@ -189,6 +190,13 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="border-l-4 border-teal bg-white p-4">
+        <div className="mb-3 flex items-center gap-3 border-b border-panel pb-3">
+          <ClaraAvatar speaking={state === "playing"} />
+          <div className="flex flex-col">
+            <span className="clinical-label text-teal">Clara explains your visit</span>
+            <span className="text-[15px] font-semibold text-ink">Clara, your AI health nurse</span>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -205,7 +213,6 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
             )}
           </button>
           <div className="flex min-w-0 grow flex-col gap-1">
-            <span className="clinical-label text-teal">Clara explains your visit</span>
             <span className="text-[13px] text-body" role="status" aria-live="polite">{status}</span>
             <div className="flex gap-1" aria-hidden="true">
               {script.map((_, i) => (

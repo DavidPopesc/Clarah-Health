@@ -4,16 +4,9 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { SAMPLE_VISIT } from "@/lib/sample-visit";
 import { removeVisit, saveVisit, visitStore, type StoredVisit } from "@/lib/visit-store";
-import type { MedicationChange } from "@/lib/visit-verify";
+import { toNextStep, type NextStep } from "@/lib/visit-verify";
 import { ChevronIcon, MicIcon, TrashIcon } from "../icons";
 import { fmtVisitDate, VisitPlayer } from "./player";
-
-const CHANGE = {
-  start: { label: "New", className: "border-[#aebde3] bg-teal-soft text-teal-dark" },
-  change: { label: "Changed", className: "border-[#e3c899] bg-amber-soft text-amber-ink" },
-  stop: { label: "Stop", className: "border-[#e8b4b8] bg-[#f8d7d9] text-alert" },
-  continue: { label: "Keep taking", className: "border-[#c3d1bf] bg-[#eaf0e4] text-[#2f5443]" },
-} satisfies Record<MedicationChange["change"], { label: string; className: string }>;
 
 // On desktop the detail sections flow into two balanced columns; each stays in one piece.
 const COLUMN_ITEM = "xl:mb-6 xl:break-inside-avoid";
@@ -30,6 +23,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Recap({ visit }: { visit: StoredVisit }) {
   const { recap } = visit;
   const [showConversation, setShowConversation] = useState(false);
+  const steps = recap.nextSteps.map(toNextStep).filter((s): s is NextStep => s !== null);
 
   return (
     <article className="flex flex-col gap-5">
@@ -42,56 +36,19 @@ function Recap({ visit }: { visit: StoredVisit }) {
       <VisitPlayer key={visit.id} id={visit.id} recap={recap} />
 
       <div className="flex flex-col gap-5 xl:block xl:columns-2 xl:gap-x-6">
-      {recap.medicationChanges.length > 0 && (
-        <Section title="Your medicines">
-          <ul className="flex flex-col gap-2">
-            {recap.medicationChanges.map((m) => (
-              <li key={m.name} className="slab flex items-start gap-3 rounded-md p-3">
-                <span className={`clinical-label shrink-0 border px-1.5 py-1 ${CHANGE[m.change].className}`}>{CHANGE[m.change].label}</span>
+      {steps.length > 0 && (
+        <Section title="What to do next">
+          <ol className="flex flex-col gap-2.5">
+            {steps.map((s, i) => (
+              <li key={s.step} className="flex gap-2.5 text-[14px] leading-snug text-body">
+                <span className="font-mono text-[12px] font-semibold text-teal">{String(i + 1).padStart(2, "0")}</span>
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-[14px] font-semibold">{m.name}</span>
-                  <span className="text-[13px] leading-snug text-body">{m.detail}</span>
+                  <span className="font-medium text-ink">{s.step}</span>
+                  {s.why && <span className="text-[13px] text-muted">Why: {s.why}</span>}
                 </span>
               </li>
             ))}
-          </ul>
-        </Section>
-      )}
-
-      {recap.nextSteps.length > 0 && (
-        <Section title="What to do next">
-          <ol className="flex flex-col gap-1.5">
-            {recap.nextSteps.map((s, i) => (
-              <li key={s} className="flex gap-2.5 text-[14px] leading-snug text-body">
-                <span className="font-mono text-[12px] font-semibold text-teal">{String(i + 1).padStart(2, "0")}</span>
-                {s}
-              </li>
-            ))}
           </ol>
-        </Section>
-      )}
-
-      {recap.watchFor.length > 0 && (
-        <div className={`border-l-4 border-amber bg-amber-soft p-3.5 ${COLUMN_ITEM}`}>
-          <h3 className="clinical-label mb-1.5 text-amber-ink">Call your care team if</h3>
-          <ul className="flex list-disc flex-col gap-1 pl-4 text-[13px] leading-snug text-amber-ink">
-            {recap.watchFor.map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {recap.terms.length > 0 && (
-        <Section title="Words from your visit">
-          <dl className="grid grid-cols-1 gap-2">
-            {recap.terms.map((t) => (
-              <div key={t.term} className="well rounded-md px-3 py-2">
-                <dt className="text-[13px] font-semibold text-ink">{t.term}</dt>
-                <dd className="text-[13px] leading-snug text-body">{t.meaning}</dd>
-              </div>
-            ))}
-          </dl>
         </Section>
       )}
 
