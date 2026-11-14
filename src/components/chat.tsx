@@ -132,8 +132,8 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
 
   return (
     <div className="flex h-dvh flex-col bg-ground">
-      <header className="relative z-10 flex items-center gap-3 border-b border-[#9d5b49] bg-[#783120] px-4 pt-10 pb-4 text-white">
-        <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
+      <header className="relative z-10 flex items-center gap-3 border-b border-[#9d5b49] bg-[#783120] px-4 pt-10 pb-4 text-white lg:px-10 lg:pt-6 lg:pb-5">
+        <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10 lg:hidden">
           <BackIcon width={22} height={22} />
         </Link>
         <div className="flex grow flex-col">
@@ -143,7 +143,8 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
         <span className="clinical-label border border-white/25 px-2 py-1 text-[#f3d9cc]">Record on</span>
       </header>
 
-      <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4" aria-live="polite" aria-busy={loading}>
+      <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4 lg:px-10 lg:py-8" aria-live="polite" aria-busy={loading}>
+        <div className="flex w-full flex-col gap-3.5 lg:mx-auto lg:max-w-3xl">
         {messages.length === 0 && (
           <div className="flex flex-col gap-4">
             <div className="border-l-4 border-teal bg-white px-4 py-3">
@@ -153,7 +154,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
             <p className="text-[15px] leading-normal text-muted">
               Ask about your numbers, your diagnosis, or whether something is safe for you, like a fast, an herb, or a food.
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -237,6 +238,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           </div>
         )}
         <div ref={endRef} />
+        </div>
       </div>
 
       <form
@@ -244,8 +246,9 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           e.preventDefault();
           send(input);
         }}
-        className="relative z-10 flex items-center gap-2 border-t border-line bg-white px-4 pt-3 pb-6"
+        className="relative z-10 border-t border-line bg-white px-4 pt-3 pb-6 lg:px-10 lg:py-4"
       >
+        <div className="flex items-center gap-2 lg:mx-auto lg:max-w-3xl">
         <label htmlFor="ask-input" className="sr-only">
           Ask a health question
         </label>
@@ -265,6 +268,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
         >
           <SendIcon />
         </button>
+        </div>
       </form>
 
       {viewer && !flag && <BodyViewer focus={viewer} onClose={() => setViewer(null)} />}

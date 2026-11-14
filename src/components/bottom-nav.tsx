@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChatIcon, HomeIcon, LinkIcon } from "./icons";
 
-const ITEMS = [
+export const NAV_ITEMS = [
   { href: "/", label: "Overview", Icon: HomeIcon },
   { href: "/ask", label: "Ask Clara", Icon: ChatIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
@@ -9,9 +9,9 @@ const ITEMS = [
 
 export function BottomNav({ active }: { active: string }) {
   return (
-    <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4">
+    <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4 lg:hidden">
       <div className="grid grid-cols-3">
-        {ITEMS.map(({ href, label, Icon }) => {
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
           const current = href === active;
           return (
             <Link

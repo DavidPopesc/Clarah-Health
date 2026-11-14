@@ -11,9 +11,10 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
       aria-modal="true"
       aria-labelledby="urgent-title"
       aria-describedby="urgent-message"
-      className="fixed inset-0 z-50 mx-auto flex w-full max-w-[460px] flex-col overflow-y-auto bg-white"
+      className="fixed inset-0 z-50 mx-auto flex w-full max-w-[460px] flex-col overflow-y-auto bg-white lg:max-w-none lg:items-center lg:justify-center lg:bg-ink/60 lg:p-8"
     >
-      <div className={`flex flex-col gap-3.5 px-6 pt-16 pb-7 text-white ${headerColor}`}>
+      <div className="flex min-h-full w-full flex-col bg-white lg:min-h-0 lg:max-w-xl lg:border lg:border-[#70141c]">
+      <div className={`flex flex-col gap-3.5 px-6 pt-16 pb-7 text-white lg:pt-10 ${headerColor}`}>
         <div className="flex size-[52px] items-center justify-center rounded-2xl bg-white text-alert shadow-[inset_0_-3px_0_rgba(0,0,0,0.12),0_10px_20px_-8px_rgba(0,0,0,0.45)]">
           <WarningIcon width={28} height={28} className={isCrisisLine ? "text-teal-dark" : ""} />
         </div>
@@ -74,6 +75,7 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
             Clara always stops and shows this screen when a reading or symptom matches an emergency rule. A fixed safety check makes that call, not the AI.
           </span>
         </div>
+      </div>
       </div>
     </div>
   );

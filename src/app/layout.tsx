@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { SideNav } from "@/components/side-nav";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"] });
@@ -16,7 +17,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable} antialiased`}>
       <body className="font-sans">
-        <div className="mx-auto flex min-h-dvh w-full max-w-[460px] flex-col app-shell">
+        <SideNav />
+        {/* Phones: a centered 460px column. Desktop: full width next to the sidebar. */}
+        <div className="mx-auto flex min-h-dvh w-full max-w-[460px] flex-col app-shell lg:mr-0 lg:ml-60 lg:w-auto lg:max-w-none">
           {children}
         </div>
       </body>

@@ -70,7 +70,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
   return (
     <>
       <main className="flex grow flex-col gap-6 pb-8">
-        <div className="flex items-center gap-3 bg-[#783120] px-5 pt-10 pb-5 text-white">
+        <div className="flex items-center gap-3 bg-[#783120] px-5 pt-10 pb-5 text-white lg:px-10 lg:pt-8 lg:pb-8">
           <div className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
             <HeartIcon />
           </div>
@@ -80,6 +80,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
           </div>
         </div>
 
+        <div className="flex grow flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-2xl lg:pt-2">
         <div className="mx-5 rise">
           <HeroHeart />
         </div>
@@ -154,6 +155,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
           <p className="text-center text-xs leading-snug text-subtle">
             Clara explains and informs. It does not diagnose or replace your care team.
           </p>
+        </div>
         </div>
       </main>
       <BottomNav active="/connections" />
