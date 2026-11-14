@@ -20,7 +20,7 @@ export function BodyGlance({ spots }: { spots: GlanceSpot[] }) {
   return (
     <>
       <div className="flex gap-3">
-        <div className="stage-3d h-[200px] w-[44%] shrink-0 overflow-hidden rounded-[16px]" aria-hidden="true">
+        <div className="stage-3d relative h-[200px] w-[44%] shrink-0 overflow-hidden rounded-[16px]" aria-hidden="true">
           <LazyAnatomyScene
             system="organs"
             highlights={spots.map((s) => s.focus)}

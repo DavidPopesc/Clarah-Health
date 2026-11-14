@@ -9,7 +9,7 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 1. **Connect:** link MyChart (Epic sandbox, read-only) and Fitbit, or use the built-in demo patient.
 2. **Today:** blood pressure on the AHA scale, resting heart rate, A1c trend, and medications, each explained.
 3. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clara looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
-4. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body slides up and zooms to the left ankle, with the ligaments lit. The Today page also shows the organs behind your numbers in 3D.
+4. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body built from real anatomy data slides up and zooms to the left ankle, with the bones, tendons and muscles around it lit. The Today page also shows the organs behind your numbers in 3D.
 5. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clara skips the AI and shows a full-screen "Call 911".
 
 ## Safety design
@@ -57,6 +57,12 @@ Only `OPENAI_API_KEY` is required. Without Epic or Fitbit credentials, Clara use
 **Epic sandbox:** create a non-production app at [fhir.epic.com](https://fhir.epic.com) as a patient-facing app. Select the R4 APIs Patient.Read, MedicationRequest.Search, Condition.Search and Observation.Search, and set the redirect URI to `http://localhost:3000/api/auth/epic/callback`. Sign in with one of Epic's [sandbox test patients](https://fhir.epic.com/Documentation?docId=testpatients). New client IDs can take a while to activate.
 
 **Fitbit:** register a "Personal" app at [dev.fitbit.com](https://dev.fitbit.com/apps) with the callback `http://localhost:3000/api/auth/fitbit/callback`.
+
+## 3D anatomy
+
+The body model is [BodyParts3D](https://dbarchive.biosciencedbc.jp/en/bodyparts3d/), real human anatomy meshes from the Database Center for Life Science. `scripts/build-anatomy.mjs` sorts about 2,100 parts into bones, muscles, heart and vessels, nerves, and organs; tags each part with the regions it belongs to (by distance to landmarks like the talus or patella, or by name for organs); simplifies the meshes; and writes `public/anatomy/body.glb` (about 3 MB, meshopt-compressed) plus `src/components/anatomy/anchors.generated.ts`. To rebuild it, download `isa_BP3D_4.0_obj_99.zip` and `isa_inclusion_relation_list.txt` from the BodyParts3D download page, unzip them into one folder, and run `npm run build:anatomy -- <folder>`.
+
+BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International.
 
 ## Hackathon caveats
 

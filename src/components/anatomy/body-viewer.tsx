@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BODY_SYSTEMS, SYSTEM_LABELS, type BodyFocus, type BodySystem } from "@/lib/body";
 import { CloseIcon } from "../icons";
+import { ATTRIBUTION } from "./body-model";
 import { LazyAnatomyScene, useReducedMotion } from "./lazy-scene";
 
 export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () => void }) {
@@ -83,7 +84,8 @@ export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () =
             {focus.reason ? ` · ${focus.reason}` : ` · Highlighted in orange on the model.`}
           </p>
           <p className="text-[11px] leading-snug text-subtle">
-            A simplified model to help you picture where this is. It isn&apos;t an image of your body.
+            A reference model of human anatomy to help you picture where this is. It isn&apos;t an image of
+            your body. {ATTRIBUTION}.
           </p>
         </div>
       </div>

@@ -1,123 +1,110 @@
 "use client";
 
-import { ContactShadows, OrbitControls } from "@react-three/drei";
+import { ContactShadows, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { BodyFocus, BodySystem } from "@/lib/body";
-import { anchorFor, focusKeys, markerPoints, PARTS, TORSO, WHOLE_BODY, type Part, type Shape, type V } from "./body-model";
+import { ANCHORS } from "./anchors.generated";
+import { focusKeys, markerPoints, MODEL_URL, TORSO, viewFor, WHOLE_BODY, type V } from "./body-model";
 
-const UNIT_SPHERE = new THREE.SphereGeometry(1, 24, 16);
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const FOCUS_GLOW = new THREE.Color("#ff9a3d");
-
-function between(a: V, b: V) {
-  const va = new THREE.Vector3(...a);
-  const vb = new THREE.Vector3(...b);
-  const dir = vb.clone().sub(va);
-  const length = dir.length();
-  return {
-    position: va.add(vb).multiplyScalar(0.5),
-    quaternion: new THREE.Quaternion().setFromUnitVectors(Y_AXIS, dir.normalize()),
-    length,
-  };
-}
+const FOCUS_TINT = new THREE.Color("#ff8a2a");
 
 type Look = "focus" | "normal" | "dim" | "context" | "skin";
 
-const OPACITY: Record<Look, number> = { focus: 1, normal: 1, dim: 0.32, context: 0.16, skin: 0.07 };
+const OPACITY: Record<Look, number> = { focus: 1, normal: 1, dim: 0.28, context: 0.14, skin: 0.06 };
 
-function PartMesh({ part, look, reducedMotion }: { part: Part; look: Look; reducedMotion: boolean }) {
+interface ModelPart {
+  mesh: THREE.Mesh;
+  color: THREE.Color;
+  systems: string[];
+  regions: string[];
+  kind: string;
+}
+
+function PartMesh({ part, look, reducedMotion }: { part: ModelPart; look: Look; reducedMotion: boolean }) {
   const material = useRef<THREE.MeshStandardMaterial>(null);
-  const { shape } = part;
-
-  const geometry = useMemo(() => buildGeometry(shape), [shape]);
-  const transform = useMemo(() => transformFor(shape), [shape]);
 
   useFrame(({ clock }) => {
     if (look !== "focus" || !material.current) return;
-    const pulse = reducedMotion ? 0.6 : 0.45 + 0.4 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 3.2));
-    material.current.emissiveIntensity = pulse;
+    material.current.emissiveIntensity = reducedMotion ? 0.55 : 0.15 + 0.3 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 3.2));
   });
 
   const opacity = OPACITY[look];
   const transparent = opacity < 1;
+  const { mesh } = part;
+  // Tint highlighted parts toward orange so pale tissue like bone still stands out.
+  const color = useMemo(() => (look === "focus" ? part.color.clone().lerp(FOCUS_TINT, 0.55) : part.color), [look, part.color]);
 
-  const mesh = (
+  return (
     <mesh
-      geometry={geometry ?? UNIT_SPHERE}
-      position={transform.position}
-      quaternion={transform.quaternion}
-      scale={transform.scale}
+      geometry={mesh.geometry}
+      position={mesh.position}
+      quaternion={mesh.quaternion}
+      scale={mesh.scale}
       renderOrder={look === "skin" ? 2 : transparent ? 1 : 0}
     >
       <meshStandardMaterial
         ref={material}
-        color={part.color}
-        roughness={look === "skin" ? 0.2 : 0.55}
-        metalness={0.05}
+        color={color}
+        roughness={look === "skin" ? 0.25 : 0.6}
+        metalness={0.02}
         transparent={transparent}
         opacity={opacity}
         depthWrite={!transparent}
         emissive={look === "focus" ? FOCUS_GLOW : "#000000"}
-        emissiveIntensity={look === "focus" ? 0.6 : 0}
+        emissiveIntensity={look === "focus" ? 0.3 : 0}
       />
     </mesh>
   );
-
-  if (shape.kind === "ring" && shape.s) {
-    return <group scale={shape.s}>{mesh}</group>;
-  }
-  return mesh;
 }
 
-function buildGeometry(shape: Shape): THREE.BufferGeometry | null {
-  switch (shape.kind) {
-    case "limb": {
-      const { length } = between(shape.a, shape.b);
-      return new THREE.CapsuleGeometry(shape.r, Math.max(0.001, length), 6, 12);
+// Real anatomy from BodyParts3D. Each mesh carries the systems and regions it belongs to.
+function Body({ system, lit, reducedMotion }: { system: BodySystem; lit: Set<string>; reducedMotion: boolean }) {
+  const { scene } = useGLTF(MODEL_URL, false, true);
+  const parts = useMemo(() => {
+    const out: ModelPart[] = [];
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const { systems = [], regions = [], kind = "" } = mesh.userData as Partial<ModelPart>;
+      out.push({ mesh, color: (mesh.material as THREE.MeshStandardMaterial).color.clone(), systems, regions, kind });
+    });
+    return out;
+  }, [scene]);
+
+  const lookFor = (part: ModelPart): Look | null => {
+    if (part.kind === "skin") return "skin";
+    if (part.systems.includes(system)) {
+      if (lit.size === 0) return "normal";
+      return part.regions.some((r) => lit.has(r)) ? "focus" : "dim";
     }
-    case "tube":
-      return new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3(shape.points.map((p) => new THREE.Vector3(...p))),
-        Math.max(24, shape.points.length * 10),
-        shape.r,
-        8,
-      );
-    case "ring":
-      return new THREE.TorusGeometry(shape.radius, shape.tube, 8, 48, shape.arc);
-    default:
-      return null; // blob and ball reuse the shared unit sphere
-  }
+    // Faint bones under the other systems keep you oriented.
+    if (part.systems[0] === "skeletal") return "context";
+    return null;
+  };
+
+  return (
+    <group>
+      {parts.map((part, i) => {
+        const look = lookFor(part);
+        return look ? <PartMesh key={i} part={part} look={look} reducedMotion={reducedMotion} /> : null;
+      })}
+    </group>
+  );
 }
 
-function transformFor(shape: Shape) {
-  const identity = new THREE.Quaternion();
-  switch (shape.kind) {
-    case "limb": {
-      const { position, quaternion } = between(shape.a, shape.b);
-      return { position, quaternion, scale: new THREE.Vector3(1, 1, 1) };
-    }
-    case "blob": {
-      const { position, quaternion, length } = between(shape.a, shape.b);
-      return { position, quaternion, scale: new THREE.Vector3(shape.r, length / 2, shape.r * (shape.depth ?? 1)) };
-    }
-    case "ball": {
-      const s = typeof shape.s === "number" ? [shape.s, shape.s, shape.s] : shape.s;
-      const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(...(shape.rot ?? [0, 0, 0])));
-      return { position: new THREE.Vector3(...shape.p), quaternion, scale: new THREE.Vector3(...s) };
-    }
-    case "ring": {
-      const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(...(shape.rot ?? [0, 0, 0])));
-      // Ring position is applied inside its scale group, so undo the group scale here.
-      const s = shape.s ?? [1, 1, 1];
-      const position = new THREE.Vector3(shape.p[0] / s[0], shape.p[1] / s[1], shape.p[2] / s[2]);
-      return { position, quaternion, scale: new THREE.Vector3(1, 1, 1) };
-    }
-    default:
-      return { position: new THREE.Vector3(), quaternion: identity, scale: new THREE.Vector3(1, 1, 1) };
-  }
+function LoadingOverlay() {
+  const { active, progress } = useProgress();
+  if (!active) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-subtle">
+      <span className="mr-2 size-2 animate-pulse rounded-full bg-teal" />
+      Loading anatomy… {Math.round(progress)}%
+    </div>
+  );
 }
 
 function Marker({ p, reducedMotion }: { p: V; reducedMotion: boolean }) {
@@ -139,8 +126,9 @@ function Marker({ p, reducedMotion }: { p: V; reducedMotion: boolean }) {
 }
 
 function Platform() {
+  const [x, , z] = ANCHORS.body;
   return (
-    <group position={[0, -0.012, 0]}>
+    <group position={[x, -0.012, z]}>
       <mesh receiveShadow>
         <cylinderGeometry args={[0.42, 0.45, 0.02, 64]} />
         <meshStandardMaterial color="#e6f1ef" roughness={0.8} />
@@ -211,12 +199,12 @@ export default function AnatomyScene({
 
   const view = useMemo(() => {
     if (focus) {
-      const a = anchorFor(focus);
-      // Anchors are tuned tight; give a bit more room on phone screens.
-      return { target: a.p, dist: a.dist * 1.45, dir: a.dir ?? ([0.35, 0.15, 1] as V) };
+      const v = viewFor(focus);
+      // Give a bit more room on phone screens.
+      return { target: v.p, dist: v.dist * 1.45, dir: v.dir };
     }
-    const a = frame === "torso" ? TORSO : WHOLE_BODY;
-    return { target: a.p, dist: a.dist, dir: [0.25, 0.1, 1] as V };
+    const v = frame === "torso" ? TORSO : WHOLE_BODY;
+    return { target: v.p, dist: v.dist, dir: v.dir };
   }, [focus, frame]);
 
   const markers = useMemo(
@@ -224,49 +212,39 @@ export default function AnatomyScene({
     [focus, highlights],
   );
 
-  const lookFor = (part: Part): Look | null => {
-    if (part.layer === "skin") return "skin";
-    if (part.layer === system) {
-      if (lit.size === 0) return "normal";
-      return part.regions.some((r) => lit.has(r)) ? "focus" : "dim";
-    }
-    // Faint bones under the other systems keep you oriented.
-    if (part.layer === "skeletal") return "context";
-    return null;
-  };
-
-
   return (
-    <Canvas camera={{ fov: 35, near: 0.01, far: 50, position: [0.8, 1.2, 3] }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-      <hemisphereLight args={["#ffffff", "#b9c9c4", 1.15]} />
-      <directionalLight position={[2, 3, 2.5]} intensity={1.5} />
-      <directionalLight position={[-2, 1.5, -1.5]} intensity={0.6} color="#cfe8e3" />
+    <>
+      <Canvas camera={{ fov: 35, near: 0.01, far: 50, position: [0.8, 1.2, 3] }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
+        <hemisphereLight args={["#ffffff", "#b9c9c4", 1.15]} />
+        <directionalLight position={[2, 3, 2.5]} intensity={1.5} />
+        <directionalLight position={[-2, 1.5, -1.5]} intensity={0.6} color="#cfe8e3" />
 
-      <group>
-        {PARTS.map((part, i) => {
-          const look = lookFor(part);
-          return look ? <PartMesh key={i} part={part} look={look} reducedMotion={reducedMotion} /> : null;
-        })}
-      </group>
+        <Suspense fallback={null}>
+          <Body system={system} lit={lit} reducedMotion={reducedMotion} />
+        </Suspense>
 
-      {markers.map((p, i) => (
-        <Marker key={i} p={p} reducedMotion={reducedMotion} />
-      ))}
+        {markers.map((p, i) => (
+          <Marker key={i} p={p} reducedMotion={reducedMotion} />
+        ))}
 
 
-      <Platform />
-      <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={1.6} blur={2.4} far={1} />
+        <Platform />
+        <ContactShadows position={[ANCHORS.body[0], 0, ANCHORS.body[2]]} opacity={0.35} scale={1.6} blur={2.4} far={1} />
 
-      <OrbitControls
-        makeDefault
-        enabled={interactive}
-        enablePan={false}
-        minDistance={0.3}
-        maxDistance={4}
-        autoRotate={!interactive && !reducedMotion}
-        autoRotateSpeed={1.2}
-      />
-      <CameraRig target={view.target} dist={view.dist} dir={view.dir} reducedMotion={reducedMotion} />
-    </Canvas>
+        <OrbitControls
+          makeDefault
+          enabled={interactive}
+          enablePan={false}
+          minDistance={0.3}
+          maxDistance={4}
+          autoRotate={!interactive && !reducedMotion}
+          autoRotateSpeed={1.2}
+        />
+        <CameraRig target={view.target} dist={view.dist} dir={view.dir} reducedMotion={reducedMotion} />
+      </Canvas>
+      <LoadingOverlay />
+    </>
   );
 }
+
+useGLTF.preload(MODEL_URL, false, true);
