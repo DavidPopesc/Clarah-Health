@@ -32,9 +32,9 @@ function ConnectionCard({
   index: number;
 }) {
   return (
-    <Tilt className="rise rounded-2xl" max={4} order={index}>
-      <div className="slab flex items-center gap-3.5 rounded-2xl p-4">
-        <div className="tile-teal flex size-11 shrink-0 items-center justify-center rounded-xl text-teal">
+    <Tilt className="rise rounded-md" max={4} order={index}>
+      <div className="slab flex items-center gap-3.5 rounded-md p-4">
+        <div className="tile-teal flex size-11 shrink-0 items-center justify-center rounded-md text-teal">
           <Icon width={22} height={22} />
         </div>
         <div className="flex grow flex-col gap-0.5">
@@ -48,12 +48,12 @@ function ConnectionCard({
         ) : enabled ? (
           <a
             href={href}
-            className="tile-3d flex min-h-11 items-center rounded-full px-4 text-sm font-semibold text-teal"
+            className="tile-3d flex min-h-11 items-center rounded-md px-4 text-sm font-semibold text-teal"
           >
             Connect
           </a>
         ) : (
-          <span className="well shrink-0 rounded-full px-2.5 py-1 whitespace-nowrap text-[12px] font-medium text-muted">Demo data</span>
+          <span className="well shrink-0 rounded-md px-2.5 py-1 whitespace-nowrap text-[12px] font-medium text-muted">Demo data</span>
         )}
       </div>
     </Tilt>
@@ -69,20 +69,24 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
 
   return (
     <>
-      <main className="flex grow flex-col gap-6 px-6 pt-12 pb-8">
-        <div className="flex items-center gap-2.5">
-          <div className="press flex size-9 items-center justify-center rounded-xl text-white">
+      <main className="flex grow flex-col gap-6 pb-8">
+        <div className="flex items-center gap-3 bg-[#783120] px-5 pt-10 pb-5 text-white">
+          <div className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
             <HeartIcon />
           </div>
-          <span className="font-display text-xl font-semibold">Clara</span>
+          <div>
+            <span className="clinical-label block text-[#f3d9cc]">Data access</span>
+            <span className="text-xl font-semibold">Clara connections</span>
+          </div>
         </div>
 
-        <div className="rise">
+        <div className="mx-5 rise">
           <HeroHeart />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h1 className="font-display text-[30px] leading-[1.15] font-semibold">
+        <div className="mx-5 flex flex-col gap-2 border-b-2 border-ink pb-4">
+          <span className="clinical-label text-teal">Private by design</span>
+          <h1 className="text-[28px] leading-[1.15] font-semibold">
             Answers about your health, from your own data.
           </h1>
           <p className="text-[15px] leading-normal text-muted">
@@ -91,12 +95,12 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
         </div>
 
         {errorText && (
-          <p role="alert" className="rounded-xl bg-amber-soft p-3 text-sm text-amber-ink">
+          <p role="alert" className="mx-5 border-l-4 border-amber bg-amber-soft p-3 text-sm text-amber-ink">
             {errorText}
           </p>
         )}
 
-        <div className="flex flex-col gap-3">
+        <div className="mx-5 flex flex-col gap-3">
           <ConnectionCard
             title="MyChart (Epic)"
             detail="Meds, labs, diagnoses · read-only"
@@ -117,8 +121,8 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
           />
         </div>
 
-        <div className="well flex flex-col gap-2.5 rounded-2xl p-4">
-          <span className="text-[13px] font-semibold">How your data is handled</span>
+        <div className="well mx-5 flex flex-col gap-2.5 rounded-md p-4">
+          <span className="clinical-label text-muted">How your data is handled</span>
           {[
             { Icon: LockIcon, text: "Read-only access. Clara can never change your records." },
             { Icon: AnonIcon, text: "Your name and ID numbers are removed before anything reaches the AI." },
@@ -140,10 +144,10 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
 
         <div className="grow" />
 
-        <div className="flex flex-col gap-3">
+        <div className="mx-5 flex flex-col gap-3">
           <Link
             href="/"
-            className="press flex min-h-[52px] items-center justify-center rounded-[14px] text-base font-semibold text-white"
+            className="press flex min-h-[52px] items-center justify-center rounded-md text-base font-semibold text-white"
           >
             Done
           </Link>

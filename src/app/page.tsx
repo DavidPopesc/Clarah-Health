@@ -15,7 +15,7 @@ const ERRORS: Record<string, string> = {
   fitbit_auth_failed: "We couldn't link Fitbit. Please try again.",
 };
 
-function ConnectTile({
+function ConnectRow({
   name,
   detail,
   Icon,
@@ -28,132 +28,124 @@ function ConnectTile({
   linked: boolean;
   href: string;
 }) {
-  const body = (
+  const content = (
     <>
-      <span className="flex w-full items-start justify-between">
-        <Icon width={22} height={22} />
-        {linked && (
-          <span className="flex size-5 items-center justify-center rounded-full bg-teal text-white" aria-hidden="true">
-            <CheckIcon width={13} height={13} strokeWidth={3} />
-          </span>
-        )}
+      <span className="tile-teal flex size-10 shrink-0 items-center justify-center rounded-md text-teal">
+        <Icon width={20} height={20} />
       </span>
-      <span className="flex flex-col">
-        <span className="text-[13px] leading-tight font-semibold">{name}</span>
-        <span className={`text-[11px] leading-tight ${linked ? "font-semibold text-teal-dark" : "text-subtle"}`}>
-          {linked ? "Connected" : detail}
-        </span>
+      <span className="flex min-w-0 grow flex-col">
+        <span className="text-sm font-semibold text-ink">{name}</span>
+        <span className="text-xs text-subtle">{linked ? "Read-only connection active" : detail}</span>
+      </span>
+      <span className={`clinical-label flex items-center gap-1 ${linked ? "text-teal-dark" : "text-teal"}`}>
+        {linked && <CheckIcon width={14} height={14} strokeWidth={3} />}
+        {linked ? "Linked" : "Connect"}
       </span>
     </>
   );
-  const cls = "flex min-h-[92px] flex-col items-start justify-between gap-2 rounded-2xl p-3 text-left";
-  return linked ? (
-    <div className={`tile-teal text-teal-dark ${cls}`} aria-label={`${name} connected`}>
-      {body}
-    </div>
-  ) : (
-    <a href={href} className={`slab lift text-teal ${cls}`}>
-      {body}
-    </a>
-  );
+
+  const className = "slab lift flex min-h-16 items-center gap-3 rounded-md px-3.5 py-3 text-left";
+  return linked ? <div className={className}>{content}</div> : <a href={href} className={className}>{content}</a>;
 }
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
-  // Today's date and the demo data depend on the current time, so render per request.
   await connection();
   const { error } = await searchParams;
   const [record, wearable, status] = await Promise.all([getRecord(), getWearable(), connectionStatus()]);
   const { items, good } = assessHealth(record, wearable);
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
-  const meds = record.medications.filter((m) => m.status === "active");
+  const meds = record.medications.filter((medication) => medication.status === "active");
 
   return (
     <>
-      <main className="flex grow flex-col gap-6 px-5 pt-12 pb-6">
-        <header className="flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[13px] text-subtle">
-              {today}
-              {record.source === "demo" && " · Demo patient"}
+      <main className="flex grow flex-col gap-7 pb-7">
+        <header className="bg-[#783120] px-5 pt-10 pb-6 text-white">
+          <div className="mb-6 flex items-center justify-between border-b border-white/20 pb-3">
+            <span className="clinical-label text-[#f3d9cc]">Clara health record</span>
+            <span className="flex size-9 items-center justify-center border border-white/30 bg-white/10" aria-hidden="true">
+              <HeartIcon width={19} height={19} />
             </span>
-            <h1 className="font-display text-[26px] leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
           </div>
-          <div className="press flex size-10 items-center justify-center rounded-xl text-white" aria-hidden="true">
-            <HeartIcon />
+          <p className="clinical-label mb-2 text-[#f3d9cc]">{today}{record.source === "demo" && " · Demo record"}</p>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm text-white/70">Patient overview</p>
+              <h1 className="mt-0.5 text-[30px] leading-tight font-semibold">Hello, {record.identity.givenName}</h1>
+            </div>
+            <div className="border-l border-white/25 pl-4 text-right">
+              <strong className="block text-2xl leading-none">{items.length}</strong>
+              <span className="clinical-label text-[#f3d9cc]">Open items</span>
+            </div>
           </div>
         </header>
 
-        <section className="flex flex-col gap-2.5" aria-labelledby="add-heading">
-          <h2 id="add-heading" className="text-[13px] font-semibold text-muted">
-            Add your health info
-          </h2>
-          <div className="grid grid-cols-3 gap-2.5">
+        <div className="flex flex-col gap-7 px-5">
+          <section className="flex flex-col gap-2.5" aria-labelledby="sources-heading">
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h2 id="sources-heading" className="clinical-label text-muted">Data sources</h2>
+              <Link href="/connections" className="text-xs font-semibold text-teal">Manage access</Link>
+            </div>
             <UploadTile />
-            <ConnectTile name="MyChart" detail="Link records" Icon={RecordIcon} linked={status.epic} href="/api/auth/epic/login" />
-            <ConnectTile name="Fitbit" detail="Link activity" Icon={WatchIcon} linked={status.fitbit} href="/api/auth/fitbit/login" />
-          </div>
-          {errorText && (
-            <p role="alert" className="rounded-xl bg-amber-soft p-3 text-[13px] text-amber-ink">
-              {errorText}
-            </p>
-          )}
-          {!status.epic && !status.fitbit && !errorText && (
-            <p className="text-xs text-subtle">Showing a demo patient until you link an account.</p>
-          )}
-        </section>
-
-        <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
-          <div className="flex items-baseline justify-between">
-            <h2 id="attention-heading" className="font-display text-lg font-semibold">
-              What needs your attention
-            </h2>
-            <span className="text-xs text-subtle">{items.length} {items.length === 1 ? "item" : "items"}</span>
-          </div>
-          <AttentionList items={items} />
-        </section>
-
-        <Documents />
-
-        {good.length > 0 && (
-          <section className="flex flex-col gap-2.5" aria-labelledby="good-heading">
-            <h2 id="good-heading" className="text-[13px] font-semibold text-muted">
-              Looking good
-            </h2>
-            <ul className="flex flex-wrap gap-2">
-              {good.map((g) => (
-                <li key={g.label} className="tile-3d flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px]">
-                  <CheckIcon width={13} height={13} className="text-teal" />
-                  <span className="font-semibold">{g.label}</span>
-                  <span className="text-subtle">{g.value}</span>
-                </li>
-              ))}
-            </ul>
+            <ConnectRow name="MyChart" detail="Link medications, labs, and diagnoses" Icon={RecordIcon} linked={status.epic} href="/api/auth/epic/login" />
+            <ConnectRow name="Fitbit" detail="Link sleep, activity, and heart rate" Icon={WatchIcon} linked={status.fitbit} href="/api/auth/fitbit/login" />
+            {errorText && <p role="alert" className="border-l-4 border-amber bg-amber-soft px-3 py-2.5 text-[13px] text-amber-ink">{errorText}</p>}
+            {!status.epic && !status.fitbit && !errorText && <p className="text-xs text-subtle">Demo data stays active until a source is linked.</p>}
           </section>
-        )}
 
-        {meds.length > 0 && (
-          <section className="well flex flex-col gap-1.5 rounded-[18px] p-4" aria-labelledby="meds-heading">
-            <h2 id="meds-heading" className="text-[13px] font-semibold text-muted">
-              Your medications
-            </h2>
-            <ul className="flex flex-col text-[13px]">
-              {meds.map((m) => (
-                <li key={m.name} className="flex justify-between gap-3 py-1">
-                  <span className="font-medium">{m.name}</span>
-                  <span className="text-right text-subtle">{m.dosage}</span>
-                </li>
-              ))}
-            </ul>
+          <section className="flex flex-col gap-3" aria-labelledby="attention-heading">
+            <div className="flex items-end justify-between border-b-2 border-ink pb-2">
+              <div>
+                <span className="clinical-label text-teal">Clinical review</span>
+                <h2 id="attention-heading" className="mt-1 text-xl font-semibold">What needs your attention</h2>
+              </div>
+              <span className="clinical-label text-subtle">{String(items.length).padStart(2, "0")} items</span>
+            </div>
+            <AttentionList items={items} />
           </section>
-        )}
 
-        <Link
-          href="/ask"
-          className="press flex min-h-[52px] items-center justify-center gap-2 rounded-[14px] text-[15px] font-semibold text-white"
-        >
-          Ask Clara about your health
-        </Link>
+          <Documents />
+
+          {good.length > 0 && (
+            <section aria-labelledby="good-heading">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <h2 id="good-heading" className="clinical-label text-muted">Within expected range</h2>
+                <span className="clinical-label text-teal-dark">Reviewed</span>
+              </div>
+              <ul className="divide-y divide-line border-x border-b border-line bg-white">
+                {good.map((item) => (
+                  <li key={item.label} className="flex items-center gap-3 px-3.5 py-3 text-sm">
+                    <CheckIcon width={16} height={16} className="text-teal" />
+                    <span className="grow font-medium">{item.label}</span>
+                    <span className="font-mono text-xs text-subtle">{item.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {meds.length > 0 && (
+            <section aria-labelledby="meds-heading">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <h2 id="meds-heading" className="clinical-label text-muted">Active medications</h2>
+                <span className="clinical-label text-subtle">{meds.length} listed</span>
+              </div>
+              <ul className="divide-y divide-line border-x border-b border-line bg-white">
+                {meds.map((medication) => (
+                  <li key={medication.name} className="grid grid-cols-[1fr_auto] gap-4 px-3.5 py-3 text-sm">
+                    <span className="font-semibold">{medication.name}</span>
+                    <span className="text-right text-subtle">{medication.dosage}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <Link href="/ask" className="press flex min-h-14 items-center justify-between rounded-md px-4 text-[15px] font-semibold text-white">
+            <span>Ask Clara about this record</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </main>
       <BottomNav active="/" />
     </>

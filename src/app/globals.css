@@ -1,162 +1,128 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-ground: #f6f7f5;
-  --color-ink: #16211f;
-  --color-body: #2e3a37;
-  --color-muted: #4a5653;
-  --color-subtle: #5b6663;
-  --color-line: #e1e5e2;
-  --color-panel: #eef1ef;
-  --color-teal: #0f6e66;
-  --color-teal-dark: #0a4f49;
-  --color-teal-soft: #e6f1ef;
-  --color-amber: #b45309;
-  --color-amber-ink: #5c2a04;
-  --color-amber-soft: #fdf4e7;
-  --color-alert: #b42318;
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-space-grotesk);
+  --color-ground: #fbf4e8;
+  --color-ink: #33221f;
+  --color-body: #4e3732;
+  --color-muted: #71544d;
+  --color-subtle: #80665f;
+  --color-line: #ddcdbd;
+  --color-panel: #eaded0;
+  --color-teal: #b44e34;
+  --color-teal-dark: #783120;
+  --color-teal-soft: #f3d9cc;
+  --color-amber: #a85d0b;
+  --color-amber-ink: #6f3900;
+  --color-amber-soft: #f9e8c7;
+  --color-alert: #a5212b;
+  --font-sans: var(--font-plex-sans);
+  --font-display: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
+* { border-color: var(--color-line); }
+
 body {
-  background:
-    radial-gradient(80% 50% at 50% 0%, #dcebe7 0%, transparent 70%),
-    linear-gradient(180deg, #e7ecea 0%, #dfe5e2 100%);
-  background-attachment: fixed;
+  background: #e8d9c8;
   color: var(--color-ink);
 }
 
-/* ---------- 3D depth system ----------
-   Raised: cards (.slab), tiles (.tile-3d) and buttons (.press) sit above the page.
-   Recessed: inputs (.well) sit below it. Light comes from the top. */
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 3px solid #d88369;
+  outline-offset: 2px;
+}
 
 .app-shell {
-  background:
-    radial-gradient(120% 40% at 50% -5%, #e2f0ec 0%, transparent 60%),
-    var(--color-ground);
-  box-shadow: 0 40px 90px -40px rgba(10, 79, 73, 0.45), 0 0 0 1px rgba(16, 33, 31, 0.04);
+  background-color: var(--color-ground);
+  background-image:
+    linear-gradient(rgba(102, 63, 52, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 63, 52, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+  box-shadow: 0 0 0 1px rgba(91, 57, 47, 0.1);
 }
 
 .slab {
-  position: relative;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfa 100%);
-  border: 1px solid var(--color-line);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 0 #d6ddda,
-    0 3px 0 #e4e9e6,
-    0 16px 30px -16px rgba(10, 79, 73, 0.38);
+  background: #fffaf2;
+  border: 1px solid #d8c5b3;
+  box-shadow: 0 1px 2px rgba(91, 57, 47, 0.07);
 }
 
 .tile-3d {
-  background: linear-gradient(180deg, #ffffff 0%, #eef3f1 100%);
-  box-shadow:
-    inset 0 1px 0 #fff,
-    0 2px 0 #d3dcd8,
-    0 8px 14px -8px rgba(10, 79, 73, 0.35);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  background: #fffaf2;
+  border: 1px solid #cdb6a1;
+  box-shadow: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
-.tile-3d:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #fff, 0 0 0 #d3dcd8, 0 3px 6px -4px rgba(10, 79, 73, 0.35); }
+.tile-3d:hover { background: #f5e7d8; border-color: #b89278; }
+.tile-3d:active { background: #ead4c2; }
 
 .tile-teal {
-  background: linear-gradient(160deg, #e9f4f2 0%, #d5e9e5 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -2px 0 rgba(15, 110, 102, 0.12),
-    0 6px 12px -6px rgba(15, 110, 102, 0.45);
+  background: var(--color-teal-soft);
+  background: #f2d6c8;
+  border: 1px solid #d5a791;
+  box-shadow: none;
 }
 
 .press {
-  background: linear-gradient(180deg, #15887e 0%, #0f6e66 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 4px 0 var(--color-teal-dark),
-    0 14px 24px -10px rgba(15, 110, 102, 0.7);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  background: var(--color-teal);
+  border: 1px solid var(--color-teal-dark);
+  box-shadow: none;
+  transition: background-color 150ms ease;
 }
-.press:hover { filter: brightness(1.06); }
-.press:active {
-  transform: translateY(3px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 0 var(--color-teal-dark), 0 5px 10px -6px rgba(15, 110, 102, 0.6);
-}
-.press:disabled { filter: saturate(0.4); transform: none; }
-
-.press-alert {
-  background: linear-gradient(180deg, #c93a2e 0%, #b42318 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #861a12, 0 14px 24px -10px rgba(180, 35, 24, 0.6);
-}
-.press-crisis {
-  background: linear-gradient(180deg, #0f6e66 0%, #0a4f49 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 0 #063632, 0 14px 24px -10px rgba(10, 79, 73, 0.6);
-}
+.press:hover { background: #963d28; }
+.press:active { background: var(--color-teal-dark); }
+.press:disabled { background: #aa8b80; border-color: #806a62; }
+.press-alert { background: var(--color-alert); border-color: #70141c; }
+.press-crisis { background: #6f365a; border-color: #442136; }
 
 .well {
-  background: #eef2f0;
-  box-shadow: inset 0 2px 4px rgba(16, 33, 31, 0.12), inset 0 -1px 0 rgba(255, 255, 255, 0.8);
+  background: #f1e5d7;
+  border: 1px solid #dfccba;
+  box-shadow: none;
 }
 
-.lift { transition: transform 0.18s ease, box-shadow 0.18s ease; }
-.lift:hover { transform: translateY(-2px); }
-.lift:active { transform: translateY(1px); }
+.lift { transition: background-color 150ms ease, border-color 150ms ease; }
+.lift:hover { background: #f7eadc; border-color: #bc947b; }
 
 .stage-3d {
-  background:
-    radial-gradient(70% 55% at 50% 40%, #ffffff 0%, transparent 70%),
-    linear-gradient(180deg, #eef5f3 0%, #dbe8e4 100%);
-  box-shadow: inset 0 2px 8px rgba(10, 79, 73, 0.12);
+  background: #efe1d3;
+  background-image: linear-gradient(90deg, transparent 49.6%, rgba(180, 78, 52, 0.13) 50%, transparent 50.4%);
+  border: 1px solid #d0baa6;
+  box-shadow: none;
 }
 
-/* Pointer tilt: set by <Tilt>, with a light glare that follows the pointer. */
-.tilt {
-  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.tilt[data-active="true"] { transition-duration: 0.08s; }
-.tilt-glare {
-  background: radial-gradient(240px circle at var(--gx, 50%) var(--gy, 0%), rgba(255, 255, 255, 0.55), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.tilt[data-active="true"] .tilt-glare { opacity: 1; }
+.tilt { transform: none !important; transition: none; }
+.tilt-glare { display: none; }
+.rise { animation: none; }
+.sheet-3d { animation: sheet-in 220ms ease-out both; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(24px); } }
 
-/* Cards rise into place from slightly below and tilted back. */
-.rise {
-  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 70ms);
-}
-@keyframes rise {
-  from { opacity: 0; transform: perspective(900px) translateY(22px) rotateX(16deg); }
+.clinical-label {
+  font-family: var(--font-plex-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
 
-.sheet-3d { animation: sheet-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; transform-origin: 50% 100%; }
-@keyframes sheet-in {
-  from { opacity: 0.4; transform: perspective(1000px) translateY(40%) rotateX(-14deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rise, .sheet-3d, .stream-caret { animation: none; }
-  .tilt { transform: none; }
-  .lift:hover, .lift:active, .press:active, .tile-3d:active { transform: none; }
-}
-
-.answer p { margin: 0 0 0.6rem; }
+.answer p { margin: 0 0 0.7rem; }
 .answer p:last-child { margin-bottom: 0; }
-.answer ul { margin: 0.25rem 0 0.6rem; padding-left: 1.1rem; list-style: disc; }
-.answer li { margin: 0.15rem 0; }
-/* Keep the caret on the same line as the text being written. */
+.answer ul { margin: 0.3rem 0 0.7rem; padding-left: 1.15rem; list-style: square; }
+.answer li { margin: 0.2rem 0; }
 .answer.is-streaming > p:last-child { display: inline; }
 .stream-caret {
   display: inline-block;
-  width: 0.5em;
+  width: 0.45em;
   height: 1em;
   margin-left: 2px;
   vertical-align: -0.15em;
-  border-radius: 2px;
   background: var(--color-teal);
   animation: caret 1s steps(2, start) infinite;
 }
 @keyframes caret { to { visibility: hidden; } }
 .answer strong { font-weight: 600; color: var(--color-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-3d, .stream-caret { animation: none; }
+}

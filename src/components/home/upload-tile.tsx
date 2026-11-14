@@ -20,13 +20,16 @@ export function UploadTile() {
       <button
         type="button"
         onClick={() => input.current?.click()}
-        className="press flex min-h-[92px] flex-col items-start justify-between gap-2 rounded-2xl p-3 text-left text-white"
+        className="press flex min-h-16 items-center gap-3 rounded-md px-3.5 py-3 text-left text-white"
       >
-        <UploadIcon width={22} height={22} />
-        <span className="flex flex-col">
-          <span className="text-[13px] leading-tight font-semibold">Upload PDF</span>
-          <span className="text-[11px] leading-tight text-white/80">Labs, visit notes</span>
+        <span className="flex size-10 shrink-0 items-center justify-center border border-white/30 bg-white/10">
+          <UploadIcon width={20} height={20} />
         </span>
+        <span className="flex grow flex-col">
+          <span className="text-sm font-semibold">Upload a PDF</span>
+          <span className="text-xs text-white/75">Lab report or visit summary</span>
+        </span>
+        <span className="clinical-label text-white/85">Choose file</span>
       </button>
       <input ref={input} type="file" accept="application/pdf,.pdf" onChange={onFile} className="sr-only" tabIndex={-1} aria-label="Upload a PDF" />
     </>

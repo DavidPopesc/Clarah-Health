@@ -131,20 +131,25 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
   }, [initialQuestion]);
 
   return (
-    <div className="flex h-dvh flex-col">
-      <header className="relative z-10 flex items-center gap-2 border-b border-line/70 bg-white/80 px-4 pt-12 pb-3 shadow-[0_8px_20px_-14px_rgba(10,79,73,0.35)] backdrop-blur-md">
-        <Link href="/" aria-label="Back to home" className="tile-3d flex size-11 items-center justify-center rounded-full">
+    <div className="flex h-dvh flex-col bg-ground">
+      <header className="relative z-10 flex items-center gap-3 border-b border-[#9d5b49] bg-[#783120] px-4 pt-10 pb-4 text-white">
+        <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
           <BackIcon width={22} height={22} />
         </Link>
-        <div className="flex flex-col">
-          <h1 className="font-display text-[17px] font-semibold">Ask Clara</h1>
-          <span className="text-xs text-subtle">Using your meds, labs and wearable data</span>
+        <div className="flex grow flex-col">
+          <span className="clinical-label text-[#f3d9cc]">Secure health exchange</span>
+          <h1 className="text-[18px] font-semibold">Ask Clara</h1>
         </div>
+        <span className="clinical-label border border-white/25 px-2 py-1 text-[#f3d9cc]">Record on</span>
       </header>
 
       <div className="flex grow flex-col gap-3.5 overflow-y-auto p-4" aria-live="polite" aria-busy={loading}>
         {messages.length === 0 && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
+            <div className="border-l-4 border-teal bg-white px-4 py-3">
+              <span className="clinical-label text-teal">Start a review</span>
+              <h2 className="mt-1 text-xl font-semibold">What would you like to understand?</h2>
+            </div>
             <p className="text-[15px] leading-normal text-muted">
               Ask about your numbers, your diagnosis, or whether something is safe for you, like a fast, an herb, or a food.
             </p>
@@ -154,7 +159,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="slab lift rise min-h-11 rounded-2xl px-4 py-2.5 text-left text-sm text-ink"
+                  className="slab lift rise min-h-12 rounded-md px-4 py-3 text-left text-sm text-ink"
                   style={{ "--i": SUGGESTIONS.indexOf(s) } as React.CSSProperties}
                 >
                   {s}
@@ -168,21 +173,21 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           m.role === "user" ? (
             <div
               key={i}
-              className="press rise max-w-[80%] self-end rounded-[18px_18px_4px_18px] px-3.5 py-3 text-[15px] leading-snug text-white"
+              className="rise max-w-[84%] self-end border border-[#7c2f1e] bg-[#9f402b] px-3.5 py-3 text-[15px] leading-snug text-white"
             >
               {m.content}
             </div>
           ) : (
             <div
               key={i}
-              className={`rise flex flex-col gap-3 rounded-[18px_18px_18px_4px] p-4 ${
-                m.error ? "border border-amber/30 bg-amber-soft text-amber-ink" : "slab"
+              className={`rise flex flex-col gap-3 border-l-4 p-4 ${
+                m.error ? "border-amber bg-amber-soft text-amber-ink" : "border-l-teal border-y border-r border-line bg-white"
               }`}
             >
               {m.usedData && m.usedData.length > 0 && (
                 <div className="flex flex-wrap gap-1.5" aria-label="Data used">
                   {m.usedData.map((d) => (
-                    <span key={d} className="tile-teal rounded-full px-2.5 py-1 text-[11px] font-semibold text-teal-dark">
+                    <span key={d} className="clinical-label border border-[#d5a791] bg-teal-soft px-2 py-1 text-teal-dark">
                       {d}
                     </span>
                   ))}
@@ -196,7 +201,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
                 <button
                   type="button"
                   onClick={() => setViewer(m.focus!)}
-                  className="tile-teal flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-left"
+                  className="tile-teal flex min-h-12 items-center gap-2.5 rounded-md px-3 py-2 text-left"
                 >
                   <CubeIcon width={18} height={18} className="shrink-0 text-teal" />
                   <span className="flex grow flex-col">
@@ -207,7 +212,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
               )}
               {m.sources && m.sources.length > 0 && (
                 <div className="flex flex-col gap-1 border-t border-panel pt-2.5">
-                  <span className="text-[11px] font-semibold tracking-wide text-subtle uppercase">Sources</span>
+                  <span className="clinical-label text-subtle">Evidence sources</span>
                   {m.sources.map((s) => (
                     <a
                       key={s.id}
@@ -226,7 +231,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
         )}
 
         {loading && !messages[messages.length - 1]?.streaming && (
-          <div className="slab flex items-center gap-2 self-start rounded-[18px] px-4 py-3 text-sm text-subtle">
+          <div className="slab flex items-center gap-2 self-start rounded-md px-4 py-3 text-sm text-subtle">
             <span className="size-2 animate-pulse rounded-full bg-teal" />
             {status}
           </div>
@@ -239,7 +244,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           e.preventDefault();
           send(input);
         }}
-        className="relative z-10 flex items-center gap-2 border-t border-line/70 bg-white/85 px-4 pt-3 pb-7 shadow-[0_-8px_20px_-14px_rgba(10,79,73,0.35)] backdrop-blur-md"
+        className="relative z-10 flex items-center gap-2 border-t border-line bg-white px-4 pt-3 pb-6"
       >
         <label htmlFor="ask-input" className="sr-only">
           Ask a health question
@@ -250,13 +255,13 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about your health…"
           autoComplete="off"
-          className="well min-h-[46px] grow rounded-full px-4 text-[15px] text-ink outline-teal"
+          className="well min-h-[48px] grow rounded-md px-4 text-[15px] text-ink outline-teal"
         />
         <button
           type="submit"
           aria-label="Send"
           disabled={loading || !input.trim()}
-          className="press flex size-[46px] shrink-0 items-center justify-center rounded-full text-white disabled:opacity-60"
+          className="press flex size-[48px] shrink-0 items-center justify-center rounded-md text-white disabled:opacity-60"
         >
           <SendIcon />
         </button>

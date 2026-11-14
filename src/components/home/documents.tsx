@@ -8,7 +8,7 @@ import { ChevronIcon, FileIcon, TrashIcon } from "../icons";
 const STATUS = {
   attention: { label: "Needs attention", dot: "bg-amber", ring: "border-amber/30 bg-amber-soft" },
   info: { label: "Good to know", dot: "bg-teal", ring: "border-line bg-white" },
-  good: { label: "Looks good", dot: "bg-[#3f9b6b]", ring: "border-line bg-white" },
+  good: { label: "Looks good", dot: "bg-[#9b5e4a]", ring: "border-line bg-white" },
 };
 
 const fmtDate = (iso?: string) =>
@@ -22,7 +22,7 @@ async function trySample() {
 function Finding({ f, url }: { f: DocFinding; url?: string }) {
   const s = STATUS[f.status];
   return (
-    <li className={`flex flex-col gap-1.5 rounded-xl border p-3 ${s.ring}`}>
+    <li className={`flex flex-col gap-1.5 border p-3 ${s.ring}`}>
       <span className="flex items-start gap-2">
         <span className={`mt-1.5 size-2 shrink-0 rounded-full ${s.dot}`} aria-hidden="true" />
         <span className="text-sm leading-snug font-semibold text-ink">
@@ -65,9 +65,9 @@ function DocCard({ doc, url, defaultOpen }: { doc: StoredDoc; url?: string; defa
   const busy = doc.status === "reading" || doc.status === "summarizing";
 
   return (
-    <article className="slab rise flex flex-col gap-3 rounded-[18px] p-4">
+    <article className="slab rise flex flex-col gap-3 rounded-md p-4">
       <div className="flex items-start gap-3">
-        <div className="tile-teal flex size-10 shrink-0 items-center justify-center rounded-xl text-teal">
+        <div className="tile-teal flex size-10 shrink-0 items-center justify-center rounded-md text-teal">
           <FileIcon width={20} height={20} />
         </div>
         <div className="flex min-w-0 grow flex-col gap-0.5">
@@ -83,7 +83,7 @@ function DocCard({ doc, url, defaultOpen }: { doc: StoredDoc; url?: string; defa
             onClick={() => setOpen(!open)}
             aria-expanded={open}
             aria-label={open ? "Hide details" : "Show details"}
-            className="tile-3d flex size-9 shrink-0 items-center justify-center rounded-full"
+            className="tile-3d flex size-9 shrink-0 items-center justify-center rounded-md"
           >
             <ChevronIcon width={18} height={18} className={`transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
@@ -160,14 +160,14 @@ export function Documents() {
 
   return (
     <section id="documents" className="flex scroll-mt-4 flex-col gap-3" aria-labelledby="docs-heading">
-      <div className="flex items-baseline justify-between">
-        <h2 id="docs-heading" className="font-display text-lg font-semibold">
+      <div className="flex items-end justify-between border-b-2 border-ink pb-2">
+        <h2 id="docs-heading" className="text-xl font-semibold">
           Your documents
         </h2>
-        <span className="text-xs text-subtle">Saved on this device only</span>
+        <span className="clinical-label text-subtle">Device only</span>
       </div>
       {docs.length === 0 ? (
-        <div className="well flex flex-col gap-2 rounded-[18px] p-4">
+        <div className="well flex flex-col gap-2 rounded-md p-4">
           <p className="text-sm leading-normal text-body">
             Upload a lab report or visit summary as a PDF. Clara explains it in plain English, compares it with your
             history, and shows exactly where each number came from.

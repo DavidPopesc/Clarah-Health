@@ -38,7 +38,7 @@ function Heart({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <mesh ref={ref} geometry={geometry}>
-      <meshPhysicalMaterial color="#0f6e66" roughness={0.22} metalness={0.1} clearcoat={1} clearcoatRoughness={0.15} sheen={0.4} sheenColor="#7fd1c6" />
+      <meshPhysicalMaterial color="#b44e34" roughness={0.22} metalness={0.1} clearcoat={1} clearcoatRoughness={0.15} sheen={0.4} sheenColor="#e9b9a4" />
     </mesh>
   );
 }
@@ -46,9 +46,9 @@ function Heart({ reducedMotion }: { reducedMotion: boolean }) {
 export default function HeartScene({ reducedMotion = false }: { reducedMotion?: boolean }) {
   return (
     <Canvas camera={{ fov: 30, position: [0, 0.1, 4.2] }} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-      <hemisphereLight args={["#ffffff", "#9fc9c1", 1.1]} />
+      <hemisphereLight args={["#fffaf2", "#d9b9a5", 1.1]} />
       <directionalLight position={[2.5, 3, 3]} intensity={2} />
-      <directionalLight position={[-3, -1, 2]} intensity={0.6} color="#bfe6df" />
+      <directionalLight position={[-3, -1, 2]} intensity={0.6} color="#f0c8b6" />
       <Float speed={reducedMotion ? 0 : 1.6} rotationIntensity={reducedMotion ? 0 : 0.25} floatIntensity={reducedMotion ? 0 : 0.6}>
         <Heart reducedMotion={reducedMotion} />
       </Float>

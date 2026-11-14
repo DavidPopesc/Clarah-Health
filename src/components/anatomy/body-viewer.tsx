@@ -27,14 +27,14 @@ export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () =
   }, []);
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-center bg-ink/40 backdrop-blur-[2px]" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex justify-center bg-ink/55" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="body-viewer-title"
         aria-describedby="body-viewer-desc"
         onClick={(e) => e.stopPropagation()}
-        className="sheet-3d mt-auto flex h-[82dvh] w-full max-w-[430px] flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_-20px_rgba(10,79,73,0.5)]"
+        className="sheet-3d mt-auto flex h-[82dvh] w-full max-w-[460px] flex-col overflow-hidden border-t-4 border-teal bg-[#fffaf2] shadow-[0_-12px_30px_rgba(91,57,47,0.25)]"
       >
         <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-2">
@@ -49,13 +49,13 @@ export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () =
             type="button"
             onClick={onClose}
             aria-label="Close 3D view"
-            className="tile-3d flex size-11 shrink-0 items-center justify-center rounded-full text-ink"
+            className="tile-3d flex size-11 shrink-0 items-center justify-center rounded-md text-ink"
           >
             <CloseIcon width={20} height={20} />
           </button>
         </div>
 
-        <div className="stage-3d relative mx-4 grow overflow-hidden rounded-[22px]">
+        <div className="stage-3d relative mx-4 grow overflow-hidden rounded-md">
           <LazyAnatomyScene system={system} focus={focus} reducedMotion={reducedMotion} />
           <span className="pointer-events-none absolute bottom-2.5 left-0 w-full text-center text-[11px] text-subtle">
             Drag to turn · pinch to zoom
@@ -71,7 +71,7 @@ export function BodyViewer({ focus, onClose }: { focus: BodyFocus; onClose: () =
                 role="radio"
                 aria-checked={s === system}
                 onClick={() => setSystem(s)}
-                className={`min-h-9 shrink-0 rounded-full px-3 text-[12px] font-semibold transition-transform ${
+                className={`min-h-9 shrink-0 rounded-md px-3 text-[12px] font-semibold transition-transform ${
                   s === system ? "press text-white" : "tile-3d text-muted"
                 }`}
               >
