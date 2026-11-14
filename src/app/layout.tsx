@@ -16,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}>
       <body className="font-sans">
-        <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-ground shadow-sm">
+        <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col app-shell">
           {children}
         </div>
       </body>

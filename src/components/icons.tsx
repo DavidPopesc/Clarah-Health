@@ -66,3 +66,9 @@ export const PhoneIcon = (p: P) => (
 export const InfoIcon = (p: P) => (
   <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v5h1" /></Icon>
 );
+export const CloseIcon = (p: P) => (
+  <Icon {...p}><path d="M18 6 6 18M6 6l12 12" /></Icon>
+);
+export const CubeIcon = (p: P) => (
+  <Icon {...p}><path d="m21 16-9 5-9-5V8l9-5 9 5z" /><path d="m3.3 7.5 8.7 5 8.7-5M12 22V12.5" /></Icon>
+);

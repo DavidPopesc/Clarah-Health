@@ -104,6 +104,27 @@ export const SAFETY_REFERENCES: SafetyReference[] = [
     keywords: ["heart rate", "pulse", "resting heart rate", "rhr", "bpm"],
     summary: "A normal resting heart rate for most adults is between 60 and 100 beats per minute. Fitness, medicines, stress and illness can all affect it.",
   },
+  {
+    id: "sprains-strains",
+    title: "MedlinePlus: Sprains and Strains",
+    url: "https://medlineplus.gov/sprainsandstrains.html",
+    keywords: ["sprain", "strain", "twisted", "rolled my", "ligament", "pulled muscle", "ankle", "wrist injury"],
+    summary: [
+      "A sprain is a stretched or torn ligament; ligaments connect bones at a joint. A strain is an injury to a muscle or tendon.",
+      "At first, treatment of both usually involves resting the injured area, icing it, wearing a bandage or device that compresses it, and medicines.",
+    ].join(" "),
+  },
+  {
+    id: "ibuprofen",
+    title: "MedlinePlus: Ibuprofen",
+    url: "https://medlineplus.gov/druginfo/meds/a682159.html",
+    keywords: ["ibuprofen", "advil", "motrin", "naproxen", "aleve", "nsaid", "anti-inflammatory", "pain reliever", "painkiller", "pain medicine"],
+    summary: [
+      "People who take NSAIDs (other than aspirin) such as ibuprofen may have a higher risk of heart attack or stroke.",
+      "Tell your doctor before taking it if you have high cholesterol, high blood pressure, diabetes, heart disease, or kidney or liver disease.",
+      "NSAIDs can cause stomach ulcers or bleeding; stop and call your doctor for stomach pain, black or bloody stools, or vomit that looks like coffee grounds. Taking it with food or milk can prevent stomach upset.",
+    ].join(" "),
+  },
 ];
 
 export function findReferences(query: string): SafetyReference[] {

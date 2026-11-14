@@ -11,24 +11,26 @@ export function BottomNav({ active }: { active: string }) {
   return (
     <nav
       aria-label="Main"
-      className="sticky bottom-0 grid grid-cols-3 border-t border-line bg-white px-6 pt-2.5 pb-6"
+      className="sticky bottom-0 px-4 pt-2 pb-5"
     >
-      {ITEMS.map(({ href, label, Icon }) => {
-        const current = href === active;
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={current ? "page" : undefined}
-            className={`flex min-h-11 flex-col items-center gap-1 text-[11px] ${
-              current ? "font-semibold text-teal" : "text-subtle"
-            }`}
-          >
-            <Icon width={22} height={22} />
-            {label}
-          </Link>
-        );
-      })}
+      <div className="slab grid grid-cols-3 gap-1 rounded-[22px] p-1.5">
+        {ITEMS.map(({ href, label, Icon }) => {
+          const current = href === active;
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={current ? "page" : undefined}
+              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] transition-transform ${
+                current ? "tile-teal -translate-y-0.5 font-semibold text-teal-dark" : "lift text-subtle"
+              }`}
+            >
+              <Icon width={22} height={22} />
+              {label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

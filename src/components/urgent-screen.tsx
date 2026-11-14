@@ -14,7 +14,7 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
       className="fixed inset-0 z-50 mx-auto flex w-full max-w-[430px] flex-col overflow-y-auto bg-white"
     >
       <div className={`flex flex-col gap-3.5 px-6 pt-16 pb-7 text-white ${headerColor}`}>
-        <div className="flex size-[52px] items-center justify-center rounded-2xl bg-white text-alert">
+        <div className="flex size-[52px] items-center justify-center rounded-2xl bg-white text-alert shadow-[inset_0_-3px_0_rgba(0,0,0,0.12),0_10px_20px_-8px_rgba(0,0,0,0.45)]">
           <WarningIcon width={28} height={28} className={isCrisisLine ? "text-teal-dark" : ""} />
         </div>
         <h1 id="urgent-title" className="font-display text-[30px] leading-[1.15] font-semibold">
@@ -31,7 +31,7 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
             <a
               key={action.label}
               href={action.href}
-              className={`flex min-h-14 items-center justify-center gap-2.5 rounded-[14px] text-[17px] font-semibold text-white ${headerColor}`}
+              className={`press flex min-h-14 items-center justify-center gap-2.5 rounded-[14px] text-[17px] font-semibold text-white ${isCrisisLine ? "press-crisis" : "press-alert"}`}
             >
               <PhoneIcon /> {action.label}
             </a>
@@ -39,7 +39,7 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
             <a
               key={action.label}
               href={action.href}
-              className="flex min-h-[52px] items-center justify-center rounded-[14px] border-[1.5px] border-ink text-[15px] font-semibold text-ink"
+              className="tile-3d flex min-h-[52px] items-center justify-center rounded-[14px] border-[1.5px] border-ink text-[15px] font-semibold text-ink"
             >
               {action.label}
             </a>

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
-    if (err instanceof ApiError && err.status === 429) {
+    if (err instanceof ApiError && (err.status === 429 || err.status === 503)) {
       return Response.json({ error: "Clara is busy right now. Try again in a moment." }, { status: 429 });
     }
     return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });

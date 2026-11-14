@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import type { BodyFocus } from "@/lib/body";
+import { SYSTEM_LABELS } from "@/lib/body";
 import type { RedFlag } from "@/lib/red-flags";
 import type { Source } from "@/lib/types";
-import { BackIcon, SendIcon } from "./icons";
+import { BodyViewer } from "./anatomy/body-viewer";
+import { BackIcon, CubeIcon, SendIcon } from "./icons";
 import { UrgentScreen } from "./urgent-screen";
 
 interface Message {
@@ -13,6 +16,7 @@ interface Message {
   content: string;
   sources?: Source[];
   usedData?: string[];
+  focus?: BodyFocus;
   error?: boolean;
 }
 
@@ -21,6 +25,7 @@ const SUGGESTIONS = [
   "Can I take turmeric or herbal tea with my medicines?",
   "What does my blood pressure number mean?",
   "Is grapefruit okay with my cholesterol medicine?",
+  "I sprained my left ankle. Can I take ibuprofen for the pain?",
 ];
 
 export function Chat() {
@@ -28,6 +33,7 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [flag, setFlag] = useState<RedFlag | null>(null);
+  const [viewer, setViewer] = useState<BodyFocus | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,8 +65,10 @@ export function Chat() {
       } else if (data.kind === "answer") {
         setMessages([
           ...next,
-          { role: "assistant", content: data.text, sources: data.sources, usedData: data.usedData },
+          { role: "assistant", content: data.text, sources: data.sources, usedData: data.usedData, focus: data.focus },
         ]);
+        // Pop the 3D body up when the answer is about a specific body part.
+        if (data.focus) setViewer(data.focus);
       } else {
         setMessages([...next, { role: "assistant", content: data.error ?? "Something went wrong.", error: true }]);
       }
@@ -73,8 +81,8 @@ export function Chat() {
 
   return (
     <div className="flex h-dvh flex-col">
-      <header className="flex items-center gap-2 border-b border-line bg-white px-4 pt-12 pb-3">
-        <Link href="/today" aria-label="Back to Today" className="flex size-11 items-center justify-center">
+      <header className="relative z-10 flex items-center gap-2 border-b border-line/70 bg-white/80 px-4 pt-12 pb-3 shadow-[0_8px_20px_-14px_rgba(10,79,73,0.35)] backdrop-blur-md">
+        <Link href="/today" aria-label="Back to Today" className="tile-3d flex size-11 items-center justify-center rounded-full">
           <BackIcon width={22} height={22} />
         </Link>
         <div className="flex flex-col">
@@ -95,7 +103,8 @@ export function Chat() {
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="min-h-11 rounded-2xl border border-[#C9D2CE] bg-white px-4 py-2.5 text-left text-sm text-ink hover:border-teal"
+                  className="slab lift rise min-h-11 rounded-2xl px-4 py-2.5 text-left text-sm text-ink"
+                  style={{ "--i": SUGGESTIONS.indexOf(s) } as React.CSSProperties}
                 >
                   {s}
                 </button>
@@ -108,21 +117,21 @@ export function Chat() {
           m.role === "user" ? (
             <div
               key={i}
-              className="max-w-[80%] self-end rounded-[18px_18px_4px_18px] bg-teal px-3.5 py-3 text-[15px] leading-snug text-white"
+              className="press rise max-w-[80%] self-end rounded-[18px_18px_4px_18px] px-3.5 py-3 text-[15px] leading-snug text-white"
             >
               {m.content}
             </div>
           ) : (
             <div
               key={i}
-              className={`flex flex-col gap-3 rounded-[18px_18px_18px_4px] border p-4 ${
-                m.error ? "border-amber/30 bg-amber-soft text-amber-ink" : "border-line bg-white"
+              className={`rise flex flex-col gap-3 rounded-[18px_18px_18px_4px] p-4 ${
+                m.error ? "border border-amber/30 bg-amber-soft text-amber-ink" : "slab"
               }`}
             >
               {m.usedData && m.usedData.length > 0 && (
                 <div className="flex flex-wrap gap-1.5" aria-label="Data used">
                   {m.usedData.map((d) => (
-                    <span key={d} className="rounded-full bg-teal-soft px-2.5 py-1 text-[11px] font-semibold text-teal-dark">
+                    <span key={d} className="tile-teal rounded-full px-2.5 py-1 text-[11px] font-semibold text-teal-dark">
                       {d}
                     </span>
                   ))}
@@ -131,6 +140,19 @@ export function Chat() {
               <div className="answer text-[15px] leading-normal text-body">
                 <ReactMarkdown>{m.content}</ReactMarkdown>
               </div>
+              {m.focus && (
+                <button
+                  type="button"
+                  onClick={() => setViewer(m.focus!)}
+                  className="tile-teal flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-left"
+                >
+                  <CubeIcon width={18} height={18} className="shrink-0 text-teal" />
+                  <span className="flex grow flex-col">
+                    <span className="text-[13px] font-semibold text-teal-dark">See it in 3D: {m.focus.label}</span>
+                    <span className="text-[11px] text-muted">{SYSTEM_LABELS[m.focus.system]} view</span>
+                  </span>
+                </button>
+              )}
               {m.sources && m.sources.length > 0 && (
                 <div className="flex flex-col gap-1 border-t border-panel pt-2.5">
                   <span className="text-[11px] font-semibold tracking-wide text-subtle uppercase">Sources</span>
@@ -152,7 +174,7 @@ export function Chat() {
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 self-start rounded-[18px] border border-line bg-white px-4 py-3 text-sm text-subtle">
+          <div className="slab flex items-center gap-2 self-start rounded-[18px] px-4 py-3 text-sm text-subtle">
             <span className="size-2 animate-pulse rounded-full bg-teal" />
             Checking your record…
           </div>
@@ -165,7 +187,7 @@ export function Chat() {
           e.preventDefault();
           send(input);
         }}
-        className="flex items-center gap-2 border-t border-line bg-white px-4 pt-3 pb-7"
+        className="relative z-10 flex items-center gap-2 border-t border-line/70 bg-white/85 px-4 pt-3 pb-7 shadow-[0_-8px_20px_-14px_rgba(10,79,73,0.35)] backdrop-blur-md"
       >
         <label htmlFor="ask-input" className="sr-only">
           Ask a health question
@@ -176,18 +198,19 @@ export function Chat() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about your health…"
           autoComplete="off"
-          className="min-h-[46px] grow rounded-full border border-[#C9D2CE] bg-ground px-4 text-[15px] text-ink outline-teal"
+          className="well min-h-[46px] grow rounded-full px-4 text-[15px] text-ink outline-teal"
         />
         <button
           type="submit"
           aria-label="Send"
           disabled={loading || !input.trim()}
-          className="flex size-[46px] shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:opacity-50"
+          className="press flex size-[46px] shrink-0 items-center justify-center rounded-full text-white disabled:opacity-60"
         >
           <SendIcon />
         </button>
       </form>
 
+      {viewer && !flag && <BodyViewer focus={viewer} onClose={() => setViewer(null)} />}
       {flag && <UrgentScreen flag={flag} onBack={() => setFlag(null)} />}
     </div>
   );
