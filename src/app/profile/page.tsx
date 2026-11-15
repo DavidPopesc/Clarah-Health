@@ -76,7 +76,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         </header>
 
         {/* Phones: one column in the order below (CSS order). Desktop: the main column holds focus
-            areas and documents; the side column holds sources, results in range, meds and Ask. */}
+            areas and documents; the side column holds sources, meds, results in range and Ask. */}
         <div className="desk flex flex-col gap-7 px-5 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-10 lg:pt-3">
           <div className="contents lg:flex lg:flex-col lg:gap-9">
           <section className="order-2 flex flex-col gap-3 lg:order-none" aria-labelledby="attention-heading">
@@ -111,29 +111,8 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
             {!status.epic && !status.fitbit && !errorText && <p className="text-[11px] text-subtle">Live mode: link MyChart or Fitbit to see your own data.</p>}
           </section>
 
-          {good.length > 0 && (
-            <section className="order-4 lg:order-none" aria-labelledby="good-heading">
-              <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
-                <h2 id="good-heading" className="clinical-label text-muted">Within expected range</h2>
-                <span className="clinical-label text-[#2f5443]">Reviewed</span>
-              </div>
-              {/* Simple green tiles: everything here is in its expected range. */}
-              <ul className="grid grid-cols-2 gap-2 lg:grid-cols-1 xl:grid-cols-2">
-                {good.map((item) => (
-                  <li key={item.label} className="tint-good flex flex-col gap-1 rounded-md px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3 xl:flex-col xl:items-stretch xl:justify-start xl:gap-1">
-                    <span className="flex items-start gap-1.5 text-[12px] leading-snug font-semibold text-[#2f5443]">
-                      <CheckIcon width={14} height={14} className="mt-0.5 shrink-0" />
-                      {item.label}
-                    </span>
-                    <span className="pl-[19px] font-mono text-[15px] font-semibold text-[#22402f] lg:pl-0 xl:pl-[19px]">{item.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           {meds.length > 0 && (
-            <section className="order-5 lg:order-none" aria-labelledby="meds-heading">
+            <section className="order-4 lg:order-none" aria-labelledby="meds-heading">
               <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
                 <h2 id="meds-heading" className="clinical-label text-muted">Active medications</h2>
                 <span className="clinical-label text-teal-dark">{meds.length} listed</span>
@@ -173,6 +152,27 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
                 })}
               </ul>
               <p className="mt-1.5 text-[10px] leading-snug text-subtle">General information, not advice for you. Ask your pharmacist about other side effects.</p>
+            </section>
+          )}
+
+          {good.length > 0 && (
+            <section className="order-5 lg:order-none" aria-labelledby="good-heading">
+              <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
+                <h2 id="good-heading" className="clinical-label text-muted">Within expected range</h2>
+                <span className="clinical-label text-[#2f5443]">Reviewed</span>
+              </div>
+              {/* Simple green tiles: everything here is in its expected range. */}
+              <ul className="grid grid-cols-2 gap-2 lg:grid-cols-1 xl:grid-cols-2">
+                {good.map((item) => (
+                  <li key={item.label} className="tint-good flex flex-col gap-1 rounded-md px-3 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3 xl:flex-col xl:items-stretch xl:justify-start xl:gap-1">
+                    <span className="flex items-start gap-1.5 text-[12px] leading-snug font-semibold text-[#2f5443]">
+                      <CheckIcon width={14} height={14} className="mt-0.5 shrink-0" />
+                      {item.label}
+                    </span>
+                    <span className="pl-[19px] font-mono text-[15px] font-semibold text-[#22402f] lg:pl-0 xl:pl-[19px]">{item.value}</span>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
