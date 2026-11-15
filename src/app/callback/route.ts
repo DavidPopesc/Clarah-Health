@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { epicConfig } from "@/lib/epic";
-import { appOrigin, EPIC_COOKIE, finishPkce, writeSession } from "@/lib/session";
+import { epicRedirectUri, EPIC_COOKIE, finishPkce, writeSession } from "@/lib/session";
+
+// Epic's registered redirect URI is <origin>/callback (see epicRedirectUri).
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
+  if (params.get("error")) {
+    console.error("Epic authorization error", params.get("error"), params.get("error_description"));
+  }
   const verifier = await finishPkce("epic", params.get("state"));
   const code = params.get("code");
   if (!verifier || !code) {
@@ -16,7 +21,7 @@ export async function GET(request: Request) {
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      redirect_uri: `${appOrigin(request)}/api/auth/epic/callback`,
+      redirect_uri: epicRedirectUri(request),
       client_id: epicConfig.clientId!,
       code_verifier: verifier,
     }),

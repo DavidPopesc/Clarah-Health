@@ -74,7 +74,7 @@ npm test                     # red-flag and body-detection tests
 
 Only one AI key is required: `GEMINI_API_KEY`, `OPENAI_API_KEY`, or both for automatic fallback. Without Epic or Fitbit credentials, Clara uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
 
-**Epic sandbox:** create a non-production app at [fhir.epic.com](https://fhir.epic.com) as a patient-facing app. Select the R4 APIs Patient.Read, MedicationRequest.Search, Condition.Search and Observation.Search, and set the redirect URI to `http://localhost:3000/api/auth/epic/callback`. Sign in with one of Epic's [sandbox test patients](https://fhir.epic.com/Documentation?docId=testpatients). New client IDs can take a while to activate.
+**Epic sandbox:** create a non-production app at [fhir.epic.com](https://fhir.epic.com) as a patient-facing app. Select the R4 APIs Patient.Read, MedicationRequest.Search, Condition.Search and Observation.Search, and add the redirect URIs `http://localhost:3000/callback` and `https://<your-domain>/callback` (they must match exactly). Put the **Non-Production Client ID** in `EPIC_CLIENT_ID`. Sign in with one of Epic's [sandbox test patients](https://fhir.epic.com/Documentation?docId=testpatients), for example Camila Lopez (`fhircamila` / `epicepic1`). New client IDs can take a while to activate.
 
 **Fitbit:** register a "Personal" app at [dev.fitbit.com](https://dev.fitbit.com/apps) with the callback `http://localhost:3000/api/auth/fitbit/callback`.
 

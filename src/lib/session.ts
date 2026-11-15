@@ -73,3 +73,9 @@ export async function finishPkce(provider: string, state: string | null) {
 export function appOrigin(request: Request) {
   return process.env.APP_URL ?? new URL(request.url).origin;
 }
+
+// Must match a redirect URI registered on the Epic app exactly, e.g.
+// https://www.clarah.health/callback and http://localhost:3000/callback.
+export function epicRedirectUri(request: Request) {
+  return `${appOrigin(request)}/callback`;
+}

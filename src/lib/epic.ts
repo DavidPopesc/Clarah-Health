@@ -7,7 +7,8 @@ import type {
 } from "./types";
 
 // Epic SMART on FHIR (R4), standalone patient launch with PKCE.
-// Register an app at https://fhir.epic.com to get a non-production client ID.
+// Register an app at https://fhir.epic.com to get a non-production client ID;
+// its redirect URI is <origin>/callback.
 
 export const epicConfig = {
   clientId: process.env.EPIC_CLIENT_ID,
@@ -51,19 +52,30 @@ function hasLoinc(concept: any, code: string) {
 
 const day = (s?: string) => (s ?? "").slice(0, 10);
 
+// Patient is required; the other searches are optional, so an API the app
+// wasn't granted (403) or a sandbox hiccup only empties that section.
+async function fhirSearch(path: string, token: string): Promise<any[]> {
+  try {
+    return entries(await fhirGet(path, token));
+  } catch (err) {
+    console.error("Epic search failed, skipping", err);
+    return [];
+  }
+}
+
 export async function fetchEpicRecord(token: string, patientId: string): Promise<PatientRecord> {
   const [patient, meds, conditions, labs, vitals] = await Promise.all([
     fhirGet(`Patient/${patientId}`, token),
-    fhirGet(`MedicationRequest?patient=${patientId}`, token),
-    fhirGet(`Condition?patient=${patientId}&category=problem-list-item`, token),
-    fhirGet(`Observation?patient=${patientId}&category=laboratory`, token),
-    fhirGet(`Observation?patient=${patientId}&category=vital-signs`, token),
+    fhirSearch(`MedicationRequest?patient=${patientId}`, token),
+    fhirSearch(`Condition?patient=${patientId}&category=problem-list-item`, token),
+    fhirSearch(`Observation?patient=${patientId}&category=laboratory`, token),
+    fhirSearch(`Observation?patient=${patientId}&category=vital-signs`, token),
   ]);
 
   const name = patient.name?.[0];
   const givenName = name?.given?.[0] ?? "there";
 
-  const medications: Medication[] = entries(meds).map((m) => ({
+  const medications: Medication[] = meds.map((m) => ({
     name: m.medicationCodeableConcept
       ? codeText(m.medicationCodeableConcept)
       : (m.medicationReference?.display ?? "Unknown medication"),
@@ -71,12 +83,12 @@ export async function fetchEpicRecord(token: string, patientId: string): Promise
     status: m.status === "active" ? "active" : "stopped",
   }));
 
-  const conditionList: Condition[] = entries(conditions).map((c) => ({
+  const conditionList: Condition[] = conditions.map((c) => ({
     name: codeText(c.code),
     since: day(c.onsetDateTime ?? c.recordedDate) || undefined,
   }));
 
-  const labResults: LabResult[] = entries(labs)
+  const labResults: LabResult[] = labs
     .filter((o) => typeof o.valueQuantity?.value === "number")
     .map((o) => ({
       name: codeText(o.code),
@@ -85,7 +97,7 @@ export async function fetchEpicRecord(token: string, patientId: string): Promise
       date: day(o.effectiveDateTime ?? o.issued),
     }));
 
-  const bloodPressure: BloodPressureReading[] = entries(vitals)
+  const bloodPressure: BloodPressureReading[] = vitals
     .filter((o) => hasLoinc(o.code, "85354-9") || o.component?.length)
     .map((o) => {
       const comp = (code: string) =>

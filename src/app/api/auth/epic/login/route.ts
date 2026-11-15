@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { epicConfig, epicEnabled } from "@/lib/epic";
-import { appOrigin, startPkce } from "@/lib/session";
+import { epicRedirectUri, startPkce } from "@/lib/session";
 
 export async function GET(request: Request) {
   if (!epicEnabled()) {
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   url.search = new URLSearchParams({
     response_type: "code",
     client_id: epicConfig.clientId!,
-    redirect_uri: `${appOrigin(request)}/api/auth/epic/callback`,
+    redirect_uri: epicRedirectUri(request),
     scope: epicConfig.scope,
     state,
     aud: epicConfig.fhirBase,
