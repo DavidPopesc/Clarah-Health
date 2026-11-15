@@ -27,10 +27,7 @@ export function DesktopNav() {
         <span className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
           <ClaraLogo width={24} height={24} />
         </span>
-        <span className="flex flex-col">
-          <span className="text-[20px] leading-none font-semibold">Clarah Health</span>
-          <span className="clinical-label mt-1 text-[#dfe8d8]">Health record</span>
-        </span>
+        <span className="text-[20px] leading-none font-semibold">Clarah Health</span>
       </Link>
 
       <nav aria-label="Main" className="flex flex-col gap-1 p-3">
