@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { getAudio, putAudio } from "@/lib/visit-store";
 import { recapToText, type VisitRecap } from "@/lib/visit-verify";
 import { CopyIcon, DownloadIcon, PauseIcon, PlayIcon, RestartIcon } from "../icons";
+import { loadRate, saveRate } from "@/lib/voice";
+import { SpeedDial } from "../speed-dial";
 import { ClaraAvatar } from "./clara-avatar";
 
 type State = "idle" | "loading" | "playing" | "paused" | "done";
 type Voice = "ai" | "device";
 
-const RATES = [0.85, 1, 1.15];
 // Bump when the server voice changes so cached audio isn't reused.
 const VOICE_VERSION = "v1";
 
@@ -44,6 +45,11 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   const voiceRef = useRef<Voice>("ai");
 
   useEffect(() => {
+    // The patient's saved speed, shared with Ask Clara.
+    const saved = loadRate();
+    rateRef.current = saved;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the saved speed once, after hydration
+    setRate(saved);
     const clipMap = clips.current;
     return () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps -- a counter, not a DOM ref: bumping it cancels playback in flight
@@ -154,6 +160,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   function changeRate(r: number) {
     rateRef.current = r;
     setRate(r);
+    saveRate(r); // shared with Ask Clara
     if (audio.current) audio.current.playbackRate = r;
   }
 
@@ -228,19 +235,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-panel pt-3">
-          <div className="flex items-center gap-1" role="group" aria-label="Speaking speed">
-            {RATES.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => changeRate(r)}
-                aria-pressed={rate === r}
-                className={`min-h-9 rounded-md border px-2.5 font-mono text-[12px] ${rate === r ? "border-teal bg-teal-soft font-semibold text-teal-dark" : "border-line text-subtle"}`}
-              >
-                {r === 0.85 ? "Slower" : r === 1 ? "Normal" : "Faster"}
-              </button>
-            ))}
-          </div>
+          <SpeedDial rate={rate} onChange={changeRate} />
           {(active || state === "done") && (
             <button type="button" onClick={() => void playFrom(0)} className="flex min-h-9 items-center gap-1.5 text-[13px] font-semibold text-teal">
               <RestartIcon width={15} height={15} /> Start over

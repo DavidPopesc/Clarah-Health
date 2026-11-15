@@ -8,8 +8,11 @@ import { SYSTEM_LABELS } from "@/lib/body";
 import type { RedFlag } from "@/lib/red-flags";
 import type { Source } from "@/lib/types";
 import { BodyViewer } from "./anatomy/body-viewer";
-import { BackIcon, CubeIcon, SendIcon } from "./icons";
+import { loadReadAloud, saveReadAloud } from "@/lib/voice";
+import { BackIcon, CubeIcon, SendIcon, SpeakerIcon, StopIcon } from "./icons";
+import { SpeedDial } from "./speed-dial";
 import { UrgentScreen } from "./urgent-screen";
+import { useClaraVoice } from "./use-clara-voice";
 import { ClaraAvatar } from "./visits/clara-avatar";
 
 interface Message {
@@ -40,6 +43,25 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
   const endRef = useRef<HTMLDivElement>(null);
   const askedInitial = useRef(false);
 
+  // "Read answers aloud": Clara speaks each new answer in her voice. Remembered on this device.
+  const voice = useClaraVoice();
+  const [readAloud, setReadAloud] = useState(false);
+  const readAloudRef = useRef(false);
+  useEffect(() => {
+    const on = loadReadAloud();
+    readAloudRef.current = on;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the saved choice once, after hydration
+    setReadAloud(on);
+  }, []);
+
+  function toggleReadAloud() {
+    const on = !readAloudRef.current;
+    readAloudRef.current = on;
+    setReadAloud(on);
+    saveReadAloud(on);
+    if (!on) voice.stop();
+  }
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, status]);
@@ -47,6 +69,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
   async function send(text: string) {
     const question = text.trim();
     if (!question || loading) return;
+    voice.stop();
     const next: Message[] = [...messages, { role: "user", content: question }];
     setMessages(next);
     setInput("");
@@ -114,6 +137,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
       if (!failed && !content) update({ content: "Something went wrong. Please try again.", error: true, streaming: false });
       // Pop the 3D body up when the answer is about a specific body part.
       if (!failed && focus) setViewer(focus);
+      if (!failed && content && readAloudRef.current) void voice.speak(`m${at}`, content);
     } catch {
       setMessages([...next, { role: "assistant", content: "Couldn't reach Clara. Check your connection and try again.", error: true }]);
     } finally {
@@ -233,6 +257,25 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
                   ))}
                 </div>
               )}
+              {!m.streaming && !m.error && m.content && (
+                <div className="flex items-center gap-2 border-t border-panel pt-2.5">
+                  {voice.speakingId === `m${i}` ? (
+                    <button type="button" onClick={voice.stop} className="flex min-h-9 items-center gap-1.5 rounded-md border border-teal bg-teal-soft px-3 text-[12px] font-semibold text-teal-dark">
+                      <StopIcon width={13} height={13} /> Stop
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => void voice.speak(`m${i}`, m.content)} className="flex min-h-9 items-center gap-1.5 rounded-md border border-line px-3 text-[12px] font-semibold text-teal hover:border-teal">
+                      <SpeakerIcon width={15} height={15} /> Listen
+                    </button>
+                  )}
+                  {voice.speakingId === `m${i}` && (
+                    <span className="flex items-center gap-1.5 text-[12px] text-subtle" role="status">
+                      <ClaraAvatar size={26} speaking={!voice.loading} />
+                      {voice.loading ? "Getting Clara's voice ready…" : "Clara is reading this answer"}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ),
         )}
@@ -252,8 +295,19 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           e.preventDefault();
           send(input);
         }}
-        className="relative z-10 border-t border-line bg-white px-4 pt-3 pb-6 lg:px-10 lg:pb-5"
+        className="relative z-10 border-t border-line bg-white px-4 pt-2.5 pb-6 lg:px-10 lg:pb-5"
       >
+        <div className="mx-auto mb-2.5 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <button type="button" role="switch" aria-checked={readAloud} onClick={toggleReadAloud} className="flex min-h-9 items-center gap-2 text-[13px] font-semibold text-body">
+            <span className={`relative h-6 w-11 shrink-0 rounded-full border-[1.5px] transition-colors ${readAloud ? "border-teal bg-teal" : "border-[#b9c6aa] bg-[#e6ebdf]"}`} aria-hidden="true">
+              <span className={`absolute top-1/2 size-[18px] -translate-y-1/2 rounded-full bg-white shadow transition-[left] ${readAloud ? "left-[21px]" : "left-[2px]"}`} />
+            </span>
+            <SpeakerIcon width={16} height={16} className={readAloud ? "text-teal" : "text-subtle"} />
+            Read answers aloud
+          </button>
+          <SpeedDial rate={voice.rate} onChange={voice.setRate} />
+        </div>
+        {voice.notice && <p className="mx-auto mb-2 w-full max-w-3xl text-[12px] text-amber-ink">{voice.notice}</p>}
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2">
         <label htmlFor="ask-input" className="sr-only">
           Ask a health question

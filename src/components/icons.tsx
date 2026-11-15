@@ -105,6 +105,9 @@ export const DownloadIcon = (p: P) => (
 export const CopyIcon = (p: P) => (
   <Icon {...p}><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></Icon>
 );
+export const SpeakerIcon = (p: P) => (
+  <Icon {...p}><path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /></Icon>
+);
 export const VisitIcon = (p: P) => (
   <Icon {...p}><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></Icon>
 );
