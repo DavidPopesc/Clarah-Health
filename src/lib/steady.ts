@@ -269,9 +269,9 @@ export async function takeCommands(deviceId: string): Promise<RemoteCommand[]> {
 // ---------------------------------------------------------------- sync pace
 
 // While someone has /steady open the board syncs every second, so the live graph is smooth;
-// otherwise every 30 s. The page's polling marks the device as watched.
+// otherwise every 10 s. The page's polling marks the device as watched.
 export const FAST_SYNC_S = 1;
-export const IDLE_SYNC_S = 30;
+export const IDLE_SYNC_S = 10;
 const WATCHED_FOR_MS = 15_000;
 const memoryViewers = new Map<string, number>();
 

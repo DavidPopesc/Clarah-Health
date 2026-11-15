@@ -668,7 +668,7 @@ ui.expose_api("GET", "/api/summary", api_summary)
 
 
 # Idle pace. Clarah's reply sets the next wait (next_sync_s): 1 s while someone has /steady open.
-SYNC_INTERVAL_S = float(os.environ.get("STEADY_SYNC_INTERVAL_S", "30"))
+SYNC_INTERVAL_S = float(os.environ.get("STEADY_SYNC_INTERVAL_S", "10"))
 
 
 def ingest_payload():
