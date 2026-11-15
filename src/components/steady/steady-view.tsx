@@ -168,10 +168,22 @@ const SIM_STEPS = [
   "Sharing fall details and location with the dispatcher (simulated)",
 ];
 
-function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose, closeLabel = "Close" }: {
+function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose, closeLabel = "Close", remote }: {
   p: SteadyPayload; offsetMs: number; careTeamPhone?: string; onClose?: () => void; closeLabel?: string;
+  /** Live mode: the website can end the alarm on the device. */
+  remote?: boolean;
 }) {
   const [now, setNow] = useState(() => Date.now());
+  const [sent, setSent] = useState<"" | "sending" | "sent" | "failed">("");
+  async function imOk(command: "cancel" | "resolve") {
+    setSent("sending");
+    try {
+      const res = await fetch("/api/steady/command", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ command }) });
+      setSent(res.ok ? "sent" : "failed");
+    } catch {
+      setSent("failed");
+    }
+  }
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
@@ -229,9 +241,17 @@ function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose, closeLabel = "Cl
         {careTeamPhone && (
           <a href={`tel:${careTeamPhone}`} className="tile-3d flex min-h-12 items-center justify-center rounded-md text-[15px] font-semibold text-ink">Call my care team</a>
         )}
+        {remote && (
+          <button type="button" onClick={() => imOk(counting ? "cancel" : "resolve")} disabled={sent === "sending" || sent === "sent"}
+            className="tile-3d flex min-h-14 items-center justify-center gap-2 rounded-md border-2 border-[#3f8a5c] text-[16px] font-semibold text-[#2f5443] disabled:opacity-70">
+            <CheckIcon width={18} height={18} />
+            {sent === "sent" ? "Sent: the device will stop in a few seconds" : sent === "sending" ? "Sending…" : counting ? "I'm OK, cancel the alarm" : "Everyone's OK, end the alarm"}
+          </button>
+        )}
+        {sent === "failed" && <p role="alert" className="text-[13px] font-semibold text-alert">Couldn&apos;t reach the device. Use the device button instead.</p>}
         {!counting && (
           <p className="well rounded-md p-3 text-[13px] leading-snug text-body">
-            <strong className="text-ink">Is everyone OK?</strong> Hold the button on the device for 3 seconds to end the alarm (a short press only quiets the buzzer). This screen clears a few seconds later.
+            <strong className="text-ink">On the device:</strong> hold the button for 3 seconds to end the alarm (a short press only quiets the buzzer). This screen clears a few seconds later.
           </p>
         )}
         {onClose && <button type="button" onClick={onClose} className="min-h-11 text-sm font-semibold text-muted underline">{closeLabel}</button>}
@@ -304,6 +324,7 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
           careTeamPhone={careTeamPhone}
           onClose={preview ? () => setPreview(null) : () => setHiddenAlert(alertId)}
           closeLabel={preview ? "Close preview" : "Hide this screen (the alarm stays on)"}
+          remote={!preview && !demo}
         />
       )}
       {!showEmergency && !stale && (p.emergency.active || p.alert) && (

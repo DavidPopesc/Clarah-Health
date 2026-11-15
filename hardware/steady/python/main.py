@@ -693,7 +693,12 @@ def sync_loop():
                 data=json.dumps(ingest_payload()).encode(), method="POST",
                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as response:
-                response.read()
+                reply = json.loads(response.read() or b"{}")
+            # The website can end ("resolve") or cancel the alarm; run it like the dashboard does.
+            for c in reply.get("commands") or []:
+                if c in ("cancel", "resolve"):
+                    log.info(f"Clarah asked the device to {c}")
+                    cmd(c)
             if sync_status.get("state") != "ok":
                 log.info("Clarah sync succeeded")
             sync_status.update({"state": "ok", "at": now(), "error": None})

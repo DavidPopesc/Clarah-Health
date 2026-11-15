@@ -227,6 +227,45 @@ export async function latestReading(deviceId = process.env.STEADY_DEVICE_ID ?? "
   return payload ? { payload, receivedAt: doc.updated_at, source: "device" } : null;
 }
 
+// ---------------------------------------------------------------- remote commands
+
+// The website can end or cancel the device's alarm. Commands wait in a "<device>:commands"
+// document until the board's next sync (every 5 s) picks them up in the ingest response.
+export const REMOTE_COMMANDS = ["cancel", "resolve"] as const;
+export type RemoteCommand = (typeof REMOTE_COMMANDS)[number];
+const COMMAND_TTL_MS = 2 * 60_000;
+const memoryCommands = new Map<string, { commands: RemoteCommand[]; at: number }>();
+
+async function writeCommands(deviceId: string, commands: RemoteCommand[]) {
+  const entry = { commands, at: Date.now() };
+  memoryCommands.set(deviceId, entry);
+  const cfg = storeConfig();
+  if (!cfg) return;
+  const res = await fetch(`${cfg.base}?action=upsert`, {
+    method: "POST",
+    headers: { "X-TYPESENSE-API-KEY": cfg.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ id: `${deviceId}:commands`, updated_at: entry.at, payload: JSON.stringify(entry) }),
+  });
+  if (!res.ok) throw new Error(`Steady command write failed (${res.status})`);
+}
+
+export async function queueCommand(command: RemoteCommand, deviceId = process.env.STEADY_DEVICE_ID ?? "uno-q") {
+  await writeCommands(deviceId, [command]);
+}
+
+/** Commands waiting for this device (dropped after 2 minutes), cleared once handed over. */
+export async function takeCommands(deviceId: string): Promise<RemoteCommand[]> {
+  const cfg = storeConfig();
+  let entry = memoryCommands.get(deviceId) ?? null;
+  if (cfg) {
+    const res = await fetch(`${cfg.base}/${encodeURIComponent(`${deviceId}:commands`)}`, { headers: { "X-TYPESENSE-API-KEY": cfg.key }, cache: "no-store" });
+    entry = res.ok ? (JSON.parse(((await res.json()) as { payload: string }).payload) as { commands: RemoteCommand[]; at: number }) : null;
+  }
+  if (!entry?.commands.length) return [];
+  await writeCommands(deviceId, []);
+  return Date.now() - entry.at < COMMAND_TTL_MS ? entry.commands.filter((c) => REMOTE_COMMANDS.includes(c)) : [];
+}
+
 // ---------------------------------------------------------------- demo readings
 
 const dayString = (offset: number, today: Date) => {
