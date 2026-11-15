@@ -7,7 +7,7 @@ trunk sway, while visibly wobbly stretches score 73-80 with 25-50 degrees of swa
 SPOT_COOLDOWN_S = 30.0   # don't repeat the pop-up more often than this
 BAD_SCORE = 80.0         # a window this unsteady is bad on its own
 BAD_DROP = 8.0           # or this many points below the wearer's usual
-BAD_SWAY_DEG = 25.0      # or the trunk swinging this far from its usual posture
+BAD_SWAY_DEG = 25.0      # mentioned in the message; not a trigger on its own (handling the device sways it)
 
 DOCTOR_ADVICE = "If you feel your walking is getting worse, call your doctor."
 
@@ -16,7 +16,7 @@ def spot_check(score: float, usual: float | None, sway: float | None = None) -> 
     """Returns an alert when one 10 s window is really bad, else None."""
     drop = (usual - score) if usual is not None else 0.0
     swaying = sway is not None and sway >= BAD_SWAY_DEG
-    if score > BAD_SCORE and drop < BAD_DROP and not swaying:
+    if score > BAD_SCORE and drop < BAD_DROP:
         return None
     vs = f" (usual {usual:.0f})" if usual is not None else ""
     sway_note = f", swaying {sway:.0f} degrees" if swaying else ""

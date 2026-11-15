@@ -98,7 +98,7 @@ class SpotCheckTest(unittest.TestCase):
         self.assertIsNone(spot_check(92, 86, 3))         # steady walking on the board
         self.assertIsNone(spot_check(84, 86, 16))        # a little looser, still fine
         self.assertIsNotNone(spot_check(76, 86, 50))     # recorded wobble: low score, big sway
-        self.assertIsNotNone(spot_check(87, 86, 32))     # big sway even with a decent score
+        self.assertIsNone(spot_check(87, 86, 32))        # sway alone (picking the device up) is not a warning
         bad = spot_check(77, 86, 12)                      # 9 below usual
         self.assertEqual(bad["drop"], 9.0)
         self.assertIn("call your doctor", bad["message"])

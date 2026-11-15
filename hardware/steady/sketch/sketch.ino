@@ -179,6 +179,7 @@ uint32_t harshCountdownMs = 10000;
 bool harshFall = false, hadFreefall = false;
 int harshRun = 0;
 const uint32_t HELP_COUNTDOWN_MS = 5000;
+const uint32_t HELP_HOLD_MS = 1000;  // hold this long to ask for help
 const uint32_t FALL_CHECK_MS = 3000;
 
 // Thresholds in g. The sensor saturates at 1.5 g per axis, so impact is judged
@@ -298,9 +299,7 @@ bool holdHandled = false;
 void onPress() {
   switch (state) {
     case NORMAL:
-      sendEvent("help_pressed", "");
-      setState(HELP_COUNTDOWN);
-      break;
+      break;  // help needs a 1 s hold (see updateButton), so squeezing the device doesn't start it
     case HELP_COUNTDOWN:
       sendEvent("help_cancelled", "button");
       setState(NORMAL);
@@ -326,6 +325,11 @@ void updateButton() {
   if (millis() - btnChangedAt > 25 && raw != btnStable) {
     btnStable = raw;
     if (btnStable) { btnDownAt = millis(); holdHandled = false; onPress(); }
+  }
+  if (btnStable && !holdHandled && state == NORMAL && millis() - btnDownAt > HELP_HOLD_MS) {
+    holdHandled = true;
+    sendEvent("help_pressed", "");
+    setState(HELP_COUNTDOWN);
   }
   if (btnStable && !holdHandled && state == EMERGENCY && millis() - btnDownAt > 3000) {
     holdHandled = true;
