@@ -195,7 +195,8 @@ def push_outbox():
         ui.send_message("outbox", {"items": outbox[-20:], "urls": {i["id"]: ntfy_url(i) for i in outbox[-20:]}})
 
 
-def on_relayed(sid, data):
+def on_relayed(sid, data=None):
+    data = data or {}
     with lock:
         for item in outbox:
             if item["id"] == data.get("id") and item["status"] != "sent":
@@ -441,7 +442,7 @@ def public_settings() -> dict:
     return {k: v for k, v in settings.items() if k not in ("clock_offset", "tz_offset_min")}
 
 
-def on_hello(sid, data):
+def on_hello(sid, data=None):
     client_ms = (data or {}).get("now")
     if client_ms and time.time() < CLOCK_PLAUSIBLE:
         offset = client_ms / 1000 - time.time()
@@ -461,7 +462,7 @@ def on_hello(sid, data):
     push_outbox()
 
 
-def on_save_settings(sid, data):
+def on_save_settings(sid, data=None):
     allowed = set(DEFAULT_SETTINGS) - {"baseline", "clock_offset", "tz_offset_min"}
     for k, v in (data or {}).items():
         if k in allowed:
@@ -476,7 +477,7 @@ def on_save_settings(sid, data):
     ui.send_message("settings", public_settings())
 
 
-def on_set_baseline(sid, data):
+def on_set_baseline(sid, data=None):
     s = balance.get("smoothed")
     settings["baseline"] = s
     save_settings()
@@ -486,13 +487,13 @@ def on_set_baseline(sid, data):
     push_balance()
 
 
-def on_test_alert(sid, data):
+def on_test_alert(sid, data=None):
     audience = (data or {}).get("audience", "contact")
     notify(audience, "Clarah Steady test", f"This is a test alert for {who()}. Alerts will arrive here.",
            priority="default", tags="bell")
 
 
-def on_seed_demo(sid, data):
+def on_seed_demo(sid, data=None):
     """Sample history: two weeks of walking with balance slipping in the last few days."""
     rng = np.random.default_rng(3)
     base_t = now()
@@ -516,7 +517,7 @@ def on_seed_demo(sid, data):
     push_balance()
 
 
-def on_clear_history(sid, data):
+def on_clear_history(sid, data=None):
     with lock:
         history.clear()
         open(HISTORY_PATH, "w").close()
@@ -529,7 +530,7 @@ def on_clear_history(sid, data):
 
 
 def simple(command: str):
-    def handler(sid, data):
+    def handler(sid, data=None):
         cmd(command)
     return handler
 

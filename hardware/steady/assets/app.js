@@ -263,7 +263,7 @@ function renderOverlay() {
 
   if (state === "fall_check") {
     kicker = "Checking"; title = "Did you fall?"; text = "Hold on, checking whether you're still upright.";
-    actions.push(btn("I'm OK", "btn-primary btn-big", () => socket.emit("cancel")));
+    actions.push(btn("I'm OK", "btn-primary btn-big", () => socket.emit("cancel", {})));
   } else if (state === "fall_countdown" || state === "help_countdown") {
     const isFall = state === "fall_countdown";
     const total = isFall ? (alert?.countdown_s || settings.countdown_s || 30) : 5;
@@ -274,8 +274,8 @@ function renderOverlay() {
     text = isFall
       ? `If you don't respond, Steady will alert ${contact}. Press the button on the device or tap below if you're fine.`
       : `Alerting ${contact} when the countdown ends. Press the button again to cancel.`;
-    actions.push(btn(isFall ? "I'm OK" : "Cancel", "btn-primary btn-big", () => socket.emit("cancel")));
-    actions.push(btn("Get help now", "btn-danger btn-big", () => socket.emit("help")));
+    actions.push(btn(isFall ? "I'm OK" : "Cancel", "btn-primary btn-big", () => socket.emit("cancel", {})));
+    actions.push(btn("Get help now", "btn-danger btn-big", () => socket.emit("help", {})));
     actions.push(link("Call 911", "tel:911", "btn-outline btn-big"));
   } else if (state === "emergency") {
     emergency = true;
@@ -284,8 +284,8 @@ function renderOverlay() {
     text = "If you are hurt or can't get up, call 911 now.";
     actions.push(link("Call 911", "tel:911", "btn-danger btn-big"));
     if (settings.contact_phone) actions.push(link(`Call ${settings.contact_name || "contact"}`, `tel:${settings.contact_phone}`, "btn-outline btn-big"));
-    actions.push(btn("Quiet the alarm", "btn-outline btn-big", () => socket.emit("silence")));
-    actions.push(btn("I'm safe now", "btn-primary btn-big", () => socket.emit("resolve")));
+    actions.push(btn("Quiet the alarm", "btn-outline btn-big", () => socket.emit("silence", {})));
+    actions.push(btn("I'm safe now", "btn-primary btn-big", () => socket.emit("resolve", {})));
   }
 
   if (!title) { ov.hidden = true; return; }
@@ -385,7 +385,7 @@ document.querySelectorAll("[data-cmd]").forEach((b) => b.addEventListener("click
 }));
 
 $("btn-help").addEventListener("click", () => {
-  if (confirm(`Send a help alert to ${settings.contact_name || "your emergency contact"} now?`)) socket.emit("help");
+  if (confirm(`Send a help alert to ${settings.contact_name || "your emergency contact"} now?`)) socket.emit("help", {});
 });
 
 document.querySelector("[data-dismiss=warning]").addEventListener("click", () => ($("warning").hidden = true));
