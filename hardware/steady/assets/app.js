@@ -57,9 +57,9 @@ function renderPill() {
   const d = status?.device;
   if (!d || !d.online) { pill.textContent = "Device not responding"; pill.className = "pill bad"; return; }
   if (d.sensor === "missing") { pill.textContent = "Check accelerometer"; pill.className = "pill bad"; return; }
-  const label = { normal: "Monitoring", fall_check: "Checking", fall_countdown: "Fall alarm", help_countdown: "Help requested", emergency: "Emergency" }[d.state] || d.state;
+  const label = { normal: "Monitoring", fall_check: "Monitoring", fall_countdown: "Fall alarm", help_countdown: "Help requested", emergency: "Emergency" }[d.state] || d.state;
   pill.textContent = label;
-  pill.className = "pill " + (d.state === "normal" ? "ok" : "bad");
+  pill.className = "pill " + (d.state === "normal" || d.state === "fall_check" ? "ok" : "bad");
 }
 
 function renderBalance() {
@@ -218,7 +218,8 @@ function traceSvg(trace) {
 
 function renderEvents() {
   const list = $("events");
-  const shown = events.filter((e) => e.kind !== "settings_saved").slice(-25).reverse();
+  const quiet = ["settings_saved", "fall_suspected", "fall_dismissed"];
+  const shown = events.filter((e) => !quiet.includes(e.kind)).slice(-25).reverse();
   $("events-empty").hidden = shown.length > 0;
   $("event-count").textContent = shown.length ? `${shown.length} recent` : "";
   list.innerHTML = shown.map((e) => {
@@ -238,6 +239,7 @@ function humanDetail(d) {
   if (kv.peak) out.push(`impact ${kv.peak} g`);
   if (kv.freefall === "1") out.push("after a drop");
   if (kv.angle) out.push(`body tilted ${kv.angle}°`);
+  if (kv.still) out.push(`then ${+kv.still <= 0.15 ? "still" : "moving"}`);
   return out.join(", ");
 }
 
@@ -261,10 +263,8 @@ function renderOverlay() {
   const actions = [];
   let kicker = "", title = "", count = "", text = "", emergency = false;
 
-  if (state === "fall_check") {
-    kicker = "Checking"; title = "Did you fall?"; text = "Hold on, checking whether you're still upright.";
-    actions.push(btn("I'm OK", "btn-primary btn-big", () => socket.emit("cancel", {})));
-  } else if (state === "fall_countdown" || state === "help_countdown") {
+  // fall_check (a hard bump being looked at for ~3 s) stays quiet; most turn out fine.
+  if (state === "fall_countdown" || state === "help_countdown") {
     const isFall = state === "fall_countdown";
     const total = isFall ? (alert?.countdown_s || settings.countdown_s || 30) : 5;
     const left = alert ? Math.max(0, Math.ceil(total - (status.now - alert.t))) : "";

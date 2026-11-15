@@ -176,16 +176,19 @@ String emergencyReason = "";
 
 uint32_t fallCountdownMs = 30000;
 const uint32_t HELP_COUNTDOWN_MS = 5000;
-const uint32_t FALL_CHECK_MS = 2500;
+const uint32_t FALL_CHECK_MS = 3000;
 
 // Thresholds in g. The sensor saturates at 1.5 g per axis, so impact is judged
 // on the magnitude of all three axes together.
-const float FREEFALL_G = 0.6f;
-const int FREEFALL_SAMPLES = 3;  // 60 ms
-const float IMPACT_G = 1.4f;
-const float HARD_IMPACT_G = 2.0f;
+// Tuned on real use: bumps and grabs of the sensor peak around 2.0-2.1 g and normal
+// movement dips under 0.6 g with 1.5 g rebounds, so those levels alone mean nothing.
+const float FREEFALL_G = 0.5f;
+const int FREEFALL_SAMPLES = 5;  // 100 ms
+const float IMPACT_G = 1.8f;
+const float HARD_IMPACT_G = 2.3f;  // two or three axes saturated at once
 const uint32_t FREEFALL_TO_IMPACT_MS = 1000;
-const float FALL_ANGLE_DEG = 40.0f;
+const float FALL_ANGLE_DEG = 50.0f;
+const float STILL_STD_G = 0.15f;  // someone who has fallen lies fairly still afterwards
 
 float gLP[3] = {0, 0, 1};    // slow gravity estimate
 float refG[3] = {0, 0, 1};   // posture before the event
@@ -193,6 +196,7 @@ int freefallRun = 0;
 uint32_t freefallAt = 0;
 float impactPeak = 0;
 float postSum[3];
+float postMagSum = 0, postMagSq = 0;
 int postN = 0;
 
 void sendEvent(const char* name, const String& detail) {
@@ -237,6 +241,7 @@ void processSample(const float a[3]) {
       impactPeak = mag;
       postN = 0;
       postSum[0] = postSum[1] = postSum[2] = 0;
+      postMagSum = postMagSq = 0;
       sendEvent("fall_suspected", "peak=" + String(mag, 2) + " freefall=" + (recentFreefall ? "1" : "0"));
       freefallAt = 0;
       setState(FALL_CHECK);
@@ -248,13 +253,17 @@ void processSample(const float a[3]) {
     } else if (t > 1000) {
       // Average posture once the bounce has settled.
       for (int i = 0; i < 3; i++) postSum[i] += a[i];
+      postMagSum += mag;
+      postMagSq += mag * mag;
       postN++;
     }
     if (t >= FALL_CHECK_MS) {
       float post[3] = {postSum[0] / postN, postSum[1] / postN, postSum[2] / postN};
       float angle = postN ? angleBetween(refG, post) : 0;
-      String detail = "angle=" + String(angle, 0) + " peak=" + String(impactPeak, 2);
-      if (angle >= FALL_ANGLE_DEG) {
+      float mean = postN ? postMagSum / postN : 0;
+      float sd = postN ? sqrtf(fmaxf(0, postMagSq / postN - mean * mean)) : 1;
+      String detail = "angle=" + String(angle, 0) + " peak=" + String(impactPeak, 2) + " still=" + String(sd, 2);
+      if (angle >= FALL_ANGLE_DEG && sd <= STILL_STD_G) {
         sendEvent("fall_detected", detail);
         setState(FALL_COUNTDOWN);
       } else {
@@ -400,7 +409,7 @@ void updateMatrix() {
       else if (riskLevel == 'h') drawIcon(ICON_WOBBLE, blink ? 7 : 3, balanceScore);
       else drawIcon(ICON_HEART, riskLevel == 'm' ? 5 : 3, balanceScore);
       break;
-    case FALL_CHECK: drawIcon(ICON_ALERT, 4, -1); break;
+    case FALL_CHECK: drawIcon(ICON_HEART, 3, balanceScore); break;
     case FALL_COUNTDOWN: drawIcon(ICON_ALERT, blink ? 7 : 0, -1); break;
     case HELP_COUNTDOWN: drawIcon(ICON_HELP, blink ? 7 : 0, -1); break;
     case EMERGENCY: drawIcon(ICON_SOS, blink ? 7 : 1, -1); break;

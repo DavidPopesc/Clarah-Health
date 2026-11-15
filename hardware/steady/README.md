@@ -18,7 +18,7 @@ Clip the accelerometer at your waist or lower back. It can face any direction.
 
 **Microcontroller (`sketch/`)** runs on its own, even if Linux or the dashboard is down:
 - Samples the accelerometer at 50 Hz and streams the samples to Linux.
-- **Fall detection:** a free fall (|a| < 0.6 g for 60 ms) followed within 1 s by an impact (|a| ≥ 1.4 g), or a single hard impact (≥ 2.0 g). It then waits 2.5 s and checks the body's angle. A tilt of 40° or more from the posture before the fall counts as a fall.
+- **Fall detection:** a free fall (|a| < 0.5 g for 100 ms) followed within 1 s by an impact (|a| ≥ 1.8 g), or a single very hard impact (≥ 2.3 g). It then watches for 3 s, silently. It counts as a fall only if the body ends up tilted 50° or more from before and lies fairly still (the spread of the acceleration stays under 0.15 g).
 - **After a fall:** the buzzer counts down for 30 s (configurable) and the LED matrix flashes "!". Press the button if you're OK. If you don't respond, an emergency starts: the buzzer plays SOS, the matrix shows SOS, and your contact is alerted.
 - **Help button:** press once and a 5 s countdown starts (press again to cancel); when it ends, your contact is alerted. During an alarm, a short press quiets the buzzer, and holding for 3 s resolves the alarm.
 - **LED matrix:** shows a heart while all is well, a wobble icon when fall risk is high, and a bar along the bottom for the balance score.
