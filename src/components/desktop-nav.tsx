@@ -17,9 +17,9 @@ export function DesktopNav() {
     window.addEventListener(CLARA_SPEAKING_EVENT, onSpeaking);
     return () => window.removeEventListener(CLARA_SPEAKING_EVENT, onSpeaking);
   }, []);
-  // Overview lives at "/"; its recording page (/visits/new) belongs to it too.
+  // Overview lives at "/"; old /visits links redirect there.
   const isActive = (href: string) =>
-    href === "/" ? path === "/" || path.startsWith("/visits") : path === href || path.startsWith(`${href}/`);
+    href === "/" ? path === "/" || path === "/visits" : path === href || path.startsWith(`${href}/`);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-[#fffdf7] lg:flex">

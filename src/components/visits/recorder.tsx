@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { saveVisit } from "@/lib/visit-store";
 import { recordingToWavChunks } from "@/lib/wav";
-import { BackIcon, MicIcon, StopIcon } from "../icons";
+import { MicIcon, StopIcon } from "../icons";
 
 const MAX_SECONDS = 30 * 60;
 
@@ -123,14 +123,9 @@ export function VisitRecorder({ sample }: { sample?: string }) {
   return (
     <main className="flex grow flex-col gap-6 pb-8 lg:gap-8">
       <header className="bg-eucalyptus px-4 pt-10 pb-4 text-white lg:py-7">
-        <div className="desk flex items-center gap-3">
-          <Link href="/" aria-label="Back to Overview" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
-            <BackIcon width={22} height={22} />
-          </Link>
-          <div className="flex flex-col">
-            <span className="clinical-label text-[#dfe8d8]">For the care team</span>
-            <h1 className="text-[18px] font-semibold lg:text-[26px]">Record a visit</h1>
-          </div>
+        <div className="desk flex flex-col">
+          <span className="clinical-label text-[#dfe8d8]">Care team · for doctors and nurses</span>
+          <h1 className="text-[18px] font-semibold lg:text-[26px]">Record a visit</h1>
         </div>
       </header>
 

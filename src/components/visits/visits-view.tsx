@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { removeVisit, saveVisit, setStepDone, visitStore, type StoredVisit } from "@/lib/visit-store";
 import { toNextStep, type NextStep } from "@/lib/visit-verify";
-import { CheckIcon, ChevronIcon, MicIcon, TrashIcon } from "../icons";
+import { CheckIcon, ChevronIcon, TrashIcon } from "../icons";
 import { fmtVisitDate, VisitPlayer } from "./player";
 
 // On desktop the detail sections flow into two balanced columns; each stays in one piece.
@@ -141,8 +140,8 @@ export function VisitsView({ sample }: { sample?: string }) {
     }
   }
 
-  // Phones: one column. Desktop: the recap and player on the left, the list of recaps and the
-  // care team's recording link on the right.
+  // Phones: one column. Desktop: the recap and player on the left, the list of recaps on the right.
+  // Doctors and nurses record visits in the Care team tab.
   return (
     <div className="desk flex flex-col gap-6 px-5 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-10">
       <div className="flex flex-col gap-6">
@@ -204,15 +203,6 @@ export function VisitsView({ sample }: { sample?: string }) {
           </ul>
         </section>
       )}
-
-      <Link href="/visits/new" className="tile-3d flex min-h-14 items-center gap-3 rounded-md px-4">
-        <MicIcon width={20} height={20} className="shrink-0 text-teal" />
-        <span className="flex grow flex-col">
-          <span className="text-[14px] font-semibold text-ink">Care team: record a visit</span>
-          <span className="text-[12px] text-subtle">For doctors and nurses, with the patient&apos;s consent</span>
-        </span>
-        <span aria-hidden="true" className="text-teal">→</span>
-      </Link>
 
       <p className="text-[11px] leading-snug text-subtle">
         Clarah explains what your care team said; it doesn&apos;t add advice of its own or replace your care team. Recaps are saved only on this device.

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HomeIcon, LibraryIcon, LinkIcon, VisitIcon } from "./icons";
+import { HomeIcon, LibraryIcon, LinkIcon, MicIcon, VisitIcon } from "./icons";
 import { ClaraAvatar } from "./visits/clara-avatar";
 
 // Clarah's own face stands in for the Ask Clarah tab's icon.
@@ -10,6 +10,7 @@ function ClaraTabIcon({ width = 20 }: { width?: number | string }) {
 export const NAV_ITEMS = [
   { href: "/", label: "Overview", Icon: VisitIcon },
   { href: "/ask", label: "Ask Clarah", Icon: ClaraTabIcon },
+  { href: "/care-team", label: "Care team", Icon: MicIcon },
   { href: "/library", label: "Library", Icon: LibraryIcon },
   { href: "/profile", label: "My profile", Icon: HomeIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
@@ -18,8 +19,8 @@ export const NAV_ITEMS = [
 // Phone navigation. On a computer the sidebar (DesktopNav) replaces it.
 export function BottomNav({ active }: { active: string }) {
   return (
-    <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4 lg:hidden">
-      <div className="grid grid-cols-5">
+    <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-1.5 pb-4 lg:hidden">
+      <div className="grid grid-cols-6">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const current = href === active;
           return (
@@ -27,9 +28,9 @@ export function BottomNav({ active }: { active: string }) {
               key={href}
               href={href}
               aria-current={current ? "page" : undefined}
-              className={`relative flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold ${current ? "text-teal" : "text-subtle"}`}
+              className={`relative flex min-h-16 flex-col items-center justify-center gap-1 text-center text-[10.5px] leading-tight font-semibold ${current ? "text-teal" : "text-subtle"}`}
             >
-              {current && <span className="absolute inset-x-5 top-0 h-1 rounded-b bg-linear-to-r from-[#3864c8] to-[#2a4fa8]" />}
+              {current && <span className="absolute inset-x-3 top-0 h-1 rounded-b bg-linear-to-r from-[#3864c8] to-[#2a4fa8]" />}
               <Icon width={20} height={20} />
               {label}
             </Link>

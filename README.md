@@ -44,7 +44,7 @@ Clarah opens in **demo mode** with made-up patients (none are real people), each
 
 ## Visit recaps
 
-- **Care team records, patient listens.** On `/visits/new` the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clarah explains it.
+- **Care team records, patient listens.** In the **Care team** tab (`/care-team`) the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clarah explains it.
 - **Transcription.** The browser converts the recording to 16 kHz mono WAV in 4-minute chunks (`src/lib/wav.ts`); `/api/visits/transcribe` sends each to Gemini (`gemini-3.5-flash`) for a word-for-word transcript labelled Clinician / Patient. The audio isn't stored.
 - **Explanation.** `/api/visits` removes the patient's name and ID numbers, pairs the transcript with their record, and asks the model for a spoken script plus medicine changes, next steps, warning signs, and a glossary (`src/lib/visits.ts`). It may only relay what the clinician said; a medicine change is dropped unless that medicine was actually named in the conversation (`src/lib/visit-verify.ts`).
 - **Clarah's voice.** The player reads the script one paragraph at a time with Gemini text-to-speech (`gemini-3.8-flash-tts`, voice "Sulafat") through `/api/visits/speech`, fetching the next paragraph while one plays and caching the audio on the device. It's one-way speech, not a conversation. If the AI voice is unavailable, the device's own voice reads instead.
@@ -130,7 +130,8 @@ flowchart LR
 
 ```
 Next.js 16 (App Router)
-├─ /            Overview: visit recaps Clarah reads aloud (/visits/new to record one)
+├─ /            Overview: visit recaps Clarah reads aloud
+├─ /care-team   Care team: record a visit (with consent) for Clarah to explain
 ├─ /profile     My profile: health focus areas, documents, results, medications
 ├─ /connections Sources (Epic + Fitbit OAuth with PKCE, demo fallback)
 ├─ /ask         Chat UI → POST /api/chat

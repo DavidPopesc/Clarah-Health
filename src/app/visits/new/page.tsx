@@ -1,9 +1,6 @@
-import { VisitRecorder } from "@/components/visits/recorder";
-import { getMode } from "@/lib/mode";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Record a visit · Clarah Health" };
-
-export default async function NewVisitPage() {
-  const { mode, patient } = await getMode();
-  return <VisitRecorder sample={mode === "demo" ? patient.sampleVisit : undefined} />;
+// Recording moved to the Care team tab; keep old links working.
+export default function NewVisitPage() {
+  redirect("/care-team");
 }
