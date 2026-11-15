@@ -9,9 +9,14 @@ import { dateWords, summarizeBloodPressure, summarizeLabs } from "./record-summa
 import { findReferences, type SafetyReference } from "./safety-references.ts";
 import type { PatientRecord, Source, WearableSummary } from "./types";
 import { ageFrom, bpCategory, BP_LABELS } from "./vitals.ts";
+import { serviceAccount, vertexAccessToken } from "./vertex-auth.ts";
 
 // Gemini answers first (through Google's OpenAI-compatible endpoint). If it fails, the
 // backup provider takes over: any OpenAI-compatible endpoint, Pulpo by default.
+// Vertex AI comes first when a service account is set: it bills to Google Cloud credit and
+// can serve Clarah's fine-tuned model (set VERTEX_MODEL and VERTEX_BASE_URL to its endpoint).
+const VERTEX_LOCATION = process.env.VERTEX_LOCATION ?? "global";
+const VERTEX_MODEL = process.env.VERTEX_MODEL ?? "google/gemini-3.5-flash-lite";
 const GEMINI_BASE_URL = process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta/openai/";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 const BACKUP_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
@@ -222,16 +227,39 @@ const isRetryable = (err: unknown) =>
   err instanceof OpenAI.APIError && (err.status === 503 || err.status === 500);
 
 interface Provider {
-  name: "gemini" | "backup";
+  name: "vertex" | "gemini" | "backup";
+  // Google models (Vertex and the Gemini API) share JSON mode and thought signatures.
+  google: boolean;
   client: OpenAI;
   model: string;
 }
 
-function providers(): Provider[] {
+async function providers(): Promise<Provider[]> {
   const list: Provider[] = [];
+  const account = serviceAccount();
+  if (account) {
+    try {
+      const project = process.env.VERTEX_PROJECT ?? account.project_id;
+      const host = VERTEX_LOCATION === "global" ? "aiplatform.googleapis.com" : `${VERTEX_LOCATION}-aiplatform.googleapis.com`;
+      list.push({
+        name: "vertex",
+        google: true,
+        client: new OpenAI({
+          apiKey: await vertexAccessToken(),
+          baseURL: process.env.VERTEX_BASE_URL ?? `https://${host}/v1/projects/${project}/locations/${VERTEX_LOCATION}/endpoints/openapi`,
+          maxRetries: 0,
+          timeout: 15_000,
+        }),
+        model: VERTEX_MODEL,
+      });
+    } catch (err) {
+      console.warn("vertex unavailable, skipping:", err instanceof Error ? err.message : err);
+    }
+  }
   if (process.env.GEMINI_API_KEY) {
     list.push({
       name: "gemini",
+      google: true,
       // Short timeout so a slow or stuck Gemini hands over to the backup quickly.
       client: new OpenAI({ apiKey: process.env.GEMINI_API_KEY, baseURL: GEMINI_BASE_URL, maxRetries: 0, timeout: 15_000 }),
       model: GEMINI_MODEL,
@@ -240,11 +268,12 @@ function providers(): Provider[] {
   if (process.env.OPENAI_API_KEY) {
     list.push({
       name: "backup",
+      google: false,
       client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY, baseURL: BACKUP_BASE_URL, maxRetries: 0, timeout: 60_000 }),
       model: BACKUP_MODEL,
     });
   }
-  if (!list.length) throw new MissingApiKeyError("Set GEMINI_API_KEY and/or OPENAI_API_KEY");
+  if (!list.length) throw new MissingApiKeyError("Set GOOGLE_SERVICE_ACCOUNT_KEY, GEMINI_API_KEY and/or OPENAI_API_KEY");
   return list;
 }
 
@@ -253,7 +282,7 @@ export async function completeWithFallback(
   messages: ChatCompletionMessageParam[],
   { json = false, timeoutMs = 60_000 }: { json?: boolean; timeoutMs?: number } = {},
 ): Promise<string> {
-  const chain = providers();
+  const chain = await providers();
   let lastError: unknown;
   for (const [i, provider] of chain.entries()) {
     try {
@@ -262,7 +291,7 @@ export async function completeWithFallback(
           model: provider.model,
           messages,
           // Gemini supports JSON mode; other providers just follow the prompt.
-          ...(json && provider.name === "gemini" ? { response_format: { type: "json_object" as const } } : {}),
+          ...(json && provider.google ? { response_format: { type: "json_object" as const } } : {}),
         },
         { timeout: timeoutMs },
       );
@@ -285,7 +314,7 @@ export async function completeWithFallback(
 type ToolCall = ChatCompletionMessageFunctionToolCall & { extra_content?: unknown };
 
 function forProvider(messages: ChatCompletionMessageParam[], provider: Provider): ChatCompletionMessageParam[] {
-  if (provider.name === "gemini") return messages;
+  if (provider.google) return messages;
   return messages.map((m) =>
     m.role === "assistant" && m.tool_calls
       ? { ...m, tool_calls: m.tool_calls.map((c) => ({ ...c, extra_content: undefined })) }
@@ -365,7 +394,7 @@ export async function runAgent(
   wearable: WearableSummary,
   emit: (e: AgentEvent) => void,
 ): Promise<void> {
-  const chain = providers();
+  const chain = await providers();
   let active = 0;
 
   const messages: ChatCompletionMessageParam[] = [
