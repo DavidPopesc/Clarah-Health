@@ -210,7 +210,7 @@ function MetricSheet({ progress, context, onClose }: { progress: ResultProgress;
           <p className="text-[11px] text-subtle">Goals shown are common targets. Your care team may set a different goal for you.</p>
 
           <Link href={`/ask?q=${encodeURIComponent(context?.ask ?? `Explain my ${info.name.toLowerCase()} results and how they changed.`)}`} className="flex min-h-11 items-center justify-center gap-2 border border-teal text-[13px] font-semibold text-teal hover:bg-teal-soft">
-            <ChatIcon width={15} height={15} /> Ask Clara about this
+            <ChatIcon width={15} height={15} /> Ask Clarah Health about this
           </Link>
         </div>
       </div>

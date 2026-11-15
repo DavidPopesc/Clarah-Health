@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 
-// Clara as a friendly nurse: cap with a blue cross, eucalyptus scrubs and a stethoscope, in the
+// Clarah Health as a friendly nurse: cap with a blue cross, eucalyptus scrubs and a stethoscope, in the
 // site's palette. She blinks now and then and smiles; while her voice plays, her mouth moves as
 // she talks and a soft ring pulses around her. Animations live in globals.css (.clara-*).
 export function ClaraAvatar({ speaking = false, size = 64 }: { speaking?: boolean; size?: number }) {
@@ -12,7 +12,7 @@ export function ClaraAvatar({ speaking = false, size = 64 }: { speaking?: boolea
       className={`inline-flex shrink-0 rounded-full border-2 border-white shadow-[0_0_0_1px_#c9d3bd] ${speaking ? "clara-speaking" : ""}`}
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 64 64" width="100%" height="100%" role="img" aria-label="Clara, your AI health nurse">
+      <svg viewBox="0 0 64 64" width="100%" height="100%" role="img" aria-label="Clarah Health, your AI health nurse">
         <defs>
           <clipPath id={clip}>
             <circle cx="32" cy="32" r="32" />

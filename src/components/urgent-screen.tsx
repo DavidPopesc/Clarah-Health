@@ -71,7 +71,7 @@ export function UrgentScreen({ flag, onBack }: { flag: RedFlag; onBack: () => vo
         <div className="flex items-start gap-2.5 text-xs leading-snug text-subtle">
           <InfoIcon width={16} height={16} className="mt-px shrink-0" />
           <span>
-            Clara always stops and shows this screen when a reading or symptom matches an emergency rule. A fixed safety check makes that call, not the AI.
+            Clarah Health always stops and shows this screen when a reading or symptom matches an emergency rule. A fixed safety check makes that call, not the AI.
           </span>
         </div>
       </div>

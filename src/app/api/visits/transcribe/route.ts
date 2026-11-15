@@ -25,6 +25,6 @@ export async function POST(request: Request) {
     if (err instanceof AudioApiError && (err.status === 429 || err.status === 503)) {
       return Response.json({ error: "Transcription is busy right now. Try again in a moment." }, { status: 429 });
     }
-    return Response.json({ error: "Clara couldn't transcribe this recording. Please try again." }, { status: 500 });
+    return Response.json({ error: "Clarah Health couldn't transcribe this recording. Please try again." }, { status: 500 });
   }
 }

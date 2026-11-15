@@ -30,11 +30,11 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("Document summary error", err);
     if (err instanceof MissingApiKeyError) {
-      return Response.json({ error: "Clara isn't set up yet: add an AI key." }, { status: 500 });
+      return Response.json({ error: "Clarah Health isn't set up yet: add an AI key." }, { status: 500 });
     }
     if (err instanceof APIError && (err.status === 429 || err.status === 503)) {
-      return Response.json({ error: "Clara is busy right now. Try again in a moment." }, { status: 429 });
+      return Response.json({ error: "Clarah Health is busy right now. Try again in a moment." }, { status: 429 });
     }
-    return Response.json({ error: "Clara couldn't read this document. Please try again." }, { status: 500 });
+    return Response.json({ error: "Clarah Health couldn't read this document. Please try again." }, { status: 500 });
   }
 }

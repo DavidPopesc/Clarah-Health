@@ -1,4 +1,4 @@
-"""Download Clara's trusted knowledge library and convert it to Markdown for Gemini File Search.
+"""Download Clarah Health's trusted knowledge library and convert it to Markdown for Gemini File Search.
 
 Sources (all U.S. government, public domain):
   - MedlinePlus health topics (NLM), from the official XML download
@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2] / "data" / "knowledge"
 RAW = ROOT / "raw"
 OUT = ROOT / "upload"
-USER_AGENT = "Clara-EmoryHacks-student-project/1.0 (educational health app; low-rate, cached)"
+USER_AGENT = "ClarahHealth-EmoryHacks-student-project/1.0 (educational health app; low-rate, cached)"
 DELAY_SECONDS = 1.0
 TODAY = date.today().isoformat()
 

@@ -1,4 +1,4 @@
-// Shared pieces of Clara's voice, used by the Overview player and Ask Clara: the speed choices,
+// Shared pieces of Clarah Health's voice, used by the Overview player and Ask Clarah Health: the speed choices,
 // remembering the patient's speed and read-aloud preference on this device, and turning a written
 // answer into short plain-text parts for the voice (the speech endpoint takes one part at a time).
 

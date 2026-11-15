@@ -25,7 +25,7 @@ interface Part {
 
 async function generate(model: string, body: unknown, timeoutMs: number): Promise<Part[]> {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new MissingApiKeyError("Set GEMINI_API_KEY for recording and Clara's voice");
+  if (!key) throw new MissingApiKeyError("Set GEMINI_API_KEY for recording and Clarah Health's voice");
   const res = await fetch(`${BASE}/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -85,7 +85,7 @@ function pcmToWav(pcm: Buffer, rate: number): Buffer {
   return Buffer.concat([h, pcm]);
 }
 
-// Text to Clara's voice. Only the words to say are sent: this model reads style hints out loud.
+// Text to Clarah Health's voice. Only the words to say are sent: this model reads style hints out loud.
 export async function synthesizeSpeech(text: string): Promise<{ audio: Buffer; mimeType: string }> {
   const parts = await generate(
     TTS_MODEL,

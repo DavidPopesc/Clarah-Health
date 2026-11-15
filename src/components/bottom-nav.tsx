@@ -2,14 +2,14 @@ import Link from "next/link";
 import { HomeIcon, LinkIcon, VisitIcon } from "./icons";
 import { ClaraAvatar } from "./visits/clara-avatar";
 
-// Clara's own face stands in for the Ask Clara tab's icon.
+// Clarah Health's own face stands in for the Ask Clarah Health tab's icon.
 function ClaraTabIcon({ width = 20 }: { width?: number | string }) {
   return <ClaraAvatar size={Number(width) + 6} />;
 }
 
 export const NAV_ITEMS = [
   { href: "/", label: "Overview", Icon: VisitIcon },
-  { href: "/ask", label: "Ask Clara", Icon: ClaraTabIcon },
+  { href: "/ask", label: "Ask Clarah Health", Icon: ClaraTabIcon },
   { href: "/profile", label: "My profile", Icon: HomeIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
 ];

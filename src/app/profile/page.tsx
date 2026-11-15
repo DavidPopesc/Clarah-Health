@@ -10,9 +10,9 @@ import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
 
 const ERRORS: Record<string, string> = {
-  epic_not_configured: "MyChart linking isn't set up on this server yet, so Clara is using the demo patient.",
+  epic_not_configured: "MyChart linking isn't set up on this server yet, so Clarah Health is using the demo patient.",
   epic_auth_failed: "We couldn't link MyChart. Please try again.",
-  fitbit_not_configured: "Fitbit linking isn't set up on this server yet, so Clara is using demo wearable data.",
+  fitbit_not_configured: "Fitbit linking isn't set up on this server yet, so Clarah Health is using demo wearable data.",
   fitbit_auth_failed: "We couldn't link Fitbit. Please try again.",
 };
 
@@ -44,7 +44,7 @@ function ConnectRow({
   return linked ? <div className={className} aria-label={`${name}: read-only connection active`}>{content}</div> : <a href={href} className={className} aria-label={`Connect ${name}`}>{content}</a>;
 }
 
-export const metadata = { title: "My profile · Clara" };
+export const metadata = { title: "My profile · Clarah Health" };
 
 export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
   await connection();
@@ -61,7 +61,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         <header className="bg-eucalyptus px-5 py-4 text-white lg:py-8">
           <div className="desk">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="clinical-label flex items-center gap-1.5 text-[#dfe8d8]"><ClaraLogo width={14} height={14} className="text-white" />Clara health record</span>
+              <span className="clinical-label flex items-center gap-1.5 text-[#dfe8d8]"><ClaraLogo width={14} height={14} className="text-white" />Clarah Health record</span>
               <span className="text-[11px] text-[#dfe8d8]">{today}{record.source === "demo" && " · Demo"}</span>
             </div>
             <div className="flex items-end justify-between gap-4">
@@ -160,7 +160,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
                               <p><span className="font-semibold text-ink">Possible side effects:</span> {info.sideEffects.join(" · ")}</p>
                             </>
                           ) : (
-                            <p>Clara doesn&apos;t have a summary for this medicine yet. Your pharmacist can explain what it does.</p>
+                            <p>Clarah Health doesn&apos;t have a summary for this medicine yet. Your pharmacist can explain what it does.</p>
                           )}
                           <a href={medlinePlusSearch(medication.name)} target="_blank" rel="noreferrer" className="w-fit text-[11px] font-semibold text-teal underline-offset-2 hover:underline">
                             More on MedlinePlus
@@ -176,7 +176,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           )}
 
           <Link href="/ask" className="press order-6 flex min-h-14 items-center justify-between rounded-md px-4 text-[15px] font-semibold text-white lg:order-none">
-            <span>Ask Clara about this record</span>
+            <span>Ask Clarah Health about this record</span>
             <span aria-hidden="true">→</span>
           </Link>
           </div>

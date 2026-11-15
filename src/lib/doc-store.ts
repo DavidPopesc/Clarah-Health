@@ -2,7 +2,7 @@
 
 import type { DocSummary } from "./documents";
 
-// Uploaded documents live only in this browser (IndexedDB): the PDF file and Clara's summary.
+// Uploaded documents live only in this browser (IndexedDB): the PDF file and Clarah Health's summary.
 // The server only ever sees the extracted text, and keeps nothing.
 
 export interface StoredDoc {
@@ -111,11 +111,11 @@ export async function addPdf(file: File | Blob, name: string) {
       body: JSON.stringify({ pages }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Clara couldn't read this document.");
+    if (!res.ok) throw new Error(data.error ?? "Clarah Health couldn't read this document.");
     update(id, { status: "ready", summary: data.summary, pagesRead: data.pagesRead, totalPages: data.totalPages });
   } catch (err) {
-    const message = err instanceof Error && err.message ? err.message : "Clara couldn't read this document.";
-    update(id, { status: "error", error: /pdf|password|invalid/i.test(message) && !message.includes("Clara") ? "This file couldn't be opened as a PDF." : message });
+    const message = err instanceof Error && err.message ? err.message : "Clarah Health couldn't read this document.";
+    update(id, { status: "error", error: /pdf|password|invalid/i.test(message) && !message.includes("Clarah Health") ? "This file couldn't be opened as a PDF." : message });
   }
 }
 

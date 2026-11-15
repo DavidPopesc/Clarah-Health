@@ -18,7 +18,7 @@ const BACKUP_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
 const BACKUP_MODEL = process.env.OPENAI_MODEL ?? "glm-5.3-flash";
 const MAX_TOOL_ROUNDS = 8;
 
-const SYSTEM_PROMPT = `You are Clara, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
+const SYSTEM_PROMPT = `You are Clarah Health, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
 
 How to work:
 - Before answering anything about the patient's own health, use the tools to look up the relevant parts of their record and wearable data. Never guess or invent their values.

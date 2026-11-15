@@ -43,7 +43,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
   const endRef = useRef<HTMLDivElement>(null);
   const askedInitial = useRef(false);
 
-  // "Read answers aloud": Clara speaks each new answer in her voice. Remembered on this device.
+  // "Read answers aloud": Clarah Health speaks each new answer in her voice. Remembered on this device.
   const voice = useClaraVoice();
   const [readAloud, setReadAloud] = useState(false);
   const readAloudRef = useRef(false);
@@ -139,14 +139,14 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
       if (!failed && focus) setViewer(focus);
       if (!failed && content && readAloudRef.current) void voice.speak(`m${at}`, content);
     } catch {
-      setMessages([...next, { role: "assistant", content: "Couldn't reach Clara. Check your connection and try again.", error: true }]);
+      setMessages([...next, { role: "assistant", content: "Couldn't reach Clarah Health. Check your connection and try again.", error: true }]);
     } finally {
       setLoading(false);
       setStatus("Checking your record…");
     }
   }
 
-  // Questions handed over from the home page ("Ask Clara" on an attention item) send right away.
+  // Questions handed over from the home page ("Ask Clarah Health" on an attention item) send right away.
   useEffect(() => {
     if (!initialQuestion || askedInitial.current) return;
     askedInitial.current = true;
@@ -164,7 +164,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
           </Link>
           <div className="flex grow flex-col">
             <span className="clinical-label text-[#dfe8d8]">Secure health exchange</span>
-            <h1 className="text-[18px] font-semibold lg:text-[22px]">Ask Clara</h1>
+            <h1 className="text-[18px] font-semibold lg:text-[22px]">Ask Clarah Health</h1>
           </div>
           <span className="clinical-label border border-white/25 px-2 py-1 text-[#dfe8d8]">Record on</span>
         </div>
@@ -271,7 +271,7 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
                   {voice.speakingId === `m${i}` && (
                     <span className="flex items-center gap-1.5 text-[12px] text-subtle" role="status">
                       <ClaraAvatar size={26} speaking={!voice.loading} />
-                      {voice.loading ? "Getting Clara's voice ready…" : "Clara is reading this answer"}
+                      {voice.loading ? "Getting Clarah Health's voice ready…" : "Clarah Health is reading this answer"}
                     </span>
                   )}
                 </div>

@@ -1,7 +1,7 @@
 import { BottomNav } from "@/components/bottom-nav";
 import { VisitsView } from "@/components/visits/visits-view";
 
-export const metadata = { title: "Overview · Clara" };
+export const metadata = { title: "Overview · Clarah Health" };
 
 // The home page: Overview, the patient's visit recaps.
 export default function OverviewPage() {

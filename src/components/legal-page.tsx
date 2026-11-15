@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { BackIcon } from "./icons";
 
 export const LEGAL_UPDATED = "November 14, 2026";
-export const PROJECT_URL = "https://github.com/DavidPopesc/Clara-Health";
+export const PROJECT_URL = "https://github.com/DavidPopesc/Clarah-Health";
 
 export interface LegalSection {
   id: string;

@@ -10,7 +10,7 @@ export interface VisitRecap {
   title: string;
   date?: string; // YYYY-MM-DD
   summary: string;
-  script: string[]; // what Clara says out loud, one paragraph per item
+  script: string[]; // what Clarah Health says out loud, one paragraph per item
   nextSteps: NextStep[];
   questions: string[];
 }
@@ -59,12 +59,12 @@ export function normalizeRecap(raw: unknown): VisitRecap {
   };
 }
 
-// Plain-text version of a recap, for copying or downloading the transcript of what Clara says.
+// Plain-text version of a recap, for copying or downloading the transcript of what Clarah Health says.
 export function recapToText(recap: VisitRecap, dateLabel?: string): string {
-  const lines = [recap.title, dateLabel ?? "", "", "What Clara says", "", ...recap.script.flatMap((p) => [p, ""])];
+  const lines = [recap.title, dateLabel ?? "", "", "What Clarah Health says", "", ...recap.script.flatMap((p) => [p, ""])];
   const steps = recap.nextSteps.map(toNextStep).filter((s): s is NextStep => s !== null);
   if (steps.length) lines.push("What to do next", ...steps.map((s) => `- ${s.step}${s.why ? ` (Why: ${s.why})` : ""}`), "");
   if (recap.questions.length) lines.push("Questions you could ask", ...recap.questions.map((q) => `- ${q}`), "");
-  lines.push("Clara explains what was said at your visit. It does not replace your care team.");
+  lines.push("Clarah Health explains what was said at your visit. It does not replace your care team.");
   return lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n").trim() + "\n";
 }

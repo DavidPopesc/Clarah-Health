@@ -2,7 +2,7 @@
 
 import type { VisitRecap } from "./visit-verify";
 
-// Visit recaps live only in this browser (IndexedDB), like uploaded documents: Clara's recap,
+// Visit recaps live only in this browser (IndexedDB), like uploaded documents: Clarah Health's recap,
 // the transcript it was made from, and the voice audio once it has been spoken (so replays
 // don't ask the AI again). A separate database keeps the documents store untouched.
 

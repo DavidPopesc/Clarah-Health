@@ -17,7 +17,7 @@ const VOICE_VERSION = "v1";
 export const fmtVisitDate = (iso?: string) =>
   iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
 
-// The best-sounding English voice the device offers, for when Clara's AI voice isn't available.
+// The best-sounding English voice the device offers, for when Clarah Health's AI voice isn't available.
 function deviceVoice(): SpeechSynthesisVoice | undefined {
   const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith("en"));
   const score = (v: SpeechSynthesisVoice) =>
@@ -25,7 +25,7 @@ function deviceVoice(): SpeechSynthesisVoice | undefined {
   return voices.sort((a, b) => score(b) - score(a))[0];
 }
 
-// Clara reads the recap aloud, one paragraph at a time. It's a one-way explanation: the patient
+// Clarah Health reads the recap aloud, one paragraph at a time. It's a one-way explanation: the patient
 // can pause, replay, change the speed, or read along, but there's no conversation.
 export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   const script = recap.script;
@@ -45,7 +45,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   const voiceRef = useRef<Voice>("ai");
 
   useEffect(() => {
-    // The patient's saved speed, shared with Ask Clara.
+    // The patient's saved speed, shared with Ask Clarah Health.
     const saved = loadRate();
     rateRef.current = saved;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the saved speed once, after hydration
@@ -60,7 +60,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
     };
   }, []);
 
-  // Paragraph audio: from this device's cache, else Clara's voice from the server (then cached).
+  // Paragraph audio: from this device's cache, else Clarah Health's voice from the server (then cached).
   function clip(i: number): Promise<string> {
     let p = clips.current.get(i);
     if (!p) {
@@ -124,7 +124,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
       if (current !== run.current) return;
       voiceRef.current = "device";
       setVoice("device");
-      setNotice("Clara's voice isn't available right now, so your device's voice is reading instead.");
+      setNotice("Clarah Health's voice isn't available right now, so your device's voice is reading instead.");
       return speakWithDevice(i, current);
     }
     if (current !== run.current) return;
@@ -160,7 +160,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   function changeRate(r: number) {
     rateRef.current = r;
     setRate(r);
-    saveRate(r); // shared with Ask Clara
+    saveRate(r); // shared with Ask Clarah Health
     if (audio.current) audio.current.playbackRate = r;
   }
 
@@ -185,9 +185,9 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
   const active = state === "playing" || state === "paused" || state === "loading";
   const status =
     state === "loading"
-      ? "Getting Clara's voice ready…"
+      ? "Getting Clarah Health's voice ready…"
       : state === "playing"
-        ? `Clara is speaking · part ${index + 1} of ${script.length}`
+        ? `Clarah Health is speaking · part ${index + 1} of ${script.length}`
         : state === "paused"
           ? `Paused · part ${index + 1} of ${script.length}`
           : state === "done"
@@ -200,15 +200,15 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
         <div className="mb-3 flex items-center gap-3 border-b border-panel pb-3">
           <ClaraAvatar speaking={state === "playing"} />
           <div className="flex flex-col">
-            <span className="clinical-label text-teal">Clara explains your visit</span>
-            <span className="text-[15px] font-semibold text-ink">Clara, your AI health nurse</span>
+            <span className="clinical-label text-teal">Clarah Health explains your visit</span>
+            <span className="text-[15px] font-semibold text-ink">Clarah Health, your AI health nurse</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={toggle}
-            aria-label={state === "playing" ? "Pause" : state === "paused" ? "Resume" : "Listen to Clara"}
+            aria-label={state === "playing" ? "Pause" : state === "paused" ? "Resume" : "Listen to Clarah Health"}
             className="press flex size-16 shrink-0 items-center justify-center rounded-full text-white"
           >
             {state === "loading" ? (
@@ -259,7 +259,7 @@ export function VisitPlayer({ id, recap }: { id: string; recap: VisitRecap }) {
         {showText && (
           <div id={`visit-transcript-${id}`} className="slab mt-2 flex flex-col gap-3 rounded-md p-4">
             <div className="flex items-center justify-between">
-              <span className="clinical-label text-muted">What Clara says</span>
+              <span className="clinical-label text-muted">What Clarah Health says</span>
               <div className="flex items-center gap-3">
                 <button type="button" onClick={copy} className="flex min-h-9 items-center gap-1 text-[12px] font-semibold text-teal">
                   <CopyIcon width={14} height={14} /> {copied ? "Copied" : "Copy"}

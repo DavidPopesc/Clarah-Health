@@ -7,7 +7,7 @@ const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"
 const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["500", "600"] });
 
 export const metadata: Metadata = {
-  title: "Clara: answers about your health, from your own data",
+  title: "Clarah Health: answers about your health, from your own data",
   description: "A health companion that explains your records and checks whether everyday choices are safe with your medicines.",
 };
 

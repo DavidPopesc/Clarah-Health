@@ -1,4 +1,4 @@
-// Body regions and systems Clara can show in the 3D anatomy viewer.
+// Body regions and systems Clarah Health can show in the 3D anatomy viewer.
 // Shared by the server (agent tool + keyword fallback) and the client viewer.
 
 export const BODY_SYSTEMS = ["skeletal", "muscular", "circulatory", "nervous", "organs"] as const;

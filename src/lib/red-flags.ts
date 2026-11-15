@@ -80,7 +80,7 @@ export function screenMessage(raw: string, careTeamPhone?: string): RedFlag | nu
     return {
       level: "emergency",
       title: "This needs emergency care now",
-      message: `You mentioned ${symptom.label}. That can be a sign of a medical emergency. Please don't wait for an answer from Clara.`,
+      message: `You mentioned ${symptom.label}. That can be a sign of a medical emergency. Please don't wait for an answer from Clarah Health.`,
       actions: [CALL_911, careTeam],
       alsoCall911If: STROKE_HEART_SIGNS,
     };
@@ -96,7 +96,7 @@ export function screenMessage(raw: string, careTeamPhone?: string): RedFlag | nu
         return {
           level: "emergency",
           title: "This needs emergency care now",
-          message: `A reading of ${systolic}/${diastolic} with symptoms like the ones you described can be a hypertensive emergency. Please don't wait for an answer from Clara.`,
+          message: `A reading of ${systolic}/${diastolic} with symptoms like the ones you described can be a hypertensive emergency. Please don't wait for an answer from Clarah Health.`,
           actions: [CALL_911, careTeam],
           alsoCall911If: STROKE_HEART_SIGNS,
         };

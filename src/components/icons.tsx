@@ -21,7 +21,7 @@ function Icon({ children, ...props }: SVGProps<SVGSVGElement>) {
 
 type P = SVGProps<SVGSVGElement>;
 
-// Clara's hand-drawn heart logo. Also used as the favicon (src/app/icon.svg).
+// Clarah Health's hand-drawn heart logo. Also used as the favicon (src/app/icon.svg).
 export const CLARA_LOGO_PATH =
   "M34 32C33.5 22 31 7.5 25 6.5C18 5.5 12 12 11.5 23C11 32 13 39 17 45C23 54 30 63 35 69C38 61 44 52 51 43C57 34 59.5 25 57.5 15C55.5 7 48 8 44 13C40 18 36 26 34 32";
 export const ClaraLogo = (p: P) => (

@@ -5,7 +5,7 @@ import { loadRate, saveRate, speechParts } from "@/lib/voice";
 
 export const CLARA_SPEAKING_EVENT = "clara-speaking";
 
-// Reads text aloud in Clara's voice (the same Gemini voice as the Overview player), one short
+// Reads text aloud in Clarah Health's voice (the same Gemini voice as the Overview player), one short
 // part at a time, fetching the next part while the current one plays. If the AI voice isn't
 // available, the device's own voice takes over. Only one thing is read at a time.
 
@@ -36,7 +36,7 @@ export function useClaraVoice() {
     };
   }, []);
 
-  // Tell the rest of the page (the big Clara in the sidebar) when she's talking.
+  // Tell the rest of the page (the big Clarah Health in the sidebar) when she's talking.
   useEffect(() => {
     const talking = speakingId !== null && !loading;
     window.dispatchEvent(new CustomEvent(CLARA_SPEAKING_EVENT, { detail: talking }));
@@ -112,7 +112,7 @@ export function useClaraVoice() {
           if (current !== run.current) return;
           deviceOnly.current = true;
           setLoading(false);
-          setNotice("Clara's voice isn't available right now, so your device's voice is reading instead.");
+          setNotice("Clarah Health's voice isn't available right now, so your device's voice is reading instead.");
         }
       }
       await sayWithDevice(part);

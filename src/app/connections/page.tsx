@@ -8,9 +8,9 @@ import { epicEnabled } from "@/lib/epic";
 import { fitbitEnabled } from "@/lib/fitbit";
 
 const ERRORS: Record<string, string> = {
-  epic_not_configured: "MyChart isn't configured yet. Add EPIC_CLIENT_ID to use the Epic sandbox. Clara is using the demo patient for now.",
+  epic_not_configured: "MyChart isn't configured yet. Add EPIC_CLIENT_ID to use the Epic sandbox. Clarah Health is using the demo patient for now.",
   epic_auth_failed: "We couldn't link MyChart. Please try again.",
-  fitbit_not_configured: "Fitbit isn't configured yet. Add FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET. Clara is using demo wearable data for now.",
+  fitbit_not_configured: "Fitbit isn't configured yet. Add FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET. Clarah Health is using demo wearable data for now.",
   fitbit_auth_failed: "We couldn't link Fitbit. Please try again.",
 };
 
@@ -60,7 +60,7 @@ function ConnectionCard({
   );
 }
 
-export const metadata = { title: "Connections · Clara" };
+export const metadata = { title: "Connections · Clarah Health" };
 
 export default async function ConnectPage({ searchParams }: PageProps<"/connections">) {
   const { error } = await searchParams;
@@ -77,7 +77,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
             </div>
             <div>
               <span className="clinical-label block text-[#dfe8d8]">Data access</span>
-              <span className="text-xl font-semibold lg:text-[26px]">Clara connections</span>
+              <span className="text-xl font-semibold lg:text-[26px]">Clarah Health connections</span>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
             Answers about your health, from your own data.
           </h1>
           <p className="text-[15px] leading-normal text-muted lg:text-[16px]">
-            Connect your records and your watch so Clara can explain your numbers in plain language and check whether something is safe for you.
+            Connect your records and your watch so Clarah Health can explain your numbers in plain language and check whether something is safe for you.
           </p>
         </div>
         </div>
@@ -130,7 +130,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
         <div className="well mx-5 flex flex-col gap-2.5 rounded-md p-4 lg:mx-0 lg:p-5">
           <span className="clinical-label text-muted">How your data is handled</span>
           {[
-            { Icon: LockIcon, text: "Read-only access. Clara can never change your records." },
+            { Icon: LockIcon, text: "Read-only access. Clarah Health can never change your records." },
             { Icon: AnonIcon, text: "Your name and ID numbers are removed before anything reaches the AI." },
             { Icon: TrashIcon, text: "Disconnect and delete everything at any time." },
           ].map(({ Icon, text }) => (
@@ -158,7 +158,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
             Done
           </Link>
           <p className="text-center text-xs leading-snug text-subtle lg:text-left">
-            Clara explains and informs. It does not diagnose or replace your care team.{" "}
+            Clarah Health explains and informs. It does not diagnose or replace your care team.{" "}
             <Link href="/terms" className="font-semibold text-teal">Terms</Link> ·{" "}
             <Link href="/privacy" className="font-semibold text-teal">Privacy</Link>
           </p>
