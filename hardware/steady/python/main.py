@@ -128,7 +128,7 @@ outbox: list[dict] = []
 device = {"state": "unknown", "last_seen": 0.0, "sensor": "unknown", "last_imu": 0.0}
 balance = {"score": None, "smoothed": None, "risk": "unknown", "slope": None, "projected": None,
            "walking": False, "last_window": None, "baseline": settings.get("baseline")}
-last_warn_at = 0.0
+last_warn_at = {"moderate": 0.0, "high": 0.0}
 last_doctor_at = 0.0
 active_alert: dict | None = None  # the fall / help episode in progress
 last_seq = None
@@ -333,9 +333,13 @@ def recompute_trend():
         smoothed = h["score"] if smoothed is None else alpha * h["score"] + (1 - alpha) * smoothed
     baseline = settings.get("baseline")
     if baseline is None and len(walk) >= 12:
-        baseline = float(np.median([h["score"] for h in walk[:12]]))
-        settings["baseline"] = round(baseline, 1)
-        save_settings()
+        # Your usual steadiness: the upper-middle of your last dozen windows. Skip
+        # it while those look unsteady (e.g. the sensor being handled while set up),
+        # so a bad start doesn't become the yardstick.
+        candidate = float(np.percentile([h["score"] for h in walk[-12:]], 75))
+        if candidate >= 70:
+            settings["baseline"] = round(candidate, 1)
+            save_settings()
     slope = gait.trend([(h["t"], h["score"]) for h in recent])
     balance.update({
         "smoothed": round(smoothed, 1),
@@ -351,8 +355,9 @@ def check_risk(prev_risk: str):
     risk = balance["risk"]
     order = {"unknown": 0, "low": 0, "moderate": 1, "high": 2}
     t = now()
-    if order[risk] > order.get(prev_risk, 0) and order[risk] >= 1 and t - last_warn_at > WARN_COOLDOWN_S:
-        last_warn_at = t
+    # Warn on every step up (moderate, then high), but repeat a level at most every 15 min.
+    if order[risk] > order.get(prev_risk, 0) and order[risk] >= 1 and t - last_warn_at[risk] > WARN_COOLDOWN_S:
+        last_warn_at[risk] = t
         cmd("warn")
         msg = ("Your steadiness has dropped a lot. Please slow down, hold on to something or sit and rest."
                if risk == "high" else "Your walking is getting less steady. Take it slow.")
@@ -367,8 +372,9 @@ def check_risk(prev_risk: str):
             f"Clarah Steady balance score {balance['smoothed']:.0f}/100"
             + (f" (baseline {base:.0f})" if base is not None else "")
             + (f", trending {balance['slope']:+.1f} points per minute of walking" if balance["slope"] is not None else "")
-            + f". Step-time variability {w.get('step_cv', 0):.1f}%, stride regularity {w.get('regularity', 0):.2f}, "
-            f"cadence {w.get('cadence', 0):.0f} steps/min. Sent at the patient's request.",
+            + f". Trunk sway {w.get('sway') or 0:.0f} degrees, jolt {w.get('jolt') or 0:.2f} g"
+            + (f", cadence {w['cadence']:.0f} steps/min" if w.get("cadence") else "")
+            + ". Sent at the patient's request.",
             priority="high", tags="chart_with_downwards_trend",
         )
         add_event("doctor_alerted", f"Shared balance trend with {settings.get('doctor_name') or 'the doctor'}")
@@ -504,8 +510,8 @@ def on_seed_demo(sid, data=None):
                 t = base_t - day * 86400 + 9 * 3600 + k * 60
                 sc = float(np.clip(level + rng.normal(0, 4), 0, 100))
                 d = {"t": t, "walking": True, "score": round(sc, 1), "cadence": round(100 - (84 - level) * 0.5, 1),
-                     "step_cv": round(3 + (84 - level) / 6, 2), "regularity": round(0.85 - (84 - level) / 120, 3),
-                     "sway": round(0.5 + (84 - level) / 60, 3), "steps": 17, "sample": True}
+                     "regularity": round(0.85 - (84 - level) / 120, 3),
+                     "sway": round(4 + (84 - level) / 2, 1), "jolt": round(0.15 + (84 - level) / 90, 3), "sample": True}
                 history.append(d)
                 append_jsonl(HISTORY_PATH, d)
         history.sort(key=lambda h: h["t"])

@@ -7,7 +7,7 @@
   <title>Clarah Steady</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div class="shell">
@@ -53,10 +53,10 @@
           <span><i class="sw sw-base"></i>Your baseline</span>
         </div>
         <dl class="metrics">
+          <div><dt>Body sway</dt><dd id="m-sway">—</dd><span>degrees · steady under 8</span></div>
+          <div><dt>Jolt</dt><dd id="m-jolt">—</dd><span>g · steady under 0.25</span></div>
           <div><dt>Cadence</dt><dd id="m-cadence">—</dd><span>steps/min</span></div>
-          <div><dt>Step timing variability</dt><dd id="m-cv">—</dd><span>% · steady under 4</span></div>
-          <div><dt>Stride regularity</dt><dd id="m-reg">—</dd><span>0–1 · steady above 0.7</span></div>
-          <div><dt>Side-to-side sway</dt><dd id="m-sway">—</dd><span>ratio · lower is steadier</span></div>
+          <div><dt>Stride regularity</dt><dd id="m-reg">—</dd><span>0–1 · steady above 0.6</span></div>
         </dl>
       </section>
 
@@ -164,6 +164,6 @@
   </div>
 
   <script src="libs/socket.io.min.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

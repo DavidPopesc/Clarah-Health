@@ -24,8 +24,8 @@ Clip the accelerometer at your waist or lower back. It can face any direction.
 - **LED matrix:** shows a heart while all is well, a wobble icon when fall risk is high, and a bar along the bottom for the balance score.
 
 **Linux (`python/`)** runs in the App Lab Python container:
-- `gait.py` takes each 10 s window of walking and measures cadence, **step-time variability** (CV of the time between steps), **stride regularity** (autocorrelation one stride later) and **side-to-side sway** (horizontal vs. vertical motion). It combines them into a 0–100 balance score. When you're not walking, no score is computed.
-- **Trend / prediction:** smooths the score, fits a line through the last 30 minutes of walking, and projects 10 minutes ahead. It compares the result with your baseline (set automatically from your first walks, or reset from the dashboard, e.g. after discharge). Fall risk is **high** if the score is under 50, has dropped 20 or more points from your baseline, or is projected to fall below 45. On a rise in risk, the buzzer gives a warning pattern and the dashboard shows a warning. When risk is high and you've turned on doctor sharing, your doctor gets your score, trend and gait numbers (at most once an hour).
+- `gait.py` takes each 10 s of movement and measures how much the trunk is thrown around: **body sway** (RMS tilt from the average posture, in degrees) and **jolt** (spread of the total acceleration, in g). Stride regularity counts a little; cadence is shown but not scored. It combines them into a 0–100 balance score. When you're sitting or standing still, no score is computed. Step-to-step timing isn't used: the sensor's 6-bit readings give double peaks that make it unreliable.
+- **Trend / prediction:** smooths the score, fits a line through the last 30 minutes of movement, and projects 10 minutes ahead. It compares the result with your baseline (set automatically once a dozen windows look steady, or reset from the dashboard, e.g. after discharge). Fall risk is **moderate** under 70, 12+ points below baseline or projected under 55; **high** under 45, 25+ below baseline or projected under 35. Each step up (moderate, then high) sounds a buzzer warning and shows a warning on the dashboard. When risk is high and you've turned on doctor sharing, your doctor gets your score, trend and sway numbers (at most once an hour).
 - **Alerts** go out as [ntfy](https://ntfy.sh) push notifications. Your contact and doctor install the free ntfy app and subscribe to their channel name. The board usually has no internet, so an open dashboard sends the alerts for it.
 - Serves the dashboard and `GET /api/summary` (JSON with CORS, for the Clarah Health app) on port 7000.
 
@@ -49,6 +49,6 @@ Tests: `python3 -m unittest discover -s tests` (needs numpy).
 
 ## Limits
 
-- Score thresholds were tuned on synthetic gait and literature ranges, not on patients. Calibrate them with real walks.
+- The score is calibrated on recordings from the board (steady movement ~0.15 g jolt = low risk, big swings ~0.52 g = moderate, wild swings at the sensor's limits ~0.66 g = high), not on patients. Calibrate it with real walks.
 - The ±1.5 g sensor saturates on impact, so impact detection uses the magnitude of all three axes together.
 - This is a hackathon prototype, not a medical device.

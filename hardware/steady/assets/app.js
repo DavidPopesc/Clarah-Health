@@ -96,10 +96,10 @@ function renderBalance() {
     el.textContent = v == null ? "—" : v.toFixed(digits);
     el.classList.toggle("flag", v != null && flag(v));
   };
+  set("m-sway", w.sway, 0, (v) => v > 15);
+  set("m-jolt", w.jolt, 2, (v) => v > 0.4);
   set("m-cadence", w.cadence, 0, (v) => v < 70);
-  set("m-cv", w.step_cv, 1, (v) => v > 7);
-  set("m-reg", w.regularity, 2, (v) => v < 0.5);
-  set("m-sway", w.sway, 2, (v) => v > 1.4);
+  set("m-reg", w.regularity, 2, (v) => v < 0.4);
 
   drawTrend(b);
   drawDaily(b.daily || []);
