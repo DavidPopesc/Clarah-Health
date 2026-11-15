@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-import { SAMPLE_VISIT } from "@/lib/sample-visit";
 import { removeVisit, saveVisit, setStepDone, visitStore, type StoredVisit } from "@/lib/visit-store";
 import { toNextStep, type NextStep } from "@/lib/visit-verify";
 import { CheckIcon, ChevronIcon, MicIcon, TrashIcon } from "../icons";
@@ -117,7 +116,8 @@ function Recap({ visit }: { visit: StoredVisit }) {
   );
 }
 
-export function VisitsView() {
+// `sample` is the demo patient's sample visit; live mode has none.
+export function VisitsView({ sample }: { sample?: string }) {
   const visits = useSyncExternalStore(visitStore.subscribe, visitStore.getSnapshot, visitStore.getServerSnapshot);
   const [selected, setSelected] = useState<string | null>(null);
   const [sampleState, setSampleState] = useState<"idle" | "busy" | string>("idle");
@@ -129,7 +129,7 @@ export function VisitsView() {
       const res = await fetch("/api/visits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: SAMPLE_VISIT }),
+        body: JSON.stringify({ transcript: sample }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Clarah couldn't explain the sample visit.");
@@ -157,20 +157,22 @@ export function VisitsView() {
           <p className="text-[14px] leading-normal text-muted">
             When your doctor or nurse records your visit, Clarah explains what they said in everyday English, connects it to your health record, and reads it to you. You can replay it any time and read the transcript.
           </p>
-          <button
-            type="button"
-            onClick={trySample}
-            disabled={sampleState === "busy"}
-            className="press flex min-h-12 items-center justify-center gap-2 rounded-md text-[15px] font-semibold text-white"
-          >
-            {sampleState === "busy" ? (
-              <>
-                <span className="size-2 animate-pulse rounded-full bg-white" /> Clarah is preparing the sample…
-              </>
-            ) : (
-              "Hear a sample visit"
-            )}
-          </button>
+          {sample && (
+            <button
+              type="button"
+              onClick={trySample}
+              disabled={sampleState === "busy"}
+              className="press flex min-h-12 items-center justify-center gap-2 rounded-md text-[15px] font-semibold text-white"
+            >
+              {sampleState === "busy" ? (
+                <>
+                  <span className="size-2 animate-pulse rounded-full bg-white" /> Clarah is preparing the sample…
+                </>
+              ) : (
+                "Hear a sample visit"
+              )}
+            </button>
+          )}
           {sampleState !== "idle" && sampleState !== "busy" && (
             <p role="alert" className="border-l-4 border-amber bg-amber-soft px-3 py-2.5 text-[13px] text-amber-ink">{sampleState}</p>
           )}

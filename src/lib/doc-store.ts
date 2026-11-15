@@ -1,6 +1,7 @@
 "use client";
 
 import type { DocSummary } from "./documents";
+import { currentScope } from "./scope";
 
 // Uploaded documents live only in this browser (IndexedDB): the PDF file and Clarah's summary.
 // The server only ever sees the extracted text, and keeps nothing.
@@ -14,6 +15,7 @@ export interface StoredDoc {
   summary?: DocSummary;
   pagesRead?: number;
   totalPages?: number;
+  patient?: string; // demo patient id or "live" (see scope.ts); older documents belong to Amira
 }
 
 interface State {
@@ -59,7 +61,7 @@ async function load() {
   if (loaded || typeof indexedDB === "undefined") return;
   loaded = true;
   try {
-    const docs = (await tx<StoredDoc[]>(META, "readonly", (s) => s.getAll())).filter((d) => d.status === "ready" || d.status === "error");
+    const docs = (await tx<StoredDoc[]>(META, "readonly", (s) => s.getAll())).filter((d) => (d.status === "ready" || d.status === "error") && (d.patient ?? "amira") === currentScope());
     docs.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
     const urls: Record<string, string> = {};
     for (const d of docs) {
@@ -98,7 +100,7 @@ async function extractPages(file: Blob): Promise<string[]> {
 
 export async function addPdf(file: File | Blob, name: string) {
   const id = crypto.randomUUID();
-  const doc: StoredDoc = { id, name, addedAt: new Date().toISOString(), status: "reading" };
+  const doc: StoredDoc = { id, name, addedAt: new Date().toISOString(), status: "reading", patient: currentScope() };
   set({ docs: [doc, ...state.docs], urls: { ...state.urls, [id]: URL.createObjectURL(file) } });
   void tx(FILES, "readwrite", (s) => s.put(file, id)).catch((err) => console.error("Couldn't save PDF", err));
 

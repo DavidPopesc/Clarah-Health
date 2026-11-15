@@ -34,6 +34,10 @@ const DOCUMENT_SUBISSUE_TITLES: Record<string, string> = {
   adhd: "ADHD",
   "mental-health": "Mental health",
   cancer: "Cancer care",
+  pregnancy: "Pregnancy",
+  gdm: "Gestational diabetes",
+  hemoglobin: "Blood counts",
+  anc: "White blood cells",
 };
 
 interface DocumentEvidence {

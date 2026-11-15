@@ -24,7 +24,9 @@ export type HealthThemeId =
   | "daily-routines"
   | "mental-health"
   | "adhd"
-  | "cancer";
+  | "cancer"
+  | "pregnancy"
+  | "blood";
 
 export interface HealthEvidence {
   id: string;
@@ -134,7 +136,28 @@ export const HEALTH_THEME_DEFINITIONS: Record<HealthThemeId, ThemeDefinition> = 
     title: "Cancer & treatment",
     description: "Cancer diagnoses, imaging findings and treatment notes are kept together here.",
     action: "Use this area to keep the diagnosis, treatment plan, follow-up tests and questions for the oncology team in one place.",
-    relationships: [],
+    relationships: [
+      { themeId: "blood", label: "Blood counts", note: "Chemotherapy often lowers blood counts, which can cause tiredness and raise infection risk." },
+      { themeId: "mental-health", label: "Emotional wellbeing", note: "Worry, low mood and trouble sleeping are common during cancer treatment and can be treated too." },
+    ],
+  },
+  pregnancy: {
+    title: "Pregnancy",
+    description: "Your pregnancy and the conditions being watched alongside it, such as blood sugar, iron and blood pressure.",
+    action: "Keep every prenatal visit, track the numbers your midwife or doctor asks for, and know the warning signs that mean you should call right away.",
+    relationships: [
+      { themeId: "blood", label: "Blood counts & iron", note: "Pregnancy raises iron needs, and low iron is a common cause of tiredness." },
+      { themeId: "cardiometabolic", label: "Heart, blood sugar & metabolism", note: "Blood pressure and blood sugar are watched closely in pregnancy for both parent and baby." },
+    ],
+  },
+  blood: {
+    title: "Blood counts & energy",
+    description: "Red blood cells carry oxygen and white blood cells fight infection. Low counts can explain tiredness or raise the chance of infection.",
+    action: "Ask what your counts mean for daily life, and know when a fever or new symptom means calling your care team right away.",
+    relationships: [
+      { themeId: "cancer", label: "Cancer & treatment", note: "Cancer treatment is a common reason for low blood counts." },
+      { themeId: "pregnancy", label: "Pregnancy", note: "Low iron and anemia are common in pregnancy." },
+    ],
   },
 };
 
@@ -214,6 +237,8 @@ export function classifyDocumentFinding(finding: Pick<DocFinding, "title" | "exp
   if (/depress|anxiety|panic|bipolar|post[- ]traumatic|\bptsd\b|obsessive|\bocd\b|mood|mental health|substance use|eating disorder/.test(text)) {
     return { themeId: "mental-health", itemId: "mental-health" };
   }
+  if (/pregnan|prenatal|gestation|trimester|preeclampsia/.test(text)) return { themeId: "pregnancy", itemId: "pregnancy" };
+  if (/neutrophil|white blood cell|\bwbc\b|hemoglobin(?! a1c)|anemi|ferritin|iron/.test(text)) return { themeId: "blood", itemId: "hemoglobin" };
   if (/cancer|carcinoma|malignan|tumou?r|lymphoma|leukemia|melanoma|oncolog/.test(text)) return { themeId: "cancer", itemId: "cancer" };
   if (/kidney|renal|\begfr\b|creatinine|urine protein|urine albumin|albumin.*urine|\buacr\b/.test(text)) {
     return { themeId: "kidney", itemId: "egfr" };
@@ -237,6 +262,7 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
   const good: GoodItem[] = [];
   const from = record.source === "epic" ? "MyChart" : "Demo record";
   const hasDiabetes = record.conditions.some((condition) => /diabetes/i.test(condition.name));
+  const pregnancy = record.conditions.find((condition) => /pregnan/i.test(condition.name));
 
   const bp = latest(record.bloodPressure);
   if (bp) {
@@ -251,13 +277,17 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
     if (category === "crisis" || category === "stage2" || category === "stage1") {
       items.push({
         id: "bp",
-        themeId: "cardiometabolic",
+        themeId: pregnancy ? "pregnancy" : "cardiometabolic",
         progress,
         level: category === "crisis" ? "urgent" : "attention",
         title: category === "crisis" ? "Dangerously high blood pressure" : "Blood pressure above the healthy range",
         detail: `${bp.systolic}/${bp.diastolic} on ${fmt(bp.date)} is ${BP_LABELS[category].toLowerCase()}${trend}.`,
-        why: "Over time, high blood pressure strains the heart, brain and kidneys, especially with diabetes.",
-        todo: category === "crisis"
+        why: pregnancy
+          ? "In pregnancy, rising blood pressure can be an early sign of preeclampsia, which affects both parent and baby."
+          : "Over time, high blood pressure strains the heart, brain and kidneys, especially with diabetes.",
+        todo: pregnancy && category !== "crisis"
+          ? "Check it at home as your care team asks. Call right away for 160/110 or higher, a bad headache, vision changes, pain under the right ribs or sudden swelling."
+          : category === "crisis"
           ? "If it is still above 180/120 when you recheck, contact your care team now. Call 911 with chest pain, trouble breathing, weakness or trouble speaking."
           : "Check it at home a few times a week and bring the readings to your next visit.",
         source: `${from} · ${fmt(bp.date)}`,
@@ -407,6 +437,89 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
     }
   }
 
+  if (pregnancy) {
+    const weeks = pregnancy.since ? Math.floor((Date.now() - new Date(`${pregnancy.since}T12:00:00`).getTime()) / (7 * 86_400_000)) : undefined;
+    const due = pregnancy.name.match(/due (\d{4}-\d{2}-\d{2})/)?.[1];
+    items.push({
+      id: "pregnancy",
+      themeId: "pregnancy",
+      level: "watch",
+      title: weeks ? `About ${weeks} weeks pregnant` : "Pregnancy",
+      detail: `${weeks ? `About ${weeks} weeks along` : "Pregnant"}${due ? `, due ${fmt(due)}` : ""}. Clarah keeps the conditions being watched during pregnancy together here.`,
+      why: "Some medicines, foods and symptoms need extra care in pregnancy.",
+      todo: "Ask before starting any new medicine or supplement, and call right away if the baby moves less than usual.",
+      source: `${from} · Conditions`,
+      ask: "What should I watch for at this stage of my pregnancy?",
+      evidence: [{ id: "condition-pregnancy", kind: "condition", label: "Recorded condition", value: pregnancy.name, source: `${from}${pregnancy.since ? ` · since ${fmt(pregnancy.since)}` : ""}` }],
+      focus: { region: "abdomen", system: "organs", label: "Belly", reason: "Pregnancy." },
+    });
+  }
+
+  const gestational = record.conditions.find((condition) => /gestational diabetes/i.test(condition.name));
+  if (gestational) {
+    const tolerance = record.labs.filter((lab) => /glucose tolerance/i.test(lab.name));
+    items.push({
+      id: "gdm",
+      themeId: "pregnancy",
+      level: "attention",
+      title: "Gestational diabetes",
+      detail: `Diagnosed ${gestational.since ? fmt(gestational.since) : "during this pregnancy"}${tolerance.length ? ` after a glucose tolerance test (${tolerance.map((lab) => `${lab.value} ${lab.unit}`).join(", ")})` : ""}. Common goals are a fasting sugar under 95 and under 140 one hour after meals.`,
+      why: "Keeping blood sugar in range lowers the chance of a very large baby, a difficult birth and low sugar in the newborn.",
+      todo: "Check your sugar as your care team asks, take a short walk after meals, and bring your log to every visit.",
+      source: `${from} · Conditions`,
+      ask: "What can I eat to keep my blood sugar in range with gestational diabetes?",
+      evidence: [
+        { id: "condition-gdm", kind: "condition", label: "Recorded condition", value: gestational.name, source: `${from} · since ${fmt(gestational.since ?? "")}` },
+        ...tolerance.map((lab) => ({ id: `gtt-${lab.date}`, kind: "lab" as const, label: lab.name, value: `${lab.value} ${lab.unit}`, source: `${from} · ${fmt(lab.date)}` })),
+      ],
+      focus: { region: "pancreas", system: "organs", label: "Pancreas", reason: "Gestational diabetes." },
+    });
+  }
+
+  const hasCancer = record.conditions.some((condition) => /cancer|carcinoma|malignan|neoplasm|lymphoma|leukemia/i.test(condition.name));
+  const hemoglobinLabs = labHistory(record.labs, "Hemoglobin");
+  const hemoglobin = hemoglobinLabs.at(-1);
+  if (hemoglobin) {
+    const low = pregnancy ? 11 : record.sex === "male" ? 13.5 : 12;
+    const previous = hemoglobinLabs.at(-2);
+    const ferritin = latest(record.labs.filter((lab) => /ferritin/i.test(lab.name)));
+    if (hemoglobin.value < low) {
+      const evidence: HealthEvidence[] = [{ id: `hgb-${hemoglobin.date}`, kind: "lab", label: "Hemoglobin", value: `${hemoglobin.value} ${hemoglobin.unit}`, source: `${from} · ${fmt(hemoglobin.date)}` }];
+      if (ferritin && ferritin.value < 30) evidence.push({ id: `ferritin-${ferritin.date}`, kind: "lab", label: "Iron stores (ferritin)", value: `${ferritin.value} ${ferritin.unit}`, source: `${from} · ${fmt(ferritin.date)}` });
+      items.push({
+        id: "hemoglobin",
+        themeId: "blood",
+        level: hemoglobin.value < 10 ? "attention" : "watch",
+        title: "Low red blood cells (anemia)",
+        detail: `Hemoglobin was ${hemoglobin.value} ${hemoglobin.unit} on ${fmt(hemoglobin.date)}${previous ? ` (was ${previous.value} on ${fmt(previous.date)})` : ""}. ${pregnancy ? "In pregnancy, under 11 is considered low" : `Under ${low} is considered low`}.${ferritin && ferritin.value < 30 ? ` Iron stores (ferritin) are low at ${ferritin.value}.` : ""}`,
+        why: hasCancer ? "Chemotherapy can lower red blood cells, which carry oxygen. That often causes tiredness and shortness of breath." : "Red blood cells carry oxygen. When they are low, people often feel tired, dizzy or short of breath.",
+        todo: "Tell your care team if you feel short of breath, your heart races or you feel faint.",
+        source: `${from} · ${fmt(hemoglobin.date)}`,
+        ask: "Why is my hemoglobin low, and what can help my energy?",
+        evidence,
+        focus: { region: "heart", system: "circulatory", label: "Heart", reason: `Hemoglobin ${hemoglobin.value}.` },
+      });
+    } else {
+      good.push({ label: "Hemoglobin", value: `${hemoglobin.value} ${hemoglobin.unit}` });
+    }
+  }
+
+  const neutrophils = latest(record.labs.filter((lab) => /neutrophil/i.test(lab.name)));
+  if (neutrophils && neutrophils.value < 1.5) {
+    items.push({
+      id: "anc",
+      themeId: "blood",
+      level: neutrophils.value < 0.5 ? "urgent" : "attention",
+      title: "Low infection-fighting white cells",
+      detail: `Absolute neutrophil count was ${neutrophils.value} ${neutrophils.unit} on ${fmt(neutrophils.date)}. Under 1.5 means a higher chance of infection.`,
+      why: "Neutrophils are the white blood cells that fight infection. When they are low, an infection can become serious quickly.",
+      todo: "Wash hands often and avoid people who are sick. A temperature of 100.4°F (38°C) or higher means calling your care team right away, day or night.",
+      source: `${from} · ${fmt(neutrophils.date)}`,
+      ask: "My neutrophils are low. What does that mean, and when should I call?",
+      evidence: [{ id: `anc-${neutrophils.date}`, kind: "lab", label: "Absolute neutrophil count", value: `${neutrophils.value} ${neutrophils.unit}`, source: `${from} · ${fmt(neutrophils.date)}` }],
+    });
+  }
+
   const adhd = record.conditions.find((condition) => /attention[- ]deficit|\badhd\b/i.test(condition.name));
   if (adhd) {
     items.push({
@@ -423,23 +536,33 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
     });
   }
 
-  const mentalHealthConditions = record.conditions.filter((condition) => /depress|anxiety|panic|bipolar|post[- ]traumatic|\bptsd\b|obsessive|\bocd\b|mood|substance use|eating disorder/i.test(condition.name));
+  const mentalHealthConditions = record.conditions.filter((condition) => /depress|anxiety|panic|bipolar|post[- ]traumatic|\bptsd\b|obsessive|\bocd\b|mood|substance use|alcohol use|eating disorder/i.test(condition.name));
+  const scores = ["PCL-5", "PHQ-9", "GAD-7"].flatMap((tool) => {
+    const history = record.labs.filter((lab) => lab.name.startsWith(tool)).sort((a, b) => a.date.localeCompare(b.date));
+    const now = history.at(-1);
+    return now ? [{ now, before: history.at(-2) }] : [];
+  });
   if (mentalHealthConditions.length > 0) {
+    const scoreText = scores.map(({ now, before }) => `${now.name} ${now.value}${before ? `, ${now.value < before.value ? "down" : now.value > before.value ? "up" : "unchanged"} from ${before.value}` : ""}`);
     items.push({
       id: "mental-health",
       themeId: "mental-health",
-      level: "watch",
+      // Common screening cutoffs: PCL-5 33 or more, PHQ-9 and GAD-7 10 or more.
+      level: scores.some(({ now }) => now.value >= (now.name.startsWith("PCL-5") ? 33 : 10)) ? "attention" : "watch",
       title: "Mental health conditions in the record",
-      detail: mentalHealthConditions.map((condition) => condition.name).join(", "),
+      detail: `${mentalHealthConditions.map((condition) => condition.name).join(", ")}.${scoreText.length ? ` Symptom scores: ${scoreText.join("; ")}. Lower scores mean fewer symptoms.` : ""}`,
       why: "Mental and physical health can affect each other, so these diagnoses belong in the same overall care picture.",
       todo: "Keep follow-up current and tell your care team about symptoms that are worsening or affecting daily life.",
       source: `${from} · Conditions`,
       ask: "How might my mental and physical health plans affect each other?",
-      evidence: mentalHealthConditions.map((condition) => ({ id: `condition-${condition.name}`, kind: "condition", label: "Recorded condition", value: condition.name, source: `${from}${condition.since ? ` · since ${fmt(condition.since)}` : ""}` })),
+      evidence: [
+        ...mentalHealthConditions.map((condition) => ({ id: `condition-${condition.name}`, kind: "condition" as const, label: "Recorded condition", value: condition.name, source: `${from}${condition.since ? ` · since ${fmt(condition.since)}` : ""}` })),
+        ...scores.map(({ now, before }) => ({ id: `score-${now.name}`, kind: "lab" as const, label: now.name, value: `${now.value}${before ? ` (was ${before.value})` : ""}`, source: `${from} · ${fmt(now.date)}` })),
+      ],
     });
   }
 
-  const cancerConditions = record.conditions.filter((condition) => /cancer|carcinoma|malignan|tumou?r|lymphoma|leukemia|melanoma/i.test(condition.name));
+  const cancerConditions = record.conditions.filter((condition) => /cancer|carcinoma|malignan|neoplasm|tumou?r|lymphoma|leukemia|melanoma/i.test(condition.name));
   if (cancerConditions.length > 0) {
     items.push({
       id: "cancer",

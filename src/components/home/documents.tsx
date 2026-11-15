@@ -155,7 +155,7 @@ function DocCard({ doc, url, defaultOpen }: { doc: StoredDoc; url?: string; defa
   );
 }
 
-export function Documents() {
+export function Documents({ sampleReport = false }: { sampleReport?: boolean }) {
   const { docs, urls } = useSyncExternalStore(docStore.subscribe, docStore.getSnapshot, docStore.getServerSnapshot);
 
   return (
@@ -172,9 +172,11 @@ export function Documents() {
             Upload a lab report or visit summary as a PDF. Clarah explains it in plain English, compares it with your
             history, and shows exactly where each number came from.
           </p>
-          <button type="button" onClick={trySample} className="self-start text-[13px] font-semibold text-teal underline">
-            Try a sample lab report
-          </button>
+          {sampleReport && (
+            <button type="button" onClick={trySample} className="self-start text-[13px] font-semibold text-teal underline">
+              Try a sample lab report
+            </button>
+          )}
         </div>
       ) : (
         docs.map((d, i) => <DocCard key={d.id} doc={d} url={urls[d.id]} defaultOpen={i === 0} />)

@@ -4,7 +4,9 @@ import { HeroHeart } from "@/components/hero-heart";
 import { Tilt } from "@/components/tilt";
 import { CheckIcon, ClaraLogo, RecordIcon, WatchIcon } from "@/components/icons";
 import { connectionStatus } from "@/lib/data";
+import { DEMO_PATIENTS } from "@/lib/demo-patients";
 import { epicEnabled } from "@/lib/epic";
+import { getMode } from "@/lib/mode";
 import { fitbitEnabled } from "@/lib/fitbit";
 
 const ERRORS: Record<string, string> = {
@@ -64,7 +66,8 @@ export const metadata = { title: "Connections · Clarah Health" };
 
 export default async function ConnectPage({ searchParams }: PageProps<"/connections">) {
   const { error } = await searchParams;
-  const status = await connectionStatus();
+  const [status, { patient }] = await Promise.all([connectionStatus(), getMode()]);
+  const demo = status.mode === "demo";
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
@@ -126,6 +129,57 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
             index={2}
           />
         </div>
+
+        <section className="mx-5 flex flex-col gap-3 lg:mx-0" aria-labelledby="mode-heading">
+          <div className="flex items-end justify-between gap-3 border-b-2 border-ink pb-2">
+            <div>
+              <span className="clinical-label text-teal">For presentations</span>
+              <h2 id="mode-heading" className="mt-1 text-xl font-semibold">Whose data is shown</h2>
+            </div>
+          </div>
+          <div className="well grid grid-cols-2 gap-1 rounded-md p-1 text-[13px] font-semibold" role="group" aria-label="Mode">
+            <a href={`/api/demo?patient=${patient.id}&next=/connections`} aria-current={demo ? "true" : undefined} className={`flex min-h-10 items-center justify-center rounded ${demo ? "bg-white text-ink shadow-sm" : "text-muted"}`}>
+              Demo patients
+            </a>
+            <a href="/api/demo?mode=live&next=/connections" aria-current={!demo ? "true" : undefined} className={`flex min-h-10 items-center justify-center rounded ${!demo ? "bg-white text-ink shadow-sm" : "text-muted"}`}>
+              My own data
+            </a>
+          </div>
+          <p className="text-[13px] leading-snug text-muted">
+            {demo
+              ? "Demo mode uses made-up patients with full records, wearable data and a sample visit. None of them are real people."
+              : "Live mode shows only what you link above, with no filler data."}
+          </p>
+          {demo && (
+            <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2">
+              {DEMO_PATIENTS.map((p) => {
+                const current = p.id === patient.id;
+                return (
+                  <a
+                    key={p.id}
+                    href={`/api/demo?patient=${p.id}&next=/profile`}
+                    aria-current={current ? "true" : undefined}
+                    className={`slab flex flex-col gap-2 rounded-md border-l-4 p-4 ${current ? "border-teal" : "border-transparent"}`}
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span>
+                        <span className="block text-[15px] font-semibold text-ink">{p.record.identity.name}, {p.age}</span>
+                        <span className="clinical-label text-teal">{p.focus}</span>
+                      </span>
+                      <span className={`shrink-0 text-[12px] font-semibold ${current ? "text-teal-dark" : "text-teal underline"}`}>
+                        {current ? "Viewing" : "Switch"}
+                      </span>
+                    </span>
+                    <span className="text-[13px] leading-snug text-body">{p.story}</span>
+                    <span className="text-[12px] leading-snug text-subtle">
+                      Also: {p.record.conditions.slice(1).map((c) => c.name.replace(/\s*\(.*\)$/, "")).join(" · ")}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         {(status.live.epic || status.live.fitbit) && (
           <form action="/api/disconnect" method="post" className="mx-5 lg:mx-0">

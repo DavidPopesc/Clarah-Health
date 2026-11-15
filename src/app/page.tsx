@@ -1,10 +1,12 @@
 import { BottomNav } from "@/components/bottom-nav";
 import { VisitsView } from "@/components/visits/visits-view";
+import { getMode } from "@/lib/mode";
 
 export const metadata = { title: "Overview · Clarah Health" };
 
 // The home page: Overview, the patient's visit recaps.
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const { mode, patient } = await getMode();
   return (
     <>
       <main className="flex grow flex-col gap-6 pb-8 lg:gap-8">
@@ -14,7 +16,7 @@ export default function OverviewPage() {
             <h1 className="text-xl font-semibold lg:text-[30px]">Overview</h1>
           </div>
         </header>
-        <VisitsView />
+        <VisitsView sample={mode === "demo" ? patient.sampleVisit : undefined} />
       </main>
       <BottomNav active="/" />
     </>

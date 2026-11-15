@@ -25,15 +25,15 @@ interface Message {
   streaming?: boolean;
 }
 
+// Live mode suggestions; each demo patient has their own (demo-patients.ts).
 const SUGGESTIONS = [
-  "Ramadan starts in February. Is it okay for me to fast with my diabetes meds?",
   "Can I take turmeric or herbal tea with my medicines?",
   "What does my blood pressure number mean?",
   "Is grapefruit okay with my cholesterol medicine?",
   "I sprained my left ankle. Can I take ibuprofen for the pain?",
 ];
 
-export function Chat({ initialQuestion }: { initialQuestion?: string }) {
+export function Chat({ initialQuestion, suggestions = SUGGESTIONS }: { initialQuestion?: string; suggestions?: string[] }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -185,13 +185,13 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
               Ask about your numbers, your diagnosis, or whether something is safe for you, like a fast, an herb, or a food.
             </p>
             <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2">
-              {SUGGESTIONS.map((s) => (
+              {suggestions.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => send(s)}
                   className="slab lift rise min-h-12 rounded-md px-4 py-3 text-left text-sm text-ink"
-                  style={{ "--i": SUGGESTIONS.indexOf(s) } as React.CSSProperties}
+                  style={{ "--i": suggestions.indexOf(s) } as React.CSSProperties}
                 >
                   {s}
                 </button>

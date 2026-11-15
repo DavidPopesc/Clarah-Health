@@ -1,5 +1,6 @@
 "use client";
 
+import { currentScope } from "./scope";
 import type { VisitRecap } from "./visit-verify";
 
 // Visit recaps live only in this browser (IndexedDB), like uploaded documents: Clarah's recap,
@@ -12,6 +13,7 @@ export interface StoredVisit {
   recap: VisitRecap;
   transcript: string;
   done?: string[]; // "What to do next" steps the patient has ticked off, by their text
+  patient?: string; // demo patient id or "live" (see scope.ts); older recaps belong to Amira
 }
 
 const DB_NAME = "clara-visits";
@@ -53,7 +55,8 @@ async function load() {
   loaded = true;
   try {
     const all = await tx<StoredVisit[]>(VISITS, "readonly", (s) => s.getAll());
-    emit(all.sort((a, b) => b.addedAt.localeCompare(a.addedAt)));
+    const scope = currentScope();
+    emit(all.filter((v) => (v.patient ?? "amira") === scope).sort((a, b) => b.addedAt.localeCompare(a.addedAt)));
   } catch (err) {
     console.error("Couldn't load saved visits", err);
   }
@@ -73,7 +76,7 @@ export const visitStore = {
 
 export async function saveVisit(recap: VisitRecap, transcript: string): Promise<StoredVisit> {
   await load();
-  const visit: StoredVisit = { id: crypto.randomUUID(), addedAt: new Date().toISOString(), recap, transcript };
+  const visit: StoredVisit = { id: crypto.randomUUID(), addedAt: new Date().toISOString(), recap, transcript, patient: currentScope() };
   await tx(VISITS, "readwrite", (s) => s.put(visit));
   emit([visit, ...visits]);
   return visit;

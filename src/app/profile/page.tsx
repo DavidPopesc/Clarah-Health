@@ -8,6 +8,7 @@ import { CheckIcon, ChevronIcon, ClaraLogo, RecordIcon, WatchIcon } from "@/comp
 import { medInfoFor, medlinePlusSearch } from "@/lib/med-info";
 import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
+import { getMode } from "@/lib/mode";
 
 const ERRORS: Record<string, string> = {
   epic_not_configured: "MyChart linking isn't set up on this server yet, so Clarah is using the demo patient.",
@@ -49,7 +50,7 @@ export const metadata = { title: "My profile · Clarah Health" };
 export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
   await connection();
   const { error } = await searchParams;
-  const [record, wearable, status] = await Promise.all([getRecord(), getWearable(), connectionStatus()]);
+  const [record, wearable, status, { patient }] = await Promise.all([getRecord(), getWearable(), connectionStatus(), getMode()]);
   const { themes, good } = assessHealth(record, wearable);
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
   const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -91,7 +92,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           </section>
 
           <div className="order-3 lg:order-none">
-            <Documents />
+            <Documents sampleReport={status.mode === "demo" && Boolean(patient.sampleReport)} />
           </div>
           </div>
 
@@ -107,7 +108,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
               <ConnectRow name="Fitbit" Icon={WatchIcon} linked={status.fitbit} href="/api/auth/fitbit/login" />
             </div>
             {errorText && <p role="alert" className="border-l-4 border-amber bg-amber-soft px-3 py-2.5 text-[13px] text-amber-ink">{errorText}</p>}
-            {!status.epic && !status.fitbit && !errorText && <p className="text-[11px] text-subtle">Using demo data until you link a source.</p>}
+            {!status.epic && !status.fitbit && !errorText && <p className="text-[11px] text-subtle">Live mode: link MyChart or Fitbit to see your own data.</p>}
           </section>
 
           {good.length > 0 && (

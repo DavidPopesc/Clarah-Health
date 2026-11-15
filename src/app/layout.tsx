@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { DemoBar } from "@/components/demo-bar";
 import { DesktopNav } from "@/components/desktop-nav";
 import { Suspense } from "react";
 import "./globals.css";
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="font-sans">
         <Suspense fallback={null}><DesktopNav /></Suspense>
         <div className="mx-auto flex min-h-dvh w-full max-w-[460px] flex-col app-shell">
+          <Suspense fallback={null}><DemoBar /></Suspense>
           {children}
         </div>
       </body>

@@ -29,6 +29,19 @@ node scripts/knowledge/index_typesense.mjs --reset --no-embed
 
 Then open `/library`. Without Typesense configuration, the page shows a setup message.
 
+## Demo and live mode
+
+Clarah opens in **demo mode** with made-up patients (none are real people), each with a full record, a week of wearable data, a sample visit and their own suggested questions. Switch from the **Demo/Live bar** at the top of every page, or from **Sources → Whose data is shown**, which tells each patient's story. Saved visits and documents are kept apart per patient on the device.
+
+| Patient | Main issue | Also in the record |
+|---|---|---|
+| Amira Haddad, 52 | Type 2 diabetes | High cholesterol, ADHD, rising blood pressure, low-blood-sugar risk; asking about Ramadan fasting |
+| Grace Okafor, 47 | Breast cancer in chemotherapy | Low neutrophils, anemia, nausea, neuropathy, anxiety |
+| Marcus Bell, 34 | PTSD (Army veteran) | Depression, nightmares and short sleep, back pain, at-risk drinking; symptom scores improving |
+| Sofia Ramirez, 31 | Pregnancy, 28 weeks | Gestational diabetes, iron-deficiency anemia, rising blood pressure |
+
+**Live mode** shows only what you link (MyChart, Fitbit), with no filler data. Shortcuts for presenting: `/api/demo?patient=grace` (or `amira`, `marcus`, `sofia`) and `/api/demo?mode=live`. Patients are defined in `src/lib/demo-patients.ts`.
+
 ## Visit recaps
 
 - **Care team records, patient listens.** On `/visits/new` the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clarah explains it.

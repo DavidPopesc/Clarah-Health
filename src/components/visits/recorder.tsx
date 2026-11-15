@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { SAMPLE_VISIT } from "@/lib/sample-visit";
 import { saveVisit } from "@/lib/visit-store";
 import { recordingToWavChunks } from "@/lib/wav";
 import { BackIcon, MicIcon, StopIcon } from "../icons";
@@ -20,7 +19,7 @@ const todayIso = () => {
 
 // The care team's side: record the conversation (with the patient's consent), check the
 // transcript, then have Clarah turn it into a spoken explanation for the patient.
-export function VisitRecorder() {
+export function VisitRecorder({ sample }: { sample?: string }) {
   const router = useRouter();
   const [consent, setConsent] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -199,8 +198,8 @@ export function VisitRecorder() {
         <section className="flex flex-col gap-2" aria-labelledby="transcript-heading">
           <div className="flex items-center justify-between border-b border-line pb-2">
             <h2 id="transcript-heading" className="clinical-label text-muted">3 · Check the transcript</h2>
-            {!transcript && (
-              <button type="button" onClick={() => setTranscript(SAMPLE_VISIT)} disabled={busy || phase === "recording"} className="text-[12px] font-semibold text-teal underline">
+            {!transcript && sample && (
+              <button type="button" onClick={() => setTranscript(sample)} disabled={busy || phase === "recording"} className="text-[12px] font-semibold text-teal underline">
                 Use a sample visit
               </button>
             )}
