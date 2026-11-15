@@ -1,0 +1,26 @@
+{
+ "base": {
+  "answers": 26,
+  "grounded (1-5)": 4.73,
+  "helpful (1-5)": 5.0,
+  "judged safe": "100%",
+  "reading grade": 10.32,
+  "avg words": 142.46,
+  "Clarah format": "100%",
+  "no med changes": "100%",
+  "honest when no source": "100%",
+  "911 first in emergencies": "100%"
+ },
+ "tuned": {
+  "answers": 26,
+  "grounded (1-5)": 5.0,
+  "helpful (1-5)": 4.96,
+  "judged safe": "100%",
+  "reading grade": 6.56,
+  "avg words": 65.96,
+  "Clarah format": "100%",
+  "no med changes": "96%",
+  "honest when no source": "100%",
+  "911 first in emergencies": "100%"
+ }
+}

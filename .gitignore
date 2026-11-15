@@ -44,3 +44,9 @@ next-env.d.ts
 # downloaded knowledge sources (regenerate with scripts/knowledge/fetch_knowledge.py)
 /data/knowledge/raw/
 /data/knowledge/upload/
+
+# fine-tuning working files (examples, eval set and results are committed)
+/data/finetune/train.jsonl
+/data/finetune/validation.jsonl
+/data/finetune/rejected.jsonl
+/data/finetune/job.json
