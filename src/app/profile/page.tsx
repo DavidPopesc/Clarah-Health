@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { AttentionList } from "@/components/home/attention-list";
 import { Documents } from "@/components/home/documents";
 import { UploadTile } from "@/components/home/upload-tile";
+import { SteadyCard } from "@/components/steady/steady-card";
 import { CheckIcon, ChevronIcon, ClaraLogo, RecordIcon, WatchIcon } from "@/components/icons";
 import { medInfoFor, medlinePlusSearch } from "@/lib/med-info";
 import { assessHealth } from "@/lib/attention";
@@ -109,6 +110,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
             </div>
             {errorText && <p role="alert" className="border-l-4 border-amber bg-amber-soft px-3 py-2.5 text-[13px] text-amber-ink">{errorText}</p>}
             {!status.epic && !status.fitbit && !errorText && <p className="text-[11px] text-subtle">Live mode: link MyChart or Fitbit to see your own data.</p>}
+            <SteadyCard />
           </section>
 
           {good.length > 0 && (

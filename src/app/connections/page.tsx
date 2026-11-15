@@ -8,6 +8,7 @@ import { DEMO_PATIENTS } from "@/lib/demo-patients";
 import { epicEnabled } from "@/lib/epic";
 import { getMode } from "@/lib/mode";
 import { fitbitEnabled } from "@/lib/fitbit";
+import { isStale, latestReading } from "@/lib/steady";
 
 const ERRORS: Record<string, string> = {
   epic_not_configured: "MyChart isn't configured yet. Add EPIC_CLIENT_ID to use the Epic sandbox. Clarah is using the demo patient for now.",
@@ -68,6 +69,8 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
   const { error } = await searchParams;
   const [status, { patient }] = await Promise.all([connectionStatus(), getMode()]);
   const demo = status.mode === "demo";
+  // In demo mode the patient's Steady shows as linked; live, only if the board reported recently.
+  const steadyLinked = demo || !isStale(await latestReading().catch(() => null));
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
@@ -127,6 +130,15 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
             enabled={fitbitEnabled()}
             href="/api/auth/fitbit/login"
             index={2}
+          />
+          <ConnectionCard
+            title="Clarah Steady wearable"
+            detail="Walking steadiness, falls, prosthetic adaptation"
+            Icon={WatchIcon}
+            linked={steadyLinked}
+            enabled
+            href="/steady"
+            index={3}
           />
         </div>
 
