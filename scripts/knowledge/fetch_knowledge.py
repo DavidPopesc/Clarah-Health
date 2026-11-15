@@ -273,6 +273,8 @@ LABEL_SECTIONS = [
     ("adverse_reactions", "Side effects"),
     ("use_in_specific_populations", "Pregnancy, breastfeeding, children and older adults"),
     ("pregnancy", "Pregnancy"),
+    ("pregnancy_or_breast_feeding", "If pregnant or breastfeeding"),
+    ("nursing_mothers", "Breastfeeding"),
     ("information_for_patients", "Information for patients"),
     ("do_not_use", "Do not use"),
     ("ask_doctor", "Ask a doctor before use if you have"),
@@ -292,7 +294,9 @@ def pick_label(results: list, drug: str) -> dict | None:
         exact = any(n == drug or n.startswith(drug + " ") for n in names)
         combo = any(" and " in n or "," in n for n in names)
         rx = "PRESCRIPTION" in " ".join(r.get("openfda", {}).get("product_type", []))
-        return (exact, not combo, rx, len(json.dumps(r)))
+        # Then the label that covers the most sections we show (e.g. pregnancy advice).
+        covered = sum(1 for key, _ in LABEL_SECTIONS if r.get(key))
+        return (exact, not combo, rx, covered, len(json.dumps(r)))
 
     best = max(results, key=score) if results else None
     # The generic name must start with the drug, so an unrelated product that merely

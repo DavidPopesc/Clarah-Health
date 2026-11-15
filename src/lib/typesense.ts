@@ -1,4 +1,5 @@
 import "server-only";
+import { serviceAccount, vertexAccessToken } from "./vertex-auth";
 
 export type LibraryKind = "Medication" | "Lab test" | "Condition" | "Herb & supplement";
 export type LibraryDoc = { id: string; title: string; kind: LibraryKind; aliases: string[]; summary: string; body: string; url: string; source: string };
@@ -78,10 +79,62 @@ export async function getLibraryDoc(id: string) {
   return request<LibraryDoc>(`/collections/clarah_library/documents/${encodeURIComponent(id)}`);
 }
 
-export async function searchPassages(query: string, k = 5): Promise<{ title: string; kind: LibraryKind; section: string; text: string; url: string; source: string }[]> {
+type Passage = { title: string; kind: LibraryKind; section: string; text: string; url: string; source: string };
+
+// The passages carry Gemini Embedding vectors (`vec`, 256 dims, from scripts/knowledge/embed_passages.py).
+// Embedding the question the same way lets the search match meaning, not just words.
+async function questionVector(q: string): Promise<number[] | null> {
+  const account = serviceAccount();
+  if (!account) return null;
+  try {
+    const project = process.env.VERTEX_PROJECT ?? account.project_id;
+    const res = await fetch(
+      `https://us-central1-aiplatform.googleapis.com/v1/projects/${project}/locations/us-central1/publishers/google/models/gemini-embedding-001:predict`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${await vertexAccessToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ instances: [{ content: q, task_type: "RETRIEVAL_QUERY" }], parameters: { outputDimensionality: 256 } }),
+        signal: AbortSignal.timeout(4000),
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { predictions: { embeddings: { values: number[] } }[] };
+    return data.predictions[0]?.embeddings.values ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function searchPassages(query: string, k = 5): Promise<Passage[]> {
   const q = query.trim().slice(0, 500);
   if (!q) return [];
-  const params = new URLSearchParams({ q, per_page: String(Math.max(1, Math.min(k, 20))), prefix: "true", num_typos: "2" });
-  const data = await runSearch<{ title: string; kind: LibraryKind; section: string; text: string; url: string; source: string }>("clarah_passages", params, "title,section,text");
-  return (data.hits ?? []).map(({ document }) => ({ title: document.title, kind: document.kind, section: document.section, text: document.text, url: document.url, source: document.source }));
+  const perPage = Math.max(1, Math.min(k, 20));
+  const pick = (hits: { document: Passage }[] = []) =>
+    hits.map(({ document }) => ({ title: document.title, kind: document.kind, section: document.section, text: document.text, url: document.url, source: document.source }));
+
+  // Hybrid: keyword match (typos, synonyms) fused with Gemini-embedding similarity.
+  const vector = await questionVector(q);
+  if (vector) {
+    try {
+      const res = await fetch(endpoint("/multi_search"), {
+        method: "POST",
+        headers: { "X-TYPESENSE-API-KEY": process.env.TYPESENSE_SEARCH_KEY || process.env.TYPESENSE_ADMIN_KEY || "", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          searches: [{
+            collection: "clarah_passages", q, query_by: "title,section,text", exclude_fields: "vec", per_page: perPage,
+            prefix: true, num_typos: 2, vector_query: `vec:([${vector.map((x) => x.toFixed(5)).join(",")}], k:50, alpha:0.7)`,
+          }],
+        }),
+        cache: "no-store",
+      });
+      const data = (await res.json()) as { results: (RawSearch<Passage> & { error?: string })[] };
+      const result = data.results?.[0];
+      if (res.ok && result && !result.error) return pick(result.hits);
+    } catch (error) {
+      console.warn("Hybrid passage search failed, using keywords", error);
+    }
+  }
+  const params = new URLSearchParams({ q, per_page: String(perPage), prefix: "true", num_typos: "2", exclude_fields: "vec" });
+  const data = await runSearch<Passage>("clarah_passages", params, "title,section,text");
+  return pick(data.hits);
 }

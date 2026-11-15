@@ -53,6 +53,8 @@ const synonyms = [
   ["high blood pressure", "hypertension"], ["low blood pressure", "hypotension"],
   ["heart attack", "myocardial infarction"], ["kidney", "renal"], ["liver", "hepatic"],
   ["tylenol", "acetaminophen", "paracetamol"], ["advil", "motrin", "ibuprofen"],
+  // Labels say "pregnant" and "breast-feeding"; people ask about "pregnancy" and "nursing".
+  ["pregnancy", "pregnant", "expecting"], ["breastfeeding", "breast-feeding", "nursing", "lactation"],
   ["heartburn", "acid reflux", "gerd"], ["stroke", "cerebrovascular accident"],
   ["high cholesterol", "hyperlipidemia"], ["low blood sugar", "hypoglycemia"],
   ["high blood sugar", "hyperglycemia"], ["shortness of breath", "dyspnea"],
@@ -69,7 +71,10 @@ const synonyms = [
 async function installSynonyms() {
   const name = "clarah-lay-medical";
   await api(`/synonym_sets/${name}`, { method: "PUT", body: JSON.stringify({ items: synonyms.map((terms, index) => ({ id: `lay-medical-${index + 1}`, synonyms: terms })) }) });
-  await api("/collections/clarah_library", { method: "PATCH", body: JSON.stringify({ synonym_sets: [name] }) });
+  // Both collections: the library page and Clarah's passage search ("tylenol" finds acetaminophen).
+  for (const collection of ["clarah_library", "clarah_passages"]) {
+    await api(`/collections/${collection}`, { method: "PATCH", body: JSON.stringify({ synonym_sets: [name] }) });
+  }
 }
 
 async function importDocs(name, docs) {

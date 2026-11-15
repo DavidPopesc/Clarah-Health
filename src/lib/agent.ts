@@ -29,6 +29,8 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 const BACKUP_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
 const BACKUP_MODEL = process.env.OPENAI_MODEL ?? "glm-5.3-flash";
 const MAX_TOOL_ROUNDS = 8;
+// Library searches per question. Past this, more searching rarely helps; answering does.
+const MAX_LIBRARY_SEARCHES = 3;
 
 const SYSTEM_PROMPT = `You are Clarah, a health companion that helps one patient understand their own health information in plain language. You explain and inform; you do not diagnose or replace their care team.
 
@@ -186,6 +188,7 @@ async function runTool(
   wearable: WearableSummary,
   found: Map<string, Source>,
   focus: { value?: BodyFocus },
+  searches: { count: number } = { count: 0 },
 ): Promise<unknown> {
   switch (name) {
     case "show_body_focus": {
@@ -241,11 +244,15 @@ async function runTool(
       return { results: refs.map((r) => ({ id: r.id, title: r.title, summary: r.summary })) };
     }
     case LIBRARY_TOOL: {
+      if (++searches.count > MAX_LIBRARY_SEARCHES) {
+        return { results: [], note: "You've already searched the library several times. Answer now from what you found; if nothing fits the question, say you couldn't find a trusted source for that and suggest asking their pharmacist or doctor." };
+      }
       // Loaded lazily: the Typesense client is server-only and optional.
       const { searchPassages } = await import("./typesense.ts");
       const passages = await searchPassages(String(input.query ?? ""), 5);
       if (!passages.length) return { results: [], note: "No passages found in the health library." };
-      passages.forEach((p) => found.set(`library:${p.url}`, { id: `library:${p.url}`, title: `${p.title} · ${p.source}`, url: p.url }));
+      // Only the best few become visible sources; the rest is context for the model.
+      passages.slice(0, 3).forEach((p) => found.set(`library:${p.url}`, { id: `library:${p.url}`, title: `${p.title} · ${p.source}`, url: p.url }));
       return { results: passages.map(({ title, section, text, source }) => ({ title, section, source, text })) };
     }
     default:
@@ -407,6 +414,7 @@ async function streamRound(
   messages: ChatCompletionMessageParam[],
   emit: (e: AgentEvent) => void,
   retryOverload: boolean,
+  mustAnswer = false,
 ): Promise<RoundResult> {
   for (let attempt = 1; ; attempt++) {
     let text = "";
@@ -415,6 +423,8 @@ async function streamRound(
         model: provider.model,
         messages: forProvider(messages, provider),
         tools: chatTools(),
+        // The last round: no more tool calls, write the answer from what's been gathered.
+        ...(mustAnswer ? { tool_choice: "none" as const } : {}),
         stream: true,
       });
       const calls: ToolCall[] = [];
@@ -480,10 +490,11 @@ export async function runAgent(
 
   emit({ type: "status", text: "Checking your record…" });
 
+  const searches = { count: 0 };
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     let result: RoundResult;
     try {
-      result = await streamRound(chain[active], messages, emit, active === chain.length - 1);
+      result = await streamRound(chain[active], messages, emit, active === chain.length - 1, round === MAX_TOOL_ROUNDS - 1);
     } catch (err) {
       if (!(err instanceof RoundError)) throw err;
       if (active === chain.length - 1) throw err.cause;
@@ -515,7 +526,7 @@ export async function runAgent(
       let result: Record<string, unknown>;
       try {
         const args = call.function.arguments ? JSON.parse(call.function.arguments) : {};
-        result = { result: await runTool(name, args, record, wearable, found, focus) };
+        result = { result: await runTool(name, args, record, wearable, found, focus, searches) };
       } catch (err) {
         result = { error: err instanceof Error ? err.message : "Tool failed" };
       }

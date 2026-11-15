@@ -16,7 +16,7 @@ Clarah is an AI health companion. It reads a patient's MyChart (Epic) record and
 
 ## Health library (Typesense)
 
-The library indexes the Markdown references in `data/knowledge/upload/` as searchable documents and short passages. Search supports spelling tolerance, live prefixes, medical and everyday synonyms, category counts, highlighting, and keyword plus vector ranking. Typesense generates embeddings locally with `ts/all-MiniLM-L12-v2`.
+The library indexes the Markdown references in `data/knowledge/upload/` as searchable documents and short passages. Search supports spelling tolerance, live prefixes, medical and everyday synonyms ("tylenol" finds acetaminophen, "pregnancy" finds "pregnant"), category counts and highlighting. Clarah's passage search is **hybrid**: keyword matching fused with **Gemini Embedding** similarity. The 12,500+ passages carry 256-dimension `gemini-embedding-001` vectors computed on Vertex AI (Typesense Cloud's small tier can't run a built-in model), and each question is embedded the same way at answer time, falling back to keywords if Vertex is unreachable. Locally, Typesense can also embed with its built-in `ts/all-MiniLM-L12-v2`.
 
 Start a Typesense server, then set `TYPESENSE_HOST`, `TYPESENSE_PORT` (default `443`), `TYPESENSE_PROTOCOL` (default `https`), and `TYPESENSE_ADMIN_KEY` for indexing. Set `TYPESENSE_SEARCH_KEY` to a key allowed to search and retrieve documents for the app; it falls back to the admin key for local development. Both keys stay server side. For a local server on port 8108, use `TYPESENSE_HOST=localhost`, `TYPESENSE_PORT=8108`, and `TYPESENSE_PROTOCOL=http`.
 
@@ -24,6 +24,8 @@ Start a Typesense server, then set `TYPESENSE_HOST`, `TYPESENSE_PORT` (default `
 node scripts/knowledge/index_typesense.mjs --reset
 # If the server cannot load the embedding model:
 node scripts/knowledge/index_typesense.mjs --reset --no-embed
+# Then add Gemini embeddings to the passages (needs gcloud signed in to the Vertex project):
+python3 -I scripts/knowledge/embed_passages.py
 # An alternate data folder can be passed as the positional argument.
 ```
 
