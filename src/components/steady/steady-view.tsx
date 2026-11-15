@@ -168,8 +168,8 @@ const SIM_STEPS = [
   "Sharing fall details and location with the dispatcher (simulated)",
 ];
 
-function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose }: {
-  p: SteadyPayload; offsetMs: number; careTeamPhone?: string; onClose?: () => void;
+function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose, closeLabel = "Close" }: {
+  p: SteadyPayload; offsetMs: number; careTeamPhone?: string; onClose?: () => void; closeLabel?: string;
 }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -177,6 +177,7 @@ function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose }: {
     return () => clearInterval(id);
   }, []);
   const harsh = p.emergency.reason === "harsh_fall" || p.alert?.kind === "harsh_fall";
+  const help = (p.emergency.reason ?? p.alert?.kind) === "help";
   const counting = !p.emergency.active && p.alert;
   // Board times are on the board's clock; offsetMs maps them onto ours.
   const remaining = counting && p.alert?.countdown_s != null
@@ -185,8 +186,8 @@ function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose }: {
   const simStart = p.emergency.simulated_911_at != null ? p.emergency.simulated_911_at * 1000 + offsetMs : null;
   const step = simStart == null ? -1 : Math.min(SIM_STEPS.length - 1, Math.floor((now - simStart) / 2500));
   const title = counting
-    ? harsh ? "Hard fall detected" : p.alert?.kind === "help" ? "Help requested" : "Possible fall detected"
-    : harsh ? "Hard fall: no response" : "Emergency";
+    ? harsh ? "Hard fall detected" : help ? "Help requested" : "Possible fall detected"
+    : harsh ? "Hard fall: no response" : help ? "Emergency: help requested" : "Emergency: no response after a fall";
 
   return (
     <div role="alertdialog" aria-modal="true" aria-labelledby="steady-emergency-title"
@@ -196,12 +197,15 @@ function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose }: {
         <h1 id="steady-emergency-title" className="text-[28px] leading-tight font-semibold">{title}</h1>
         {counting ? (
           <p className="text-[15px]">
-            Clarah Steady is checking on {p.patient_name || "the wearer"}.
-            {remaining != null && <> If there&apos;s no response in <strong className="font-mono text-xl">{remaining}s</strong>, an emergency starts{harsh ? " and a 911 call is simulated" : ""}.</>}
-            {" "}Press the button on the device if you&apos;re OK.
+            {help ? "The help button was pressed on the Steady device." : `Clarah Steady is checking on ${p.patient_name || "the wearer"}.`}
+            {remaining != null && <> Unless it&apos;s cancelled in <strong className="font-mono text-xl">{remaining}s</strong>, {help ? "the emergency contact is alerted" : `an emergency starts${harsh ? " and a 911 call is simulated" : ""}`}.</>}
+            {" "}Press the button on the device to cancel.
           </p>
         ) : (
-          <p className="text-[15px]">The emergency contact has been alerted with the time and fall details.</p>
+          <p className="text-[15px]">
+            {help ? "Help was requested on the Steady device and wasn't cancelled." : "Nobody responded after the fall."}
+            {" "}The emergency contact has been alerted{help ? "" : " with the time and fall details"}.
+          </p>
         )}
       </div>
 
@@ -225,7 +229,12 @@ function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose }: {
         {careTeamPhone && (
           <a href={`tel:${careTeamPhone}`} className="tile-3d flex min-h-12 items-center justify-center rounded-md text-[15px] font-semibold text-ink">Call my care team</a>
         )}
-        {onClose && <button type="button" onClick={onClose} className="min-h-11 text-sm font-semibold text-muted underline">Close preview</button>}
+        {!counting && (
+          <p className="well rounded-md p-3 text-[13px] leading-snug text-body">
+            <strong className="text-ink">Is everyone OK?</strong> Hold the button on the device for 3 seconds to end the alarm (a short press only quiets the buzzer). This screen clears a few seconds later.
+          </p>
+        )}
+        {onClose && <button type="button" onClick={onClose} className="min-h-11 text-sm font-semibold text-muted underline">{closeLabel}</button>}
       </div>
     </div>
   );
@@ -248,6 +257,7 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
   const [stale, setStale] = useState(initialStale);
   const [previewMode, setPreviewMode] = useState<SteadyMode>("fall_prevention");
   const [preview, setPreview] = useState<SteadyPayload | null>(null);
+  const [hiddenAlert, setHiddenAlert] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -279,13 +289,28 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
   const p = reading.payload;
   const offsetMs = reading.receivedAt - p.sent_at * 1000;
   const live = !demo && !stale;
-  const showEmergency = preview ?? ((p.emergency.active || p.alert) && !stale ? p : null);
+  // Each alarm is identified by when it started, so hiding one doesn't hide the next.
+  const alertId = p.emergency.since ?? p.alert?.t ?? null;
+  const showEmergency = preview ?? ((p.emergency.active || p.alert) && !stale && alertId !== hiddenAlert ? p : null);
   const prosthetic = p.mode === "prosthetic" && p.prosthetic;
   const days = p.daily.map((d) => d.day);
 
   return (
     <div className="desk flex flex-col gap-6 px-5">
-      {showEmergency && <EmergencyScreen p={showEmergency} offsetMs={preview ? 0 : offsetMs} careTeamPhone={careTeamPhone} onClose={preview ? () => setPreview(null) : undefined} />}
+      {showEmergency && (
+        <EmergencyScreen
+          p={showEmergency}
+          offsetMs={preview ? 0 : offsetMs}
+          careTeamPhone={careTeamPhone}
+          onClose={preview ? () => setPreview(null) : () => setHiddenAlert(alertId)}
+          closeLabel={preview ? "Close preview" : "Hide this screen (the alarm stays on)"}
+        />
+      )}
+      {!showEmergency && !stale && (p.emergency.active || p.alert) && (
+        <button type="button" onClick={() => setHiddenAlert(null)} className="flex items-center gap-2 border-l-4 border-alert bg-[#f6dcdc] px-4 py-3 text-left text-[14px] font-semibold text-alert">
+          <WarningIcon width={18} height={18} /> The device alarm is still on. Show the alert
+        </button>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className={`clinical-label flex items-center gap-1.5 ${live ? "text-[#2f5443]" : "text-subtle"}`}>
