@@ -156,7 +156,7 @@ export function Chat({ initialQuestion, suggestions = SUGGESTIONS }: { initialQu
   }, [initialQuestion]);
 
   return (
-    <div className="flex h-dvh flex-col bg-ground">
+    <div className="flex min-h-0 grow flex-col bg-ground">
       <header className="relative z-10 border-b border-eucalyptus-dark bg-eucalyptus px-4 pt-10 pb-4 text-white lg:pt-6">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
           <Link href="/" aria-label="Back to home" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
@@ -295,7 +295,7 @@ export function Chat({ initialQuestion, suggestions = SUGGESTIONS }: { initialQu
           e.preventDefault();
           send(input);
         }}
-        className="relative z-10 border-t border-line bg-white px-4 pt-2.5 pb-6 lg:px-10 lg:pb-5"
+        className="relative z-10 border-t border-line bg-white px-4 pt-2.5 pb-3 lg:px-10 lg:pb-5"
       >
         <div className="mx-auto mb-2.5 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <button type="button" role="switch" aria-checked={readAloud} onClick={toggleReadAloud} className="flex min-h-9 items-center gap-2 text-[13px] font-semibold text-body">
