@@ -86,3 +86,10 @@ test("motion traces are kept, clamped and capped", () => {
   assert.equal(sanitizePayload({ ...board, motion: { mag: [] } })!.motion, null);
   assert.equal(demoReading("grace").payload.motion?.mag.length, 100);
 });
+
+test("spot-check alerts come through for the pop-up", () => {
+  const instability = { t: 5, score: 38, usual: 86, drop: 48, message: `Very unsteady. ${WORSENING_ADVICE}`, extra: 1 };
+  const p = sanitizePayload({ ...board, instability })!;
+  assert.deepEqual(p.instability, { t: 5, score: 38, usual: 86, drop: 48, message: `Very unsteady. ${WORSENING_ADVICE}` });
+  assert.equal(sanitizePayload(board)!.instability, null);
+});

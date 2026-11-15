@@ -90,3 +90,15 @@ class MotionTraceTest(unittest.TestCase):
         self.assertEqual(trace["hz"], 10)
         self.assertAlmostEqual(max(trace["mag"]), 2.22, places=2)
         self.assertAlmostEqual(trace["z"][0], 1.0)
+
+
+class SpotCheckTest(unittest.TestCase):
+    def test_flags_really_bad_windows_only(self):
+        from spot import spot_check
+        self.assertIsNone(spot_check(80, 86))           # normal wobble
+        self.assertIsNone(spot_check(60, 86))           # worse, but not really bad
+        bad = spot_check(52, 86)                         # 34 below usual
+        self.assertEqual(bad["drop"], 34.0)
+        self.assertIn("call your doctor", bad["message"])
+        self.assertIsNotNone(spot_check(40, None))       # bad on its own, no baseline yet
+        self.assertIsNone(spot_check(70, None))

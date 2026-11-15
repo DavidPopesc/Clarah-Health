@@ -45,6 +45,8 @@ export interface SteadyPayload {
   events: { t: number; kind: string; detail: string }[];
   /** The last ~10 s of acceleration in g (axes averaged, peak magnitude), for the live graph. */
   motion?: null | { hz: number; t_end: number | null; x: number[]; y: number[]; z: number[]; mag: number[] };
+  /** The board's spot check: one 10 s stretch of walking far worse than usual (last 2 min). */
+  instability?: null | { t: number; score: number; usual: number | null; drop: number; message: string };
 }
 
 export interface SteadyReading {
@@ -138,6 +140,12 @@ export function sanitizePayload(input: unknown): SteadyPayload | null {
       return { t: num(r.t) ?? 0, kind: str(r.kind, 40), detail: str(r.detail) };
     }),
     motion: sanitizeMotion(p.motion),
+    instability: p.instability
+      ? (() => {
+          const i = obj(p.instability);
+          return { t: num(i.t) ?? 0, score: num(i.score) ?? 0, usual: num(i.usual), drop: num(i.drop) ?? 0, message: str(i.message) };
+        })()
+      : null,
   };
 }
 

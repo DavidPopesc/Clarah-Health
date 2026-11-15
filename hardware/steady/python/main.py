@@ -23,6 +23,7 @@ from arduino.app_utils import App, Bridge, Logger
 from arduino.app_bricks.web_ui import WebUI
 
 import gait
+import spot
 import prosthetic
 import sync
 
@@ -409,6 +410,29 @@ def check_risk(prev_risk: str):
         add_event("doctor_alerted", f"Shared balance trend with {settings.get('doctor_name') or 'the doctor'}")
 
 
+# The latest spot-check alert (one really unsteady 10 s window), sent to Clarah for a pop-up.
+instability: dict | None = None
+last_spot = {"checked": 0.0, "alerted": 0.0}
+
+
+def spot_check_window(score: float):
+    """Every 10 s, compare the last 10 s of walking with the wearer's usual score."""
+    global instability
+    t = now()
+    if t - last_spot["checked"] < spot.SPOT_EVERY_S:
+        return
+    last_spot["checked"] = t
+    usual = settings.get("baseline") or balance.get("smoothed")
+    alert = spot.spot_check(score, usual)
+    if not alert or t - last_spot["alerted"] < spot.SPOT_COOLDOWN_S:
+        return
+    last_spot["alerted"] = t
+    instability = {**alert, "t": t}
+    cmd("warn")
+    add_event("instability", alert["message"], score=alert["score"], usual=alert["usual"])
+    sync_requested.set()  # tell Clarah now, not at the next scheduled sync
+
+
 def analysis_loop():
     while True:
         time.sleep(gait.HOP_S)
@@ -432,6 +456,7 @@ def analysis_loop():
                     history.append(d)
                     append_jsonl(HISTORY_PATH, d)
                 recompute_trend()
+                spot_check_window(w.score)
                 if settings["mode"] == "fall_prevention":
                     check_risk(prev_risk)
                 cmd(f"score={int(balance['smoothed'])},{balance['risk'][0]}")
@@ -678,6 +703,7 @@ def ingest_payload():
         pts = list(samples)
     fresh = pts and time.time() - device["last_imu"] < 3
     payload["motion"] = sync.motion_trace(pts, gait.FS, clock_offset=now() - time.time()) if fresh else None
+    payload["instability"] = instability if instability and now() - instability["t"] < 120 else None
     return payload
 
 

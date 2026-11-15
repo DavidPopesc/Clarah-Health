@@ -261,6 +261,31 @@ function EmergencyScreen({ p, offsetMs, careTeamPhone, onClose, closeLabel = "Cl
   );
 }
 
+/** Pops up when the board's spot check finds 10 s of walking far worse than usual. */
+function UnsteadyPopup({ alert, careTeamPhone, onClose }: {
+  alert: NonNullable<SteadyPayload["instability"]>; careTeamPhone?: string; onClose: () => void;
+}) {
+  return (
+    <div role="alertdialog" aria-modal="true" aria-labelledby="unsteady-title"
+      className="fixed inset-x-3 top-16 z-40 mx-auto flex max-w-md flex-col gap-3 rounded-md border-2 border-amber bg-[#fffaf0] p-5 shadow-[0_12px_40px_rgba(30,40,36,0.35)] lg:top-24">
+      <div className="flex items-center gap-2 text-amber-ink">
+        <WarningIcon width={22} height={22} />
+        <h2 id="unsteady-title" className="text-[18px] font-semibold">Very unsteady just now</h2>
+      </div>
+      <p className="font-mono text-[13px] text-body">
+        Last 10 seconds: steadiness <strong className="text-ink">{Math.round(alert.score)}</strong>
+        {alert.usual != null && <> · usual <strong className="text-ink">{Math.round(alert.usual)}</strong> · {Math.round(alert.drop)} points lower</>}
+      </p>
+      <p className="text-[14px] leading-relaxed text-body">{alert.message.replace(WORSENING_ADVICE, "").trim()}</p>
+      <p className="text-[14px] font-semibold text-amber-ink">{WORSENING_ADVICE}</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={onClose} className="press min-h-11 grow rounded-md px-4 text-[14px] font-semibold text-white">OK, I&apos;m being careful</button>
+        {careTeamPhone && <a href={`tel:${careTeamPhone}`} className="tile-3d flex min-h-11 items-center rounded-md px-4 text-[14px] font-semibold text-ink">Call my doctor</a>}
+      </div>
+    </div>
+  );
+}
+
 /** A client-only preview of the hard-fall flow, for demos without the device. */
 function previewHardFall(p: SteadyPayload): SteadyPayload {
   const t = Date.now() / 1000;
@@ -279,6 +304,8 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
   const [previewMode, setPreviewMode] = useState<SteadyMode>("fall_prevention");
   const [preview, setPreview] = useState<SteadyPayload | null>(null);
   const [hiddenAlert, setHiddenAlert] = useState<number | null>(null);
+  const [seenUnsteady, setSeenUnsteady] = useState<number | null>(null);
+  const [previewUnsteady, setPreviewUnsteady] = useState<NonNullable<SteadyPayload["instability"]> | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -326,6 +353,13 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
           onClose={preview ? () => setPreview(null) : () => setHiddenAlert(alertId)}
           closeLabel={preview ? "Close preview" : "Hide this screen (the alarm stays on)"}
           remote={!preview && !demo}
+        />
+      )}
+      {!showEmergency && (previewUnsteady ?? (p.instability && !stale && p.instability.t !== seenUnsteady ? p.instability : null)) && (
+        <UnsteadyPopup
+          alert={(previewUnsteady ?? p.instability)!}
+          careTeamPhone={careTeamPhone}
+          onClose={() => { if (previewUnsteady) setPreviewUnsteady(null); else setSeenUnsteady(p.instability?.t ?? null); }}
         />
       )}
       {!showEmergency && !stale && (p.emergency.active || p.alert) && (
@@ -431,9 +465,17 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
       <section className="well rounded-md p-4 text-[13px] text-body">
         <strong className="text-ink">Falls and emergencies</strong>
         <p className="mt-1">Steady detects falls in every mode. After a fall it counts down 30 seconds, or 10 seconds after a hard fall. With no response it alerts your emergency contact, and after a hard fall it shows a simulated 911 call. Steady can&apos;t call 911 by itself.</p>
-        <button type="button" onClick={() => setPreview(previewHardFall(p))} className="mt-3 min-h-11 rounded-md border border-alert px-3 text-[13px] font-semibold text-alert">
-          Preview the hard-fall alert
-        </button>
+        <p className="mt-2">Every 10 seconds Steady also checks the last 10 seconds of walking. If it&apos;s far less steady than usual, the device beeps and a warning pops up here.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" onClick={() => setPreview(previewHardFall(p))} className="min-h-11 rounded-md border border-alert px-3 text-[13px] font-semibold text-alert">
+            Preview the hard-fall alert
+          </button>
+          <button type="button" onClick={() => setPreviewUnsteady({ t: Date.now() / 1000, score: 38, usual: p.balance.baseline ?? 85, drop: (p.balance.baseline ?? 85) - 38,
+            message: `Your last 10 seconds of walking were much less steady than usual: steadiness 38 (usual ${Math.round(p.balance.baseline ?? 85)}). Stop, hold on to something or sit down. ${WORSENING_ADVICE}` })}
+            className="min-h-11 rounded-md border border-amber px-3 text-[13px] font-semibold text-amber-ink">
+            Preview the unsteady warning
+          </button>
+        </div>
       </section>
     </div>
   );
