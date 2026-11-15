@@ -175,6 +175,25 @@ function CameraRig({ target, dist, dir, reducedMotion }: { target: V; dist: numb
   return null;
 }
 
+/** Reports where 3D points land on the canvas, in CSS pixels, whenever that changes. */
+function Projector({ points, onProject }: { points: V[]; onProject: (pts: { x: number; y: number }[]) => void }) {
+  const { camera, size } = useThree();
+  const last = useRef("");
+  const v = useMemo(() => new THREE.Vector3(), []);
+  useFrame(() => {
+    const out = points.map((p) => {
+      v.set(p[0], p[1], p[2]).project(camera);
+      return { x: ((v.x + 1) / 2) * size.width, y: ((1 - v.y) / 2) * size.height };
+    });
+    const key = out.map((o) => `${Math.round(o.x)},${Math.round(o.y)}`).join(";");
+    if (key !== last.current) {
+      last.current = key;
+      onProject(out);
+    }
+  });
+  return null;
+}
+
 export interface AnatomySceneProps {
   system: BodySystem;
   focus?: BodyFocus | null;
@@ -182,6 +201,10 @@ export interface AnatomySceneProps {
   frame?: "body" | "torso";
   interactive?: boolean;
   reducedMotion?: boolean;
+  /** Hold the body still instead of slowly turning it when it isn't interactive. */
+  still?: boolean;
+  /** Screen positions of the focus and highlight markers, in that order. */
+  onProject?: (pts: { x: number; y: number }[]) => void;
 }
 
 export default function AnatomyScene({
@@ -191,6 +214,8 @@ export default function AnatomyScene({
   frame = "body",
   interactive = true,
   reducedMotion = false,
+  still = false,
+  onProject,
 }: AnatomySceneProps) {
   const lit = useMemo(() => {
     const all = [...(focus ? [focus] : []), ...highlights];
@@ -226,6 +251,7 @@ export default function AnatomyScene({
         {markers.map((p, i) => (
           <Marker key={i} p={p} reducedMotion={reducedMotion} />
         ))}
+        {onProject && <Projector points={markers} onProject={onProject} />}
 
 
         <Platform />
@@ -237,7 +263,7 @@ export default function AnatomyScene({
           enablePan={false}
           minDistance={0.3}
           maxDistance={4}
-          autoRotate={!interactive && !reducedMotion}
+          autoRotate={!interactive && !reducedMotion && !still}
           autoRotateSpeed={1.2}
         />
         <CameraRig target={view.target} dist={view.dist} dir={view.dir} reducedMotion={reducedMotion} />
