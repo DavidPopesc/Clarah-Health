@@ -93,12 +93,14 @@ class MotionTraceTest(unittest.TestCase):
 
 
 class SpotCheckTest(unittest.TestCase):
-    def test_flags_really_bad_windows_only(self):
+    def test_flags_wobbly_windows_from_real_recordings(self):
         from spot import spot_check
-        self.assertIsNone(spot_check(80, 86))           # normal wobble
-        self.assertIsNone(spot_check(60, 86))           # worse, but not really bad
-        bad = spot_check(52, 86)                         # 34 below usual
-        self.assertEqual(bad["drop"], 34.0)
+        self.assertIsNone(spot_check(92, 86, 3))         # steady walking on the board
+        self.assertIsNone(spot_check(84, 86, 16))        # a little looser, still fine
+        self.assertIsNotNone(spot_check(76, 86, 50))     # recorded wobble: low score, big sway
+        self.assertIsNotNone(spot_check(87, 86, 32))     # big sway even with a decent score
+        bad = spot_check(77, 86, 12)                      # 9 below usual
+        self.assertEqual(bad["drop"], 9.0)
         self.assertIn("call your doctor", bad["message"])
-        self.assertIsNotNone(spot_check(40, None))       # bad on its own, no baseline yet
-        self.assertIsNone(spot_check(70, None))
+        self.assertIsNotNone(spot_check(78, None))       # bad on its own, no baseline yet
+        self.assertIsNone(spot_check(88, None))

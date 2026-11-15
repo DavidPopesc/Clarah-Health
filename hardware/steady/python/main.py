@@ -412,18 +412,15 @@ def check_risk(prev_risk: str):
 
 # The latest spot-check alert (one really unsteady 10 s window), sent to Clarah for a pop-up.
 instability: dict | None = None
-last_spot = {"checked": 0.0, "alerted": 0.0}
+last_spot = {"alerted": 0.0}
 
 
-def spot_check_window(score: float):
-    """Every 10 s, compare the last 10 s of walking with the wearer's usual score."""
+def spot_check_window(score: float, sway: float | None):
+    """Each window (the last 10 s, every 5 s): is walking far worse than the wearer's usual?"""
     global instability
     t = now()
-    if t - last_spot["checked"] < spot.SPOT_EVERY_S:
-        return
-    last_spot["checked"] = t
     usual = settings.get("baseline") or balance.get("smoothed")
-    alert = spot.spot_check(score, usual)
+    alert = spot.spot_check(score, usual, sway)
     if not alert or t - last_spot["alerted"] < spot.SPOT_COOLDOWN_S:
         return
     last_spot["alerted"] = t
@@ -456,7 +453,7 @@ def analysis_loop():
                     history.append(d)
                     append_jsonl(HISTORY_PATH, d)
                 recompute_trend()
-                spot_check_window(w.score)
+                spot_check_window(w.score, d.get("sway"))
                 if settings["mode"] == "fall_prevention":
                     check_risk(prev_risk)
                 cmd(f"score={int(balance['smoothed'])},{balance['risk'][0]}")
