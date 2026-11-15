@@ -244,7 +244,8 @@ export function VisitRecorder() {
         </button>
 
         <p className="text-[11px] leading-snug text-subtle">
-          The audio is sent to the AI only to be transcribed and isn&apos;t saved. The patient&apos;s name and ID numbers are removed from the transcript before Clara explains it. The explanation is saved only on this device.
+          The audio is sent to the AI only to be transcribed and isn&apos;t saved. The patient&apos;s name and ID numbers are removed from the transcript before Clara explains it. The explanation is saved only on this device.{" "}
+          <Link href="/privacy" className="font-semibold text-teal">Privacy policy</Link>
         </p>
         </div>
       </div>

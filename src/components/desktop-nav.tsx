@@ -44,9 +44,13 @@ export function DesktopNav() {
         })}
       </nav>
 
-      <p className="mt-auto border-t border-line px-6 py-5 text-[11px] leading-snug text-subtle">
-        Clara explains and informs. It does not diagnose or replace your care team.
-      </p>
+      <div className="mt-auto flex flex-col gap-2 border-t border-line px-6 py-5 text-[11px] leading-snug text-subtle">
+        <p>Clara explains and informs. It does not diagnose or replace your care team.</p>
+        <p className="flex gap-3 font-semibold">
+          <Link href="/terms" className="text-teal hover:underline">Terms</Link>
+          <Link href="/privacy" className="text-teal hover:underline">Privacy</Link>
+        </p>
+      </div>
     </aside>
   );
 }

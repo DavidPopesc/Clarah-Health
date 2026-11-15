@@ -153,6 +153,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   text-transform: uppercase;
 }
 
+.legal ul { margin: 0; padding-left: 1.15rem; list-style: square; display: flex; flex-direction: column; gap: 0.35rem; }
+.legal strong { font-weight: 600; color: var(--color-ink); }
+.legal a { color: var(--color-teal); font-weight: 600; }
+
 .answer p { margin: 0 0 0.7rem; }
 .answer p:last-child { margin-bottom: 0; }
 .answer ul { margin: 0.3rem 0 0.7rem; padding-left: 1.15rem; list-style: square; }

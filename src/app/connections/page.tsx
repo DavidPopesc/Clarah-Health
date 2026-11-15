@@ -158,7 +158,9 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
             Done
           </Link>
           <p className="text-center text-xs leading-snug text-subtle lg:text-left">
-            Clara explains and informs. It does not diagnose or replace your care team.
+            Clara explains and informs. It does not diagnose or replace your care team.{" "}
+            <Link href="/terms" className="font-semibold text-teal">Terms</Link> ·{" "}
+            <Link href="/privacy" className="font-semibold text-teal">Privacy</Link>
           </p>
         </div>
         </div>
