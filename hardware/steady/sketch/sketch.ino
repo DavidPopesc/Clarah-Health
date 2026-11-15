@@ -8,24 +8,24 @@
 //
 // Wiring (Seeed Grove Base Shield v2, switch on 5V):
 //   A0 port  Grove button                     (A0, HIGH while pressed)
-//   A1 port  Grove 3-Axis Digital Accel 1.5g  (MMA7660FC, I2C 0x4C; SCL=A1, SDA=A2)
-//   D5 port  Grove buzzer                     (D5). Not A2: A2 is the accelerometer's SDA line.
+//   A2 port  Grove buzzer                     (A2; the buzzer leaves the port's second pin, A3, unused)
+//   A3 port  Grove 3-Axis Digital Accel 1.5g  (MMA7660FC, I2C 0x4C; SCL=A3, SDA=A4)
 
 #include <Arduino_RouterBridge.h>
 #include <Arduino_LED_Matrix.h>
 #include "state.h"
 
 const int PIN_BUTTON = A0;
-const int PIN_SCL = A1;
-const int PIN_SDA = A2;
-const int PIN_BUZZER = 5;
+const int PIN_BUZZER = A2;
+const int PIN_SCL = A3;
+const int PIN_SDA = A4;
 
 const uint8_t MMA7660_ADDR = 0x4C;
 const float COUNTS_PER_G = 21.33f;
 const uint32_t SAMPLE_MS = 20;  // 50 Hz
 const int BATCH = 10;           // samples per message to Linux (5 messages a second)
 
-// ---------- Software I2C on the A1 Grove port ----------
+// ---------- Software I2C on the A3 Grove port ----------
 
 static inline void i2cDelay() { delayMicroseconds(4); }
 static inline void lineHigh(int p) { pinMode(p, INPUT_PULLUP); }
