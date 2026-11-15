@@ -9,8 +9,9 @@ Arduino UNO Q with a Seeed Grove Base Shield v2 (power switch on **5V**):
 | Grove port | Module | Notes |
 |---|---|---|
 | A0 | Grove Button | HIGH while pressed |
-| A2 | Grove Buzzer | Uses pin A2 only |
-| A3 | Grove 3-Axis Digital Accelerometer ±1.5g (MMA7660FC, I2C 0x4C) | Read with software I2C: SCL = A3, SDA = A4. Each Grove port carries two pins, so the accelerometer can't share A1/A2 with the buzzer. |
+| A1 | Grove 3-Axis Digital Accelerometer ±1.5g (MMA7660FC, I2C 0x4C) | Read with software I2C: SCL = A1, SDA = A2 |
+| A2 | *(leave empty)* | Its first pin, A2, is the accelerometer's SDA: each Grove port carries two pins |
+| A3 | Grove Buzzer | Uses pin A3 only |
 
 Clip the accelerometer at your waist or lower back. It can face any direction.
 
