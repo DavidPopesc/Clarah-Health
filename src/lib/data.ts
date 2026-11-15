@@ -31,7 +31,10 @@ export async function getWearable(): Promise<WearableSummary> {
   return demoWearable();
 }
 
+// The demo patient's MyChart and Fitbit show as linked too, so the demo looks
+// like a real account. `live` is only the accounts the user actually linked.
 export async function connectionStatus() {
   const [epic, fitbit] = await Promise.all([readSession(EPIC_COOKIE), readSession(FITBIT_COOKIE)]);
-  return { epic: Boolean(epic?.patient), fitbit: Boolean(fitbit) };
+  const live = { epic: Boolean(epic?.patient), fitbit: Boolean(fitbit) };
+  return { epic: true, fitbit: true, live };
 }

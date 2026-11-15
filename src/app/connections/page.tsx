@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
 import { HeroHeart } from "@/components/hero-heart";
 import { Tilt } from "@/components/tilt";
-import { AnonIcon, CheckIcon, ClaraLogo, LockIcon, RecordIcon, TrashIcon, WatchIcon } from "@/components/icons";
+import { CheckIcon, ClaraLogo, RecordIcon, WatchIcon } from "@/components/icons";
 import { connectionStatus } from "@/lib/data";
 import { epicEnabled } from "@/lib/epic";
 import { fitbitEnabled } from "@/lib/fitbit";
@@ -127,26 +127,13 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
           />
         </div>
 
-        <div className="well mx-5 flex flex-col gap-2.5 rounded-md p-4 lg:mx-0 lg:p-5">
-          <span className="clinical-label text-muted">How your data is handled</span>
-          {[
-            { Icon: LockIcon, text: "Read-only access. Clarah can never change your records." },
-            { Icon: AnonIcon, text: "Your name and ID numbers are removed before anything reaches the AI." },
-            { Icon: TrashIcon, text: "Disconnect and delete everything at any time." },
-          ].map(({ Icon, text }) => (
-            <div key={text} className="flex items-start gap-2.5 text-[13px] leading-snug text-muted">
-              <Icon width={16} height={16} className="mt-0.5 shrink-0" />
-              <span>{text}</span>
-            </div>
-          ))}
-          {(status.epic || status.fitbit) && (
-            <form action="/api/disconnect" method="post">
-              <button type="submit" className="min-h-11 text-[13px] font-semibold text-alert underline">
-                Disconnect all accounts
-              </button>
-            </form>
-          )}
-        </div>
+        {(status.live.epic || status.live.fitbit) && (
+          <form action="/api/disconnect" method="post" className="mx-5 lg:mx-0">
+            <button type="submit" className="min-h-11 text-[13px] font-semibold text-alert underline">
+              Disconnect all accounts
+            </button>
+          </form>
+        )}
 
         <div className="grow" />
 
