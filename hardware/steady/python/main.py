@@ -667,7 +667,8 @@ def api_summary():
 ui.expose_api("GET", "/api/summary", api_summary)
 
 
-SYNC_INTERVAL_S = float(os.environ.get("STEADY_SYNC_INTERVAL_S", "5"))
+# Idle pace. Clarah's reply sets the next wait (next_sync_s): 1 s while someone has /steady open.
+SYNC_INTERVAL_S = float(os.environ.get("STEADY_SYNC_INTERVAL_S", "30"))
 
 
 def ingest_payload():
@@ -684,9 +685,11 @@ def sync_loop():
     token = os.environ.get("STEADY_INGEST_TOKEN")
     if not token:
         return
+    wait = SYNC_INTERVAL_S
     while True:
-        sync_requested.wait(SYNC_INTERVAL_S)
+        sync_requested.wait(wait)
         sync_requested.clear()
+        wait = SYNC_INTERVAL_S
         try:
             req = urllib.request.Request(
                 settings["clarah_url"].rstrip("/") + "/api/steady/ingest",
@@ -699,6 +702,10 @@ def sync_loop():
                 if c in ("cancel", "resolve"):
                     log.info(f"Clarah asked the device to {c}")
                     cmd(c)
+            try:
+                wait = min(60.0, max(1.0, float(reply.get("next_sync_s") or SYNC_INTERVAL_S)))
+            except (TypeError, ValueError):
+                wait = SYNC_INTERVAL_S
             if sync_status.get("state") != "ok":
                 log.info("Clarah sync succeeded")
             sync_status.update({"state": "ok", "at": now(), "error": None})

@@ -266,6 +266,38 @@ export async function takeCommands(deviceId: string): Promise<RemoteCommand[]> {
   return Date.now() - entry.at < COMMAND_TTL_MS ? entry.commands.filter((c) => REMOTE_COMMANDS.includes(c)) : [];
 }
 
+// ---------------------------------------------------------------- sync pace
+
+// While someone has /steady open the board syncs every second, so the live graph is smooth;
+// otherwise every 30 s. The page's polling marks the device as watched.
+export const FAST_SYNC_S = 1;
+export const IDLE_SYNC_S = 30;
+const WATCHED_FOR_MS = 15_000;
+const memoryViewers = new Map<string, number>();
+
+export async function markWatched(deviceId = process.env.STEADY_DEVICE_ID ?? "uno-q") {
+  const at = Date.now();
+  memoryViewers.set(deviceId, at);
+  const cfg = storeConfig();
+  if (!cfg) return;
+  await fetch(`${cfg.base}?action=upsert`, {
+    method: "POST",
+    headers: { "X-TYPESENSE-API-KEY": cfg.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ id: `${deviceId}:viewer`, updated_at: at }),
+  });
+}
+
+/** How many seconds the board should wait before its next sync. */
+export async function nextSyncSeconds(deviceId: string): Promise<number> {
+  const cfg = storeConfig();
+  let at = memoryViewers.get(deviceId) ?? 0;
+  if (cfg) {
+    const res = await fetch(`${cfg.base}/${encodeURIComponent(`${deviceId}:viewer`)}`, { headers: { "X-TYPESENSE-API-KEY": cfg.key }, cache: "no-store" });
+    at = res.ok ? ((await res.json()) as { updated_at: number }).updated_at : 0;
+  }
+  return Date.now() - at < WATCHED_FOR_MS ? FAST_SYNC_S : IDLE_SYNC_S;
+}
+
 // ---------------------------------------------------------------- demo readings
 
 const dayString = (offset: number, today: Date) => {

@@ -12,7 +12,8 @@ import {
   type SteadyReading,
 } from "@/lib/steady";
 
-const POLL_MS = 5000;
+// Matches the board's fast sync while this page is open.
+const POLL_MS = 1000;
 
 interface Props {
   initial: SteadyReading | null;
@@ -124,7 +125,7 @@ function LiveMotion({ motion, live }: { motion: NonNullable<SteadyPayload["motio
     <section aria-labelledby="motion-heading">
       <div className="flex items-end justify-between border-b border-line pb-2">
         <h3 id="motion-heading" className="clinical-label text-muted">Live motion · last {seconds} seconds</h3>
-        <span className="clinical-label text-subtle">{live ? "refreshes every 5 s" : "demo"}</span>
+        <span className="clinical-label text-subtle">{live ? "live, every second" : "demo"}</span>
       </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="h-auto w-full" role="img" aria-label={`Acceleration over the last ${seconds} seconds, peak ${peak.toFixed(2)} g`}>
         {[-1, 0, 1].map((g) => (

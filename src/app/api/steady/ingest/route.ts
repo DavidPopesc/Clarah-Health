@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { sanitizePayload, saveReading, takeCommands } from "@/lib/steady";
+import { IDLE_SYNC_S, nextSyncSeconds, sanitizePayload, saveReading, takeCommands } from "@/lib/steady";
 
 // The Clarah Steady board POSTs its summary here every 30 s (and right away when an alarm
 // starts or ends), authenticated with the shared STEADY_INGEST_TOKEN.
@@ -35,6 +35,10 @@ export async function POST(request: Request) {
     return Response.json({ error: "Could not store the reading" }, { status: 503 });
   }
   // Hand over anything the website asked the device to do (end or cancel its alarm).
-  const commands = await takeCommands(payload.device_id).catch(() => []);
-  return Response.json({ ok: true, device_id: payload.device_id, commands });
+  // And how soon to sync again: every second while someone is watching /steady.
+  const [commands, next_sync_s] = await Promise.all([
+    takeCommands(payload.device_id).catch(() => []),
+    nextSyncSeconds(payload.device_id).catch(() => IDLE_SYNC_S),
+  ]);
+  return Response.json({ ok: true, device_id: payload.device_id, commands, next_sync_s });
 }
