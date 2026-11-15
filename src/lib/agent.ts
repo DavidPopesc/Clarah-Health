@@ -17,6 +17,13 @@ import { serviceAccount, vertexAccessToken } from "./vertex-auth.ts";
 // can serve Clarah's fine-tuned model (set VERTEX_MODEL and VERTEX_BASE_URL to its endpoint).
 const VERTEX_LOCATION = process.env.VERTEX_LOCATION ?? "global";
 const VERTEX_MODEL = process.env.VERTEX_MODEL ?? "google/gemini-3.5-flash-lite";
+// Clarah's fine-tuned Gemini (projects/<n>/locations/<loc>/endpoints/<id>), tried before the base model.
+const VERTEX_ENDPOINT = process.env.VERTEX_ENDPOINT;
+
+const vertexHost = (location: string) =>
+  location === "global" ? "aiplatform.googleapis.com"
+  : location === "us" || location === "eu" ? `aiplatform.${location}.rep.googleapis.com`
+  : `${location}-aiplatform.googleapis.com`;
 const GEMINI_BASE_URL = process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta/openai/";
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 const BACKUP_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://pulpo.baby/v1";
@@ -257,7 +264,7 @@ const isRetryable = (err: unknown) =>
   err instanceof OpenAI.APIError && (err.status === 503 || err.status === 500);
 
 interface Provider {
-  name: "vertex" | "gemini" | "backup";
+  name: "clarah-tuned" | "vertex" | "gemini" | "backup";
   // Google models (Vertex and the Gemini API) share JSON mode and thought signatures.
   google: boolean;
   client: OpenAI;
@@ -269,14 +276,24 @@ async function providers(): Promise<Provider[]> {
   const account = serviceAccount();
   if (account) {
     try {
+      const token = await vertexAccessToken();
+      if (VERTEX_ENDPOINT) {
+        const location = VERTEX_ENDPOINT.split("/locations/")[1]?.split("/")[0] ?? "us";
+        list.push({
+          name: "clarah-tuned",
+          google: true,
+          // A tuned endpoint serves one model, so the OpenAI-style `model` field stays empty.
+          client: new OpenAI({ apiKey: token, baseURL: `https://${vertexHost(location)}/v1/${VERTEX_ENDPOINT}`, maxRetries: 0, timeout: 15_000 }),
+          model: "",
+        });
+      }
       const project = process.env.VERTEX_PROJECT ?? account.project_id;
-      const host = VERTEX_LOCATION === "global" ? "aiplatform.googleapis.com" : `${VERTEX_LOCATION}-aiplatform.googleapis.com`;
       list.push({
         name: "vertex",
         google: true,
         client: new OpenAI({
-          apiKey: await vertexAccessToken(),
-          baseURL: process.env.VERTEX_BASE_URL ?? `https://${host}/v1/projects/${project}/locations/${VERTEX_LOCATION}/endpoints/openapi`,
+          apiKey: token,
+          baseURL: process.env.VERTEX_BASE_URL ?? `https://${vertexHost(VERTEX_LOCATION)}/v1/projects/${project}/locations/${VERTEX_LOCATION}/endpoints/openapi`,
           maxRetries: 0,
           timeout: 15_000,
         }),
