@@ -4,7 +4,7 @@ import { appOrigin, startPkce } from "@/lib/session";
 
 export async function GET(request: Request) {
   if (!epicEnabled()) {
-    return NextResponse.redirect(new URL("/?error=epic_not_configured", request.url));
+    return NextResponse.redirect(new URL("/profile?error=epic_not_configured", request.url));
   }
   const { challenge, state } = await startPkce("epic");
   const url = new URL(epicConfig.authorizeUrl);

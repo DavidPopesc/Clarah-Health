@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const verifier = await finishPkce("epic", params.get("state"));
   const code = params.get("code");
   if (!verifier || !code) {
-    return NextResponse.redirect(new URL("/?error=epic_auth_failed", request.url));
+    return NextResponse.redirect(new URL("/profile?error=epic_auth_failed", request.url));
   }
 
   const res = await fetch(epicConfig.tokenUrl, {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   });
   if (!res.ok) {
     console.error("Epic token exchange failed", res.status, await res.text());
-    return NextResponse.redirect(new URL("/?error=epic_auth_failed", request.url));
+    return NextResponse.redirect(new URL("/profile?error=epic_auth_failed", request.url));
   }
   const token = await res.json();
   await writeSession(EPIC_COOKIE, {
@@ -32,5 +32,5 @@ export async function GET(request: Request) {
     expiresAt: Date.now() + (token.expires_in ?? 3600) * 1000,
     patient: token.patient,
   });
-  return NextResponse.redirect(new URL("/", request.url));
+  return NextResponse.redirect(new URL("/profile", request.url));
 }

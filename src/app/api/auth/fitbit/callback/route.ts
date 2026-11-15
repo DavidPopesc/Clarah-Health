@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const verifier = await finishPkce("fitbit", params.get("state"));
   const code = params.get("code");
   if (!verifier || !code) {
-    return NextResponse.redirect(new URL("/?error=fitbit_auth_failed", request.url));
+    return NextResponse.redirect(new URL("/profile?error=fitbit_auth_failed", request.url));
   }
 
   const basic = Buffer.from(`${fitbitConfig.clientId}:${fitbitConfig.clientSecret}`).toString("base64");
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   });
   if (!res.ok) {
     console.error("Fitbit token exchange failed", res.status, await res.text());
-    return NextResponse.redirect(new URL("/?error=fitbit_auth_failed", request.url));
+    return NextResponse.redirect(new URL("/profile?error=fitbit_auth_failed", request.url));
   }
   const token = await res.json();
   await writeSession(FITBIT_COOKIE, {
@@ -35,5 +35,5 @@ export async function GET(request: Request) {
     refreshToken: token.refresh_token,
     expiresAt: Date.now() + (token.expires_in ?? 28800) * 1000,
   });
-  return NextResponse.redirect(new URL("/", request.url));
+  return NextResponse.redirect(new URL("/profile", request.url));
 }

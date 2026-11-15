@@ -8,7 +8,9 @@ import { ClaraLogo } from "./icons";
 // On a computer, the same navigation as the phone's bottom bar sits in a sidebar instead.
 export function DesktopNav() {
   const path = usePathname();
-  const isActive = (href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`));
+  // Overview lives at "/"; its recording page (/visits/new) belongs to it too.
+  const isActive = (href: string) =>
+    href === "/" ? path === "/" || path.startsWith("/visits") : path === href || path.startsWith(`${href}/`);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-[#fffdf7] lg:flex">

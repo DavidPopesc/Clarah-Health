@@ -111,7 +111,7 @@ export function VisitRecorder() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Clara couldn't explain this visit.");
       await saveVisit(data.recap, data.transcript);
-      router.push("/visits");
+      router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Clara couldn't explain this visit.");
       setPhase("idle");
@@ -125,7 +125,7 @@ export function VisitRecorder() {
     <main className="flex grow flex-col gap-6 pb-8 lg:gap-8">
       <header className="bg-eucalyptus px-4 pt-10 pb-4 text-white lg:py-7">
         <div className="desk flex items-center gap-3">
-          <Link href="/visits" aria-label="Back to visits" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
+          <Link href="/" aria-label="Back to Overview" className="flex size-11 items-center justify-center border border-white/30 bg-white/10">
             <BackIcon width={22} height={22} />
           </Link>
           <div className="flex flex-col">

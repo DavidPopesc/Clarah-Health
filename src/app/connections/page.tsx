@@ -152,7 +152,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
 
         <div className="mx-5 flex flex-col gap-3 lg:mx-0 lg:flex-row-reverse lg:items-center lg:justify-between lg:gap-6">
           <Link
-            href="/"
+            href="/profile"
             className="press flex min-h-[52px] items-center justify-center rounded-md text-base font-semibold text-white lg:w-56"
           >
             Done

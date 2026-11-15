@@ -8,9 +8,9 @@ function ClaraTabIcon({ width = 20 }: { width?: number | string }) {
 }
 
 export const NAV_ITEMS = [
-  { href: "/visits", label: "Overview", Icon: VisitIcon },
+  { href: "/", label: "Overview", Icon: VisitIcon },
   { href: "/ask", label: "Ask Clara", Icon: ClaraTabIcon },
-  { href: "/", label: "My profile", Icon: HomeIcon },
+  { href: "/profile", label: "My profile", Icon: HomeIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
 ];
 

@@ -4,7 +4,7 @@ import { appOrigin, startPkce } from "@/lib/session";
 
 export async function GET(request: Request) {
   if (!fitbitEnabled()) {
-    return NextResponse.redirect(new URL("/?error=fitbit_not_configured", request.url));
+    return NextResponse.redirect(new URL("/profile?error=fitbit_not_configured", request.url));
   }
   const { challenge, state } = await startPkce("fitbit");
   const url = new URL(fitbitConfig.authorizeUrl);

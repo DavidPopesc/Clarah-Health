@@ -12,7 +12,7 @@ Clara is an AI health companion. It reads a patient's MyChart (Epic) record and 
 4. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clara looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
 5. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body built from real anatomy data slides up and zooms to the left ankle, with the bones, tendons and muscles around it lit. The Today page also shows the organs behind your numbers in 3D.
 6. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clara skips the AI and shows a full-screen "Call 911".
-7. **Visit recap:** open **Overview** (the visit recaps tab) and tap "Hear a sample visit" (or, as the care team, "Record a visit"). Clara turns the doctor–patient conversation into plain English, ties it to the record (A1c 7.4 → 7.1, blood pressure trend), and reads it aloud. Tap "Show transcript" to read along, copy or download it.
+7. **Visit recap:** on **Overview** (the page Clara opens on), tap "Hear a sample visit" (or, as the care team, "Record a visit"). Clara turns the doctor–patient conversation into plain English, ties it to the record (A1c 7.4 → 7.1, blood pressure trend), and reads it aloud. Tap "Show transcript" to read along, copy or download it.
 
 ## Visit recaps
 
@@ -51,8 +51,9 @@ Clara asks **Gemini** first (`gemini-3.5-flash-lite`, small and fast, through Go
 
 ```
 Next.js 16 (App Router)
-├─ /            Connect (Epic + Fitbit OAuth with PKCE, demo fallback)
-├─ /today       Server-rendered summary from the normalized record
+├─ /            Overview: visit recaps Clara reads aloud (/visits/new to record one)
+├─ /profile     My profile: health focus areas, documents, results, medications
+├─ /connections Sources (Epic + Fitbit OAuth with PKCE, demo fallback)
 ├─ /ask         Chat UI → POST /api/chat
 └─ /api/chat    red-flag screen → tool-calling agent (OpenAI-compatible) with tools:
                 get_profile, get_medications, get_conditions, get_labs,
