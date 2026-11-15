@@ -6,7 +6,7 @@ import type {
 } from "openai/resources/chat/completions";
 import { BODY_SYSTEMS, detectBodyFocus, normalizeFocus, REGION_IDS, type BodyFocus } from "./body.ts";
 import { dateWords, summarizeBloodPressure, summarizeLabs } from "./record-summary.ts";
-import { findReferences, type SafetyReference } from "./safety-references.ts";
+import { findReferences } from "./safety-references.ts";
 import type { PatientRecord, Source, WearableSummary } from "./types";
 import { ageFrom, bpCategory, BP_LABELS } from "./vitals.ts";
 import { serviceAccount, vertexAccessToken } from "./vertex-auth.ts";
@@ -87,6 +87,19 @@ const TOOLS: ToolSpec[] = [
     },
   },
   {
+    name: "search_medical_library",
+    description:
+      "Search Clarah's health library (MedlinePlus, FDA drug labels, NIH herb fact sheets; 12,000+ passages) with Typesense hybrid search. Use it for what a medication, lab test, condition, herb or supplement is, side effects, warnings, interactions, and what a result means.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Specific terms, e.g. 'glipizide low blood sugar' or 'TSH test results'" },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "show_body_focus",
     description:
       "Highlight one body part on the app's 3D anatomy model when the question is about a specific body part, injury, or organ.",
@@ -106,10 +119,18 @@ const TOOLS: ToolSpec[] = [
 
 const NO_ARGS = { type: "object", properties: {}, additionalProperties: false };
 
-const CHAT_TOOLS: ChatCompletionTool[] = TOOLS.map(({ name, description, parameters }) => ({
+const LIBRARY_TOOL = "search_medical_library";
+const libraryEnabled = () => Boolean(process.env.TYPESENSE_HOST && (process.env.TYPESENSE_SEARCH_KEY || process.env.TYPESENSE_ADMIN_KEY));
+
+const LIBRARY_PROMPT = `\n\nHealth library:\n- For what a medication, lab test, condition, herb or supplement is, its side effects, warnings or interactions, or what a result means, call ${LIBRARY_TOOL} and base those facts on the passages it returns. If the passages don't answer the question, say you couldn't find a trusted source for that.`;
+
+const ALL_CHAT_TOOLS: ChatCompletionTool[] = TOOLS.map(({ name, description, parameters }) => ({
   type: "function",
   function: { name, description, parameters: parameters ?? NO_ARGS },
 }));
+
+// The library tool is only offered when Typesense is set up.
+const chatTools = () => (libraryEnabled() ? ALL_CHAT_TOOLS : ALL_CHAT_TOOLS.filter((t) => t.type !== "function" || t.function.name !== LIBRARY_TOOL));
 
 const DATA_LABELS: Record<string, string> = {
   get_medications: "Medications",
@@ -144,14 +165,14 @@ export function redactIdentifiers(text: string, record: PatientRecord): string {
   return out;
 }
 
-function runTool(
+async function runTool(
   name: string,
   input: Record<string, unknown>,
   record: PatientRecord,
   wearable: WearableSummary,
-  found: Map<string, SafetyReference>,
+  found: Map<string, Source>,
   focus: { value?: BodyFocus },
-): unknown {
+): Promise<unknown> {
   switch (name) {
     case "show_body_focus": {
       const f = normalizeFocus(input);
@@ -198,6 +219,14 @@ function runTool(
       }
       return { results: refs.map((r) => ({ id: r.id, title: r.title, summary: r.summary })) };
     }
+    case LIBRARY_TOOL: {
+      // Loaded lazily: the Typesense client is server-only and optional.
+      const { searchPassages } = await import("./typesense.ts");
+      const passages = await searchPassages(String(input.query ?? ""), 5);
+      if (!passages.length) return { results: [], note: "No passages found in the health library." };
+      passages.forEach((p) => found.set(`library:${p.url}`, { id: `library:${p.url}`, title: `${p.title} · ${p.source}`, url: p.url }));
+      return { results: passages.map(({ title, section, text, source }) => ({ title, section, source, text })) };
+    }
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -214,6 +243,7 @@ const TOOL_STATUS: Record<string, string> = {
   get_vitals: "Looking at your blood pressure…",
   get_wearable_summary: "Reading your wearable data…",
   lookup_safety_reference: "Checking trusted medical sources…",
+  [LIBRARY_TOOL]: "Searching the health library…",
   show_body_focus: "Preparing a 3D view…",
 };
 
@@ -352,7 +382,7 @@ async function streamRound(
       const stream = await provider.client.chat.completions.create({
         model: provider.model,
         messages: forProvider(messages, provider),
-        tools: CHAT_TOOLS,
+        tools: chatTools(),
         stream: true,
       });
       const calls: ToolCall[] = [];
@@ -398,11 +428,11 @@ export async function runAgent(
   let active = 0;
 
   const messages: ChatCompletionMessageParam[] = [
-    { role: "system", content: `${SYSTEM_PROMPT}\n\nToday's date: ${dateWords(new Date().toISOString())}.` },
+    { role: "system", content: `${SYSTEM_PROMPT}${libraryEnabled() ? LIBRARY_PROMPT : ""}\n\nToday's date: ${dateWords(new Date().toISOString())}.` },
     ...history.map((turn) => ({ role: turn.role, content: redactIdentifiers(turn.content, record) })),
   ];
 
-  const found = new Map<string, SafetyReference>();
+  const found = new Map<string, Source>();
   const usedData = new Set<string>();
   const focus: { value?: BodyFocus } = {};
   const lastQuestion = history.at(-1)?.content ?? "";
@@ -453,7 +483,7 @@ export async function runAgent(
       let result: Record<string, unknown>;
       try {
         const args = call.function.arguments ? JSON.parse(call.function.arguments) : {};
-        result = { result: runTool(name, args, record, wearable, found, focus) };
+        result = { result: await runTool(name, args, record, wearable, found, focus) };
       } catch (err) {
         result = { error: err instanceof Error ? err.message : "Tool failed" };
       }
