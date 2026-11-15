@@ -433,8 +433,11 @@ def push_balance():
 
 def status_payload() -> dict:
     online = time.time() - device["last_seen"] < 3
+    # The board only reports sensor changes; if it's talking but no samples arrive,
+    # the accelerometer is unplugged or on the wrong port.
+    sensor = "missing" if online and time.time() - device["last_imu"] > 3 else device["sensor"]
     return {
-        "device": {**device, "online": online, "dropped": dropped},
+        "device": {**device, "sensor": sensor, "online": online, "dropped": dropped},
         "alert": active_alert,
         "now": now(),
     }
