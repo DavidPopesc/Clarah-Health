@@ -6,6 +6,9 @@ import { parseKnowledgeFile } from "./parse.mjs";
 const args = process.argv.slice(2);
 const reset = args.includes("--reset");
 const embed = !args.includes("--no-embed");
+// Small clusters (e.g. Typesense Cloud's 0.5 GB tier) can't hold the model plus 12k passage vectors:
+// --embed-library-only keeps hybrid search for the library and keyword search for passages.
+const embedPassages = embed && !args.includes("--embed-library-only");
 const root = path.resolve(args.find((a) => !a.startsWith("--")) ?? "data/knowledge/upload");
 const host = process.env.TYPESENSE_HOST;
 const key = process.env.TYPESENSE_ADMIN_KEY;
@@ -38,7 +41,7 @@ async function ensureCollection(name, fields) {
     try { await api(`/collections/${name}`, { method: "DELETE" }); } catch (error) { if (!String(error).includes("404")) throw error; }
   }
   try {
-    await api("/collections", { method: "POST", body: JSON.stringify({ name, fields: embed ? [...fields, embeddingField(name === "clarah_library" ? ["title", "aliases", "summary"] : ["title", "section", "text"])] : fields }) });
+    await api("/collections", { method: "POST", body: JSON.stringify({ name, fields: (name === "clarah_library" ? embed : embedPassages) ? [...fields, embeddingField(name === "clarah_library" ? ["title", "aliases", "summary"] : ["title", "section", "text"])] : fields }) });
   } catch (error) {
     if (!String(error).includes("409")) throw error;
   }
@@ -76,13 +79,14 @@ async function importDocs(name, docs) {
       method: "POST", headers: { "X-TYPESENSE-API-KEY": key, "Content-Type": "text/plain" },
       body: docs.slice(i, i + 100).map((doc) => JSON.stringify(doc)).join("\n"),
     });
-    const lines = (await response.text()).trim().split("\n");
+    // One JSON result per document; under memory pressure Typesense can drop the newlines.
+    const lines = (await response.text()).trim().split(/\n|(?<=\})(?=\{)/);
     if (!response.ok) throw new Error(`Import ${name}: ${response.status} ${lines[0]}`);
     for (const line of lines) {
       const result = JSON.parse(line);
       if (!result.success) {
         failures++;
-        if (failures <= 3) console.error(`${name} import error:`, result.error);
+        if (failures <= 3) console.error(`${name} import error:`, result.error ?? result.message);
       }
     }
     process.stdout.write(`\r${name}: ${Math.min(i + 100, docs.length)}/${docs.length}`);
@@ -106,7 +110,7 @@ if (args.includes("--synonyms-only")) {
       passages.push(...parsed.passages);
     }
   }
-  console.log(`Parsed ${library.length} library documents and ${passages.length} passages (embeddings ${embed ? "on" : "off"})`);
+  console.log(`Parsed ${library.length} library documents and ${passages.length} passages (embeddings: library ${embed ? "on" : "off"}, passages ${embedPassages ? "on" : "off"})`);
   await importDocs("clarah_library", library);
   await importDocs("clarah_passages", passages);
   await installSynonyms();
