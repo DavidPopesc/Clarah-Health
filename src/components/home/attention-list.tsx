@@ -103,7 +103,7 @@ function ConcernCard({ item, documents, onView }: { item: AttentionItem; documen
         </div>
         <h3 className="text-[16px] leading-snug font-semibold">{item.title}</h3>
         <p className="mt-1.5 text-[13px] leading-relaxed text-body">{item.detail}</p>
-        {item.progress ? <div className="mt-3"><MetricRow progress={item.progress} context={item} /></div> : <p className="mt-2 text-[11px] text-subtle">{hasDocumentComparison ? "See the document comparison below." : "First time this shows up in your record. Clarah Health will show how it changed after your next visit or test."}</p>}
+        {item.progress ? <div className="mt-3"><MetricRow progress={item.progress} context={item} /></div> : <p className="mt-2 text-[11px] text-subtle">{hasDocumentComparison ? "See the document comparison below." : "First time this shows up in your record. Clarah will show how it changed after your next visit or test."}</p>}
       </div>
       <EvidenceList item={item} documents={documents} />
       <dl className="grid text-[12px] leading-relaxed sm:grid-cols-2">
@@ -112,7 +112,7 @@ function ConcernCard({ item, documents, onView }: { item: AttentionItem; documen
       </dl>
       <div className="flex border-t border-line divide-x divide-line">
         <Link href={`/ask?q=${encodeURIComponent(item.ask)}`} className="flex min-h-11 flex-1 items-center justify-center gap-2 text-[12px] font-semibold text-teal hover:bg-teal-soft">
-          <ChatIcon width={15} height={15} /> Ask Clarah Health
+          <ChatIcon width={15} height={15} /> Ask Clarah
         </Link>
         {item.focus && (
           <button type="button" onClick={() => onView(item.focus!)} className="flex min-h-11 flex-1 items-center justify-center gap-2 text-[12px] font-semibold text-teal hover:bg-teal-soft">
@@ -255,7 +255,7 @@ export function AttentionList({ themes }: { themes: HealthTheme[] }) {
                             </li>
                           ))}
                         </ul>
-                        <p className="mt-2 text-[10px] leading-relaxed text-subtle">Related does not mean one issue caused another. Clarah Health only groups confirmed findings and commonly connected care areas.</p>
+                        <p className="mt-2 text-[10px] leading-relaxed text-subtle">Related does not mean one issue caused another. Clarah only groups confirmed findings and commonly connected care areas.</p>
                       </div>
                     )}
                   </div>

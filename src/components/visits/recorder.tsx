@@ -19,7 +19,7 @@ const todayIso = () => {
 };
 
 // The care team's side: record the conversation (with the patient's consent), check the
-// transcript, then have Clarah Health turn it into a spoken explanation for the patient.
+// transcript, then have Clarah turn it into a spoken explanation for the patient.
 export function VisitRecorder() {
   const router = useRouter();
   const [consent, setConsent] = useState(false);
@@ -53,13 +53,13 @@ export function VisitRecorder() {
         setProgress(chunks.length > 1 ? `Transcribing part ${i + 1} of ${chunks.length}…` : "Transcribing the conversation…");
         const res = await fetch("/api/visits/transcribe", { method: "POST", headers: { "Content-Type": "audio/wav" }, body: chunk });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Clarah Health couldn't transcribe this recording.");
+        if (!res.ok) throw new Error(data.error ?? "Clarah couldn't transcribe this recording.");
         if (data.text) texts.push(data.text);
       }
-      if (!texts.length) throw new Error("Clarah Health didn't hear any speech in the recording. Check the microphone and try again.");
+      if (!texts.length) throw new Error("Clarah didn't hear any speech in the recording. Check the microphone and try again.");
       setTranscript((prev) => [prev.trim(), texts.join("\n")].filter(Boolean).join("\n"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Clarah Health couldn't transcribe this recording.");
+      setError(err instanceof Error ? err.message : "Clarah couldn't transcribe this recording.");
     } finally {
       setPhase("idle");
       setProgress("");
@@ -80,7 +80,7 @@ export function VisitRecorder() {
     try {
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     } catch {
-      setError("Clarah Health couldn't use the microphone. Allow microphone access in your browser, or type the conversation below.");
+      setError("Clarah couldn't use the microphone. Allow microphone access in your browser, or type the conversation below.");
       return;
     }
     parts.current = [];
@@ -109,11 +109,11 @@ export function VisitRecorder() {
         body: JSON.stringify({ transcript, date }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Clarah Health couldn't explain this visit.");
+      if (!res.ok) throw new Error(data.error ?? "Clarah couldn't explain this visit.");
       await saveVisit(data.recap, data.transcript);
       router.push("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Clarah Health couldn't explain this visit.");
+      setError(err instanceof Error ? err.message : "Clarah couldn't explain this visit.");
       setPhase("idle");
     }
   }
@@ -139,7 +139,7 @@ export function VisitRecorder() {
       <div className="desk flex flex-col gap-6 px-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
         <div className="flex flex-col gap-6">
         <p className="text-[14px] leading-normal text-muted lg:text-[15px]">
-          Record your conversation with the patient. Clarah Health transcribes it, pairs it with their record, and reads them a plain-English explanation they can replay at home.
+          Record your conversation with the patient. Clarah transcribes it, pairs it with their record, and reads them a plain-English explanation they can replay at home.
         </p>
 
         <section className="flex flex-col gap-2" aria-labelledby="consent-heading">
@@ -152,7 +152,7 @@ export function VisitRecorder() {
               disabled={phase === "recording"}
               className="mt-0.5 size-5 shrink-0 accent-teal"
             />
-            <span>The patient agreed to have this conversation recorded and explained by Clarah Health.</span>
+            <span>The patient agreed to have this conversation recorded and explained by Clarah.</span>
           </label>
         </section>
 
@@ -187,7 +187,7 @@ export function VisitRecorder() {
             ) : phase === "recording" ? (
               `Recording. Speak normally; stops automatically at ${clock(MAX_SECONDS)}.`
             ) : consent ? (
-              `Up to ${MAX_SECONDS / 60} minutes. You can review the transcript before Clarah Health explains it.`
+              `Up to ${MAX_SECONDS / 60} minutes. You can review the transcript before Clarah explains it.`
             ) : (
               "Confirm consent to start recording."
             )}
@@ -236,15 +236,15 @@ export function VisitRecorder() {
           {phase === "explaining" ? (
             <>
               <span className="size-2 animate-pulse rounded-full bg-white" />
-              Clarah Health is pairing this with the patient&apos;s record…
+              Clarah is pairing this with the patient&apos;s record…
             </>
           ) : (
-            "Create Clarah Health's explanation"
+            "Create Clarah's explanation"
           )}
         </button>
 
         <p className="text-[11px] leading-snug text-subtle">
-          The audio is sent to the AI only to be transcribed and isn&apos;t saved. The patient&apos;s name and ID numbers are removed from the transcript before Clarah Health explains it. The explanation is saved only on this device.{" "}
+          The audio is sent to the AI only to be transcribed and isn&apos;t saved. The patient&apos;s name and ID numbers are removed from the transcript before Clarah explains it. The explanation is saved only on this device.{" "}
           <Link href="/privacy" className="font-semibold text-teal">Privacy policy</Link>
         </p>
         </div>

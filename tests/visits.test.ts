@@ -49,7 +49,7 @@ test("caps questions at three", () => {
   assert.deepEqual(r.questions, ["a", "b", "c"]);
 });
 
-test("transcript text includes what Clarah Health says, next steps with reasons, and questions", () => {
+test("transcript text includes what Clarah says, next steps with reasons, and questions", () => {
   const r = normalizeRecap({
     title: "Check-up",
     script: ["Para one.", "Para two."],
@@ -57,7 +57,7 @@ test("transcript text includes what Clarah Health says, next steps with reasons,
     questions: ["When should I take it?"],
   });
   const text = recapToText(r, "November 14, 2026");
-  assert.match(text, /^Check-up\nNovember 14, 2026\n\nWhat Clarah Health says\n\nPara one\.\n\nPara two\./);
+  assert.match(text, /^Check-up\nNovember 14, 2026\n\nWhat Clarah says\n\nPara one\.\n\nPara two\./);
   assert.match(text, /What to do next\n- Blood test in two weeks \(Why: To check your kidneys on the new medicine\.\)/);
   assert.match(text, /Questions you could ask\n- When should I take it\?/);
   assert.doesNotMatch(text, /Medicine changes|Call your care team if|Words from your visit/);

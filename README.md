@@ -2,24 +2,24 @@
 
 **Answers about your health, from your own data.** EmoryHacks 2026 · Healthcare track
 
-Clarah Health is an AI health companion. It reads a patient's MyChart (Epic) record and Fitbit data, explains their numbers in plain language, and answers "is it safe for me to…?" questions, like fasting for Ramadan on diabetes medicine or taking an herbal supplement, using the patient's own medications and trusted, cited sources.
+Clarah is an AI health companion. It reads a patient's MyChart (Epic) record and Fitbit data, explains their numbers in plain language, and answers "is it safe for me to…?" questions, like fasting for Ramadan on diabetes medicine or taking an herbal supplement, using the patient's own medications and trusted, cited sources.
 
 ## Demo flow
 
-1. **Home:** upload a PDF, link MyChart (Epic sandbox, read-only) or link Fitbit from the top of the page; linked accounts show as connected. Without them, Clarah Health uses a built-in demo patient.
-2. **What needs your attention:** instead of a wall of numbers, the home page lists the few things worth acting on (rising blood pressure, A1c above goal, low-blood-sugar risk from glipizide, short sleep), each with why it matters, what to do, an "Ask Clarah Health" shortcut and a 3D view. Normal results collapse into "Looking good".
-3. **Upload a document:** tap "Try a sample lab report" (or upload any lab or visit PDF). Clarah Health compares it with your history and explains it in plain English: urine protein is new and high, A1c improved from 7.4 to 7.1, LDL rose from 96 to 108, and the doctor may start lisinopril. Every finding quotes the original line with its page number, and tapping it opens the PDF at that page.
-4. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clarah Health looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
+1. **Home:** upload a PDF, link MyChart (Epic sandbox, read-only) or link Fitbit from the top of the page; linked accounts show as connected. Without them, Clarah uses a built-in demo patient.
+2. **What needs your attention:** instead of a wall of numbers, the home page lists the few things worth acting on (rising blood pressure, A1c above goal, low-blood-sugar risk from glipizide, short sleep), each with why it matters, what to do, an "Ask Clarah" shortcut and a 3D view. Normal results collapse into "Looking good".
+3. **Upload a document:** tap "Try a sample lab report" (or upload any lab or visit PDF). Clarah compares it with your history and explains it in plain English: urine protein is new and high, A1c improved from 7.4 to 7.1, LDL rose from 96 to 108, and the doctor may start lisinopril. Every finding quotes the original line with its page number, and tapping it opens the PDF at that page.
+4. **Ask:** try *"Ramadan starts in February. Is it okay for me to fast with my diabetes meds?"* Clarah looks up the medications (glipizide raises the risk of low blood sugar), cites the IDF-DAR guidelines, says when to break the fast, and lists questions for the doctor.
 5. **3D body:** try *"I sprained my left ankle. Can I take ibuprofen for the pain?"* A 3D body built from real anatomy data slides up and zooms to the left ankle, with the bones, tendons and muscles around it lit. The Today page also shows the organs behind your numbers in 3D.
-6. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clarah Health skips the AI and shows a full-screen "Call 911".
-7. **Visit recap:** on **Overview** (the page Clarah Health opens on), tap "Hear a sample visit" (or, as the care team, "Record a visit"). Clarah Health turns the doctor–patient conversation into plain English, ties it to the record (A1c 7.4 → 7.1, blood pressure trend), and reads it aloud. Tap "Show transcript" to read along, copy or download it.
+6. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clarah skips the AI and shows a full-screen "Call 911".
+7. **Visit recap:** on **Overview** (the page Clarah opens on), tap "Hear a sample visit" (or, as the care team, "Record a visit"). Clarah turns the doctor–patient conversation into plain English, ties it to the record (A1c 7.4 → 7.1, blood pressure trend), and reads it aloud. Tap "Show transcript" to read along, copy or download it.
 
 ## Visit recaps
 
-- **Care team records, patient listens.** On `/visits/new` the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clarah Health explains it.
+- **Care team records, patient listens.** On `/visits/new` the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clarah explains it.
 - **Transcription.** The browser converts the recording to 16 kHz mono WAV in 4-minute chunks (`src/lib/wav.ts`); `/api/visits/transcribe` sends each to Gemini (`gemini-3.5-flash`) for a word-for-word transcript labelled Clinician / Patient. The audio isn't stored.
 - **Explanation.** `/api/visits` removes the patient's name and ID numbers, pairs the transcript with their record, and asks the model for a spoken script plus medicine changes, next steps, warning signs, and a glossary (`src/lib/visits.ts`). It may only relay what the clinician said; a medicine change is dropped unless that medicine was actually named in the conversation (`src/lib/visit-verify.ts`).
-- **Clarah Health's voice.** The player reads the script one paragraph at a time with Gemini text-to-speech (`gemini-3.8-flash-tts`, voice "Sulafat") through `/api/visits/speech`, fetching the next paragraph while one plays and caching the audio on the device. It's one-way speech, not a conversation. If the AI voice is unavailable, the device's own voice reads instead.
+- **Clarah's voice.** The player reads the script one paragraph at a time with Gemini text-to-speech (`gemini-3.8-flash-tts`, voice "Sulafat") through `/api/visits/speech`, fetching the next paragraph while one plays and caching the audio on the device. It's one-way speech, not a conversation. If the AI voice is unavailable, the device's own voice reads instead.
 - **Device only.** Recaps, transcripts and voice audio are kept in the browser's IndexedDB, like uploaded documents.
 - Recording and the AI voice need `GEMINI_API_KEY`; the backup provider has no audio. `GEMINI_TRANSCRIBE_MODEL`, `GEMINI_TTS_MODEL` and `GEMINI_TTS_VOICE` are optional overrides.
 
@@ -27,7 +27,7 @@ Clarah Health is an AI health companion. It reads a patient's MyChart (Epic) rec
 
 - **Emergency screen comes before the AI.** `src/lib/red-flags.ts` checks every message with fixed rules (severe BP with symptoms, stroke and heart attack signs, low blood sugar, crisis language → 988). A match shows an escalation screen, and the model is never called.
 - **Grounded safety answers.** The agent must call `lookup_safety_reference`, which returns curated cards from NIH NCCIH, FDA, AHA, ADA and IDF-DAR (`src/lib/safety-references.ts`). If nothing matches, it says it couldn't verify and points to the pharmacist. Sources are shown under each answer.
-- **No medication changes.** Clarah Health turns dose decisions into questions for the care team.
+- **No medication changes.** Clarah turns dose decisions into questions for the care team.
 - **De-identified.** The model gets age, not birth date, and never the name or MRN. Those are also redacted from the user's own messages.
 - **Read-only, scoped access** to Epic and Fitbit, with one-tap disconnect.
 
@@ -39,9 +39,9 @@ Clarah Health is an AI health companion. It reads a patient's MyChart (Epic) rec
 - Scanned (image-only) PDFs can't be read yet.
 - **Test documents** for the synthetic demo patient are in `public/samples/test/` (regenerate with `node scripts/make-test-pdfs.mjs`): an urgent care visit and X-ray for a sprained ankle, annual labs with low B12 and vitamin D, an echocardiogram, a 3-month follow-up where things improved, a store receipt (should be recognized as not medical), and a scanned page with no text (should show the can't-read message).
 
-## How Clarah Health uses the model
+## How Clarah uses the model
 
-Clarah Health asks **Gemini** first (`gemini-3.5-flash-lite`, small and fast, through Google's OpenAI-compatible endpoint). If Gemini errors, runs out of quota or credit, or doesn't respond within 15 seconds, the same question goes to the **backup**: any OpenAI-compatible endpoint, by default [Pulpo](https://pulpo.baby) with `glm-5.3-flash`. Answers stream either way. Set `GEMINI_API_KEY` and/or `OPENAI_API_KEY`; `GEMINI_MODEL`, `OPENAI_BASE_URL` and `OPENAI_MODEL` are optional overrides.
+Clarah asks **Gemini** first (`gemini-3.5-flash-lite`, small and fast, through Google's OpenAI-compatible endpoint). If Gemini errors, runs out of quota or credit, or doesn't respond within 15 seconds, the same question goes to the **backup**: any OpenAI-compatible endpoint, by default [Pulpo](https://pulpo.baby) with `glm-5.3-flash`. Answers stream either way. Set `GEMINI_API_KEY` and/or `OPENAI_API_KEY`; `GEMINI_MODEL`, `OPENAI_BASE_URL` and `OPENAI_MODEL` are optional overrides.
 
 - **Function calling as an agent loop.** The model decides which parts of the record it needs (medications, labs, vitals, wearable data) and calls typed tools. The server runs them and returns de-identified results, looping until the model has what it needs.
 - **Grounded answers.** For any "is it safe" question, the model has to call `lookup_safety_reference`. The sources it actually used are shown under the answer.
@@ -51,7 +51,7 @@ Clarah Health asks **Gemini** first (`gemini-3.5-flash-lite`, small and fast, th
 
 ```
 Next.js 16 (App Router)
-├─ /            Overview: visit recaps Clarah Health reads aloud (/visits/new to record one)
+├─ /            Overview: visit recaps Clarah reads aloud (/visits/new to record one)
 ├─ /profile     My profile: health focus areas, documents, results, medications
 ├─ /connections Sources (Epic + Fitbit OAuth with PKCE, demo fallback)
 ├─ /ask         Chat UI → POST /api/chat
@@ -72,7 +72,7 @@ npm run dev                  # http://localhost:3000
 npm test                     # red-flag and body-detection tests
 ```
 
-Only one AI key is required: `GEMINI_API_KEY`, `OPENAI_API_KEY`, or both for automatic fallback. Without Epic or Fitbit credentials, Clarah Health uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
+Only one AI key is required: `GEMINI_API_KEY`, `OPENAI_API_KEY`, or both for automatic fallback. Without Epic or Fitbit credentials, Clarah uses a synthetic demo patient ("Amira", type 2 diabetes on metformin, glipizide and atorvastatin).
 
 **Epic sandbox:** create a non-production app at [fhir.epic.com](https://fhir.epic.com) as a patient-facing app. Select the R4 APIs Patient.Read, MedicationRequest.Search, Condition.Search and Observation.Search, and add the redirect URIs `http://localhost:3000/callback` and `https://<your-domain>/callback` (they must match exactly). Put the **Non-Production Client ID** in `EPIC_CLIENT_ID`. Sign in with one of Epic's [sandbox test patients](https://fhir.epic.com/Documentation?docId=testpatients), for example Camila Lopez (`fhircamila` / `epicepic1`). New client IDs can take a while to activate.
 
@@ -88,4 +88,4 @@ BodyParts3D, © The Database Center for Life Science licensed under CC Attributi
 
 - OAuth tokens are kept in httpOnly cookies. Production would need an encrypted server-side store, token refresh, a BAA with every vendor, and HIPAA-compliant hosting.
 - The reference library is small and curated for the demo cases. Expand it before claiming coverage.
-- Clarah Health is not a medical device and does not give medical advice.
+- Clarah is not a medical device and does not give medical advice.

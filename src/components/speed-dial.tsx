@@ -1,6 +1,6 @@
 import { RATE_LABELS, RATES } from "@/lib/voice";
 
-// Clarah Health's speaking speed: the same three choices in the Overview player and Ask Clarah Health.
+// Clarah's speaking speed: the same three choices in the Overview player and Ask Clarah.
 export function SpeedDial({ rate, onChange }: { rate: number; onChange: (rate: number) => void }) {
   return (
     <div className="flex items-center gap-1" role="group" aria-label="Speaking speed">

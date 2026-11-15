@@ -132,12 +132,12 @@ export function VisitsView() {
         body: JSON.stringify({ transcript: SAMPLE_VISIT }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Clarah Health couldn't explain the sample visit.");
+      if (!res.ok) throw new Error(data.error ?? "Clarah couldn't explain the sample visit.");
       const visit = await saveVisit(data.recap, data.transcript);
       setSelected(visit.id);
       setSampleState("idle");
     } catch (err) {
-      setSampleState(err instanceof Error ? err.message : "Clarah Health couldn't explain the sample visit.");
+      setSampleState(err instanceof Error ? err.message : "Clarah couldn't explain the sample visit.");
     }
   }
 
@@ -155,7 +155,7 @@ export function VisitsView() {
             <h2 className="mt-1 text-xl font-semibold">No visit recaps yet</h2>
           </div>
           <p className="text-[14px] leading-normal text-muted">
-            When your doctor or nurse records your visit, Clarah Health explains what they said in everyday English, connects it to your health record, and reads it to you. You can replay it any time and read the transcript.
+            When your doctor or nurse records your visit, Clarah explains what they said in everyday English, connects it to your health record, and reads it to you. You can replay it any time and read the transcript.
           </p>
           <button
             type="button"
@@ -165,7 +165,7 @@ export function VisitsView() {
           >
             {sampleState === "busy" ? (
               <>
-                <span className="size-2 animate-pulse rounded-full bg-white" /> Clarah Health is preparing the sample…
+                <span className="size-2 animate-pulse rounded-full bg-white" /> Clarah is preparing the sample…
               </>
             ) : (
               "Hear a sample visit"
@@ -213,7 +213,7 @@ export function VisitsView() {
       </Link>
 
       <p className="text-[11px] leading-snug text-subtle">
-        Clarah Health explains what your care team said; it doesn&apos;t add advice of its own or replace your care team. Recaps are saved only on this device.
+        Clarah explains what your care team said; it doesn&apos;t add advice of its own or replace your care team. Recaps are saved only on this device.
       </p>
       </aside>
     </div>

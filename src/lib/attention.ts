@@ -414,7 +414,7 @@ export function assessHealth(record: PatientRecord, wearable: WearableSummary) {
       themeId: "adhd",
       level: "watch",
       title: "ADHD is part of the care plan",
-      detail: "The record lists ADHD. Clarah Health keeps it separate while showing where organization, sleep, meals and follow-through may overlap with other health goals.",
+      detail: "The record lists ADHD. Clarah keeps it separate while showing where organization, sleep, meals and follow-through may overlap with other health goals.",
       why: "A plan that works with attention and organization challenges can make the rest of health care easier to manage.",
       todo: "Use simple reminders and routines, and ask whether your ADHD treatment and supports still fit your daily life.",
       source: `${from} · Conditions`,

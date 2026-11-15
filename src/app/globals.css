@@ -174,14 +174,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 @keyframes caret { to { visibility: hidden; } }
 .answer strong { font-weight: 600; color: var(--color-ink); }
 
-/* Clarah Health's avatar while her voice is playing. */
+/* Clarah's avatar while her voice is playing. */
 .clara-speaking { animation: clara-speak 1.5s ease-out infinite; }
 @keyframes clara-speak {
   0% { box-shadow: 0 0 0 1px #c9d3bd, 0 0 0 0 rgba(42, 79, 168, 0.45); }
   100% { box-shadow: 0 0 0 1px #c9d3bd, 0 0 0 12px rgba(42, 79, 168, 0); }
 }
 
-/* Clarah Health's face: an uneven open-close rhythm while she talks, and a blink every few seconds. */
+/* Clarah's face: an uneven open-close rhythm while she talks, and a blink every few seconds. */
 .clara-mouth-talk {
   transform-box: fill-box;
   transform-origin: 50% 0;
@@ -206,7 +206,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   95% { transform: scaleY(0.1); }
 }
 
-/* The big Clarah Health in the sidebar bobs gently, with a speech bubble pointing down at her. */
+/* The big Clarah in the sidebar bobs gently, with a speech bubble pointing down at her. */
 .clara-float { animation: clara-float 3.6s ease-in-out infinite; }
 @keyframes clara-float {
   0%, 100% { translate: 0 0; }

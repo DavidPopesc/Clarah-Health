@@ -1,6 +1,6 @@
 import { Chat } from "@/components/chat";
 
-export const metadata = { title: "Ask Clarah Health" };
+export const metadata = { title: "Ask Clarah" };
 
 export default async function AskPage({ searchParams }: PageProps<"/ask">) {
   const { q } = await searchParams;

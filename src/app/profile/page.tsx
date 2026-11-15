@@ -10,9 +10,9 @@ import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
 
 const ERRORS: Record<string, string> = {
-  epic_not_configured: "MyChart linking isn't set up on this server yet, so Clarah Health is using the demo patient.",
+  epic_not_configured: "MyChart linking isn't set up on this server yet, so Clarah is using the demo patient.",
   epic_auth_failed: "We couldn't link MyChart. Please try again.",
-  fitbit_not_configured: "Fitbit linking isn't set up on this server yet, so Clarah Health is using demo wearable data.",
+  fitbit_not_configured: "Fitbit linking isn't set up on this server yet, so Clarah is using demo wearable data.",
   fitbit_auth_failed: "We couldn't link Fitbit. Please try again.",
 };
 
@@ -160,7 +160,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
                               <p><span className="font-semibold text-ink">Possible side effects:</span> {info.sideEffects.join(" · ")}</p>
                             </>
                           ) : (
-                            <p>Clarah Health doesn&apos;t have a summary for this medicine yet. Your pharmacist can explain what it does.</p>
+                            <p>Clarah doesn&apos;t have a summary for this medicine yet. Your pharmacist can explain what it does.</p>
                           )}
                           <a href={medlinePlusSearch(medication.name)} target="_blank" rel="noreferrer" className="w-fit text-[11px] font-semibold text-teal underline-offset-2 hover:underline">
                             More on MedlinePlus
@@ -176,7 +176,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           )}
 
           <Link href="/ask" className="press order-6 flex min-h-14 items-center justify-between rounded-md px-4 text-[15px] font-semibold text-white lg:order-none">
-            <span>Ask Clarah Health about this record</span>
+            <span>Ask Clarah about this record</span>
             <span aria-hidden="true">→</span>
           </Link>
           </div>

@@ -1,4 +1,4 @@
-"""Download Clarah Health's trusted knowledge library and convert it to Markdown for Gemini File Search.
+"""Download Clarah's trusted knowledge library and convert it to Markdown for Gemini File Search.
 
 Sources (all U.S. government, public domain):
   - MedlinePlus health topics (NLM), from the official XML download

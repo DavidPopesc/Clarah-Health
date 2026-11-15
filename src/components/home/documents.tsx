@@ -93,7 +93,7 @@ function DocCard({ doc, url, defaultOpen }: { doc: StoredDoc; url?: string; defa
       {busy && (
         <p className="flex items-center gap-2 text-sm text-subtle" role="status">
           <span className="size-2 animate-pulse rounded-full bg-teal" />
-          {doc.status === "reading" ? "Reading your PDF…" : "Clarah Health is comparing this with your history…"}
+          {doc.status === "reading" ? "Reading your PDF…" : "Clarah is comparing this with your history…"}
         </p>
       )}
       {doc.status === "error" && <p className="rounded-xl bg-amber-soft p-3 text-sm text-amber-ink">{doc.error}</p>}
@@ -125,7 +125,7 @@ function DocCard({ doc, url, defaultOpen }: { doc: StoredDoc; url?: string; defa
               )}
               {doc.totalPages && doc.pagesRead && doc.pagesRead < doc.totalPages && (
                 <p className="text-xs text-subtle">
-                  Clarah Health read the first {doc.pagesRead} of {doc.totalPages} pages.
+                  Clarah read the first {doc.pagesRead} of {doc.totalPages} pages.
                 </p>
               )}
             </>
@@ -169,7 +169,7 @@ export function Documents() {
       {docs.length === 0 ? (
         <div className="well flex flex-col gap-2 rounded-md p-4">
           <p className="text-sm leading-normal text-body">
-            Upload a lab report or visit summary as a PDF. Clarah Health explains it in plain English, compares it with your
+            Upload a lab report or visit summary as a PDF. Clarah explains it in plain English, compares it with your
             history, and shows exactly where each number came from.
           </p>
           <button type="button" onClick={trySample} className="self-start text-[13px] font-semibold text-teal underline">
@@ -180,7 +180,7 @@ export function Documents() {
         docs.map((d, i) => <DocCard key={d.id} doc={d} url={urls[d.id]} defaultOpen={i === 0} />)
       )}
       <p className="text-[11px] leading-snug text-subtle">
-        Only the PDF&apos;s text is sent to the AI, with names and ID numbers removed wherever Clarah Health can find them. Clarah Health explains; it doesn&apos;t
+        Only the PDF&apos;s text is sent to the AI, with names and ID numbers removed wherever Clarah can find them. Clarah explains; it doesn&apos;t
         diagnose. Always check with your care team.
       </p>
     </section>

@@ -53,15 +53,15 @@ export function DesktopNav() {
         })}
       </nav>
 
-      {/* Clarah Health herself, big, at the foot of the sidebar. She talks along when an answer is read aloud. */}
+      {/* Clarah herself, big, at the foot of the sidebar. She talks along when an answer is read aloud. */}
       <div className="mt-auto flex flex-col items-center gap-3 px-6 pb-6">
         <Link href="/ask" className="clara-bubble relative rounded-2xl border border-line bg-white px-4 py-2 text-[13px] font-semibold text-teal-dark shadow-sm">
           {speaking ? "Here's what I found…" : "Hi! Ask me anything."}
         </Link>
-        <Link href="/ask" aria-label="Ask Clarah Health" className="clara-float transition-transform hover:scale-105">
+        <Link href="/ask" aria-label="Ask Clarah" className="clara-float transition-transform hover:scale-105">
           <ClaraAvatar size={168} speaking={speaking} />
         </Link>
-        <p className="text-center text-[11px] leading-snug text-subtle">Clarah Health explains and informs. It does not diagnose or replace your care team.</p>
+        <p className="text-center text-[11px] leading-snug text-subtle">Clarah explains and informs. It does not diagnose or replace your care team.</p>
       </div>
     </aside>
   );

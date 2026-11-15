@@ -6,10 +6,10 @@ import { screenMessage } from "@/lib/red-flags";
 function errorMessage(err: unknown): string {
   const badKey = err instanceof APIError && (err.status === 401 || err.status === 403);
   if (err instanceof MissingApiKeyError || badKey) {
-    return "Clarah Health isn't set up yet: set a valid GEMINI_API_KEY or OPENAI_API_KEY (.env.local locally, or the project's Environment Variables on Vercel).";
+    return "Clarah isn't set up yet: set a valid GEMINI_API_KEY or OPENAI_API_KEY (.env.local locally, or the project's Environment Variables on Vercel).";
   }
   if (err instanceof APIError && (err.status === 429 || err.status === 503)) {
-    return "Clarah Health is busy right now. Try again in a moment.";
+    return "Clarah is busy right now. Try again in a moment.";
   }
   return "Something went wrong. Please try again.";
 }

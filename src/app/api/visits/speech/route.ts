@@ -1,7 +1,7 @@
 import { MissingApiKeyError } from "@/lib/agent";
 import { AudioApiError, synthesizeSpeech } from "@/lib/gemini-audio";
 
-// One paragraph of a visit recap to Clarah Health's voice. The player asks for each paragraph
+// One paragraph of a visit recap to Clarah's voice. The player asks for each paragraph
 // separately so playback can start before the whole recap is spoken.
 const MAX_CHARS = 1500;
 
@@ -18,6 +18,6 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("Speech error", err);
     const status = err instanceof MissingApiKeyError ? 501 : err instanceof AudioApiError && err.status === 429 ? 429 : 502;
-    return Response.json({ error: "Clarah Health's voice isn't available right now." }, { status });
+    return Response.json({ error: "Clarah's voice isn't available right now." }, { status });
   }
 }
