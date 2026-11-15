@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ChatIcon, HomeIcon, LinkIcon, VisitIcon } from "./icons";
 
 export const NAV_ITEMS = [
-  { href: "/", label: "Overview", Icon: HomeIcon },
+  { href: "/", label: "My results", Icon: HomeIcon },
   { href: "/ask", label: "Ask Clara", Icon: ChatIcon },
-  { href: "/visits", label: "Visits", Icon: VisitIcon },
+  { href: "/visits", label: "Overview", Icon: VisitIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
 ];
 

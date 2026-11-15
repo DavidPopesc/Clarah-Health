@@ -121,7 +121,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .lift { transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
 .lift:hover { background: #f2f6ea; border-color: #7f9a6b; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(44, 68, 58, 0.1); }
 
-/* In-range results and medication rows on Overview. */
+/* In-range results and medication rows on My results. */
 .tint-good { background: linear-gradient(135deg, #eef4e8 0%, #e1ebd8 100%); border: 1.5px solid #b3c6a6; }
 .tint-med { background: linear-gradient(135deg, #e8eefa 0%, #dbe3f5 100%); border: 1.5px solid #a3b5e0; }
 

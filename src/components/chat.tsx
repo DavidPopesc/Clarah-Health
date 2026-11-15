@@ -10,6 +10,7 @@ import type { Source } from "@/lib/types";
 import { BodyViewer } from "./anatomy/body-viewer";
 import { BackIcon, CubeIcon, SendIcon } from "./icons";
 import { UrgentScreen } from "./urgent-screen";
+import { ClaraAvatar } from "./visits/clara-avatar";
 
 interface Message {
   role: "user" | "assistant";
@@ -149,9 +150,12 @@ export function Chat({ initialQuestion }: { initialQuestion?: string }) {
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-3.5">
         {messages.length === 0 && (
           <div className="flex flex-col gap-4">
-            <div className="border-l-4 border-teal bg-white px-4 py-3">
-              <span className="clinical-label text-teal">Start a review</span>
-              <h2 className="mt-1 text-xl font-semibold lg:text-2xl">What would you like to understand?</h2>
+            <div className="flex items-center gap-3.5 border-l-4 border-teal bg-white px-4 py-3">
+              <ClaraAvatar size={52} />
+              <div>
+                <span className="clinical-label text-teal">Start a review</span>
+                <h2 className="mt-1 text-xl font-semibold lg:text-2xl">What would you like to understand?</h2>
+              </div>
             </div>
             <p className="text-[15px] leading-normal text-muted">
               Ask about your numbers, your diagnosis, or whether something is safe for you, like a fast, an herb, or a food.

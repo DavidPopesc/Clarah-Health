@@ -1,7 +1,7 @@
 import { BottomNav } from "@/components/bottom-nav";
 import { VisitsView } from "@/components/visits/visits-view";
 
-export const metadata = { title: "Visit recaps · Clara" };
+export const metadata = { title: "Overview · Clara" };
 
 export default function VisitsPage() {
   return (
@@ -10,7 +10,7 @@ export default function VisitsPage() {
         <header className="bg-eucalyptus px-5 pt-10 pb-5 text-white lg:py-8">
           <div className="desk">
             <span className="clinical-label block text-[#dfe8d8]">From your care team</span>
-            <h1 className="text-xl font-semibold lg:text-[30px]">Visit recaps</h1>
+            <h1 className="text-xl font-semibold lg:text-[30px]">Overview</h1>
           </div>
         </header>
         <VisitsView />
