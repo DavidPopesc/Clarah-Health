@@ -1,0 +1,6 @@
+name: Clarah Steady
+icon: 🦶
+description: Fall prediction from walking balance, fall detection and a help button
+
+bricks:
+  - arduino:web_ui
