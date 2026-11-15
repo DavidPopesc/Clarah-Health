@@ -237,6 +237,18 @@ def recent_trace(seconds: float) -> list[float]:
     return [round(float(np.sqrt(x * x + y * y + z * z)), 2) for _, x, y, z in pts]
 
 
+# Balance warnings only sound the buzzer when the last few seconds held a real jolt. Picking the
+# device up or carrying it reads as "unsteady" but stays well under this; it still shows on screen.
+WARN_BEEP_G = 2.0
+WARN_BEEP_WINDOW_S = 10
+
+
+def warn_beep():
+    trace = recent_trace(WARN_BEEP_WINDOW_S)
+    if trace and max(trace) >= WARN_BEEP_G:
+        cmd("warn")
+
+
 def who() -> str:
     return settings.get("patient_name") or "Your family member"
 
@@ -387,7 +399,7 @@ def check_risk(prev_risk: str):
     # Warn on every step up (moderate, then high), but repeat a level at most every 15 min.
     if order[risk] > order.get(prev_risk, 0) and order[risk] >= 1 and t - last_warn_at[risk] > WARN_COOLDOWN_S:
         last_warn_at[risk] = t
-        cmd("warn")
+        warn_beep()
         advice = " If you feel your walking is getting worse, call your doctor."
         msg = ("Your steadiness has dropped a lot. Please slow down, hold on to something or sit and rest."
                if risk == "high" else "Your walking is getting less steady. Take it slow.") + advice
@@ -425,7 +437,7 @@ def spot_check_window(score: float, sway: float | None):
         return
     last_spot["alerted"] = t
     instability = {**alert, "t": t}
-    cmd("warn")
+    warn_beep()
     add_event("instability", alert["message"], score=alert["score"], usual=alert["usual"])
     sync_requested.set()  # tell Clarah now, not at the next scheduled sync
 
