@@ -1,5 +1,6 @@
 import { completeWithFallback, redactIdentifiers } from "./agent";
 import { verifySummary } from "./doc-verify";
+import { summarizeBloodPressure, summarizeLabs } from "./record-summary";
 import type { PatientRecord, WearableSummary } from "./types";
 import { ageFrom, bpCategory, BP_LABELS } from "./vitals";
 
@@ -83,8 +84,9 @@ export function historyFor(record: PatientRecord, wearable: WearableSummary) {
     sex: record.sex,
     conditions: record.conditions.map((c) => c.name),
     medications: record.medications.filter((m) => m.status === "active").map((m) => `${m.name} ${m.dosage}`),
-    labs: [...record.labs].sort((a, b) => a.date.localeCompare(b.date)),
-    bloodPressure: record.bloodPressure.map((r) => ({ ...r, category: BP_LABELS[bpCategory(r.systolic, r.diastolic)] })),
+    // Same pre-ordered summaries the chat uses, so document and visit explanations can't flip "latest" either.
+    labs: summarizeLabs(record.labs),
+    bloodPressure: summarizeBloodPressure(record.bloodPressure, (r) => BP_LABELS[bpCategory(r.systolic, r.diastolic)]),
     averageSleepMinutes: sleep.length ? Math.round(sleep.reduce((a, b) => a + b, 0) / sleep.length) : null,
   };
 }
