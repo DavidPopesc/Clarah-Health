@@ -41,7 +41,7 @@ Steady **can't call 911 by itself**. The emergency screen has a one-tap `tel:911
 open http://localhost:7070
 ```
 
-`deploy.sh` uses `arduino-cli` (with the `arduino:zephyr` core) and the core's `adb`. The Python side runs as the Docker container `clarah-steady` (restarts on boot). Logs: `adb shell docker logs -f clarah-steady`. If the board joins Wi-Fi, you can also open the dashboard at `http://<board-ip>:7000` from a phone.
+`deploy.sh` uses `arduino-cli` (with the `arduino:zephyr` core) and the core's `adb`. The Python side runs as the Docker container `clarah-steady` (restarts on boot). Logs: `adb shell docker logs -f clarah-steady`. Over Wi-Fi, open `http://<board-ip>:7000` from any device on the same network (find the IP with `adb shell ip -4 addr show wlan0`). On eduroam, `uno-q.local` doesn't resolve, so use the IP. The board joins eduroam on boot; once it has internet, it sends alerts itself.
 
 We don't use `arduino-app-cli app start` because, on a board with no internet, it can't download libraries and its flashing step fails.
 
