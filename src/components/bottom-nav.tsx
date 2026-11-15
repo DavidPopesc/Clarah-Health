@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HomeIcon, LinkIcon, VisitIcon } from "./icons";
+import { HomeIcon, LibraryIcon, LinkIcon, VisitIcon } from "./icons";
 import { ClaraAvatar } from "./visits/clara-avatar";
 
 // Clarah's own face stands in for the Ask Clarah tab's icon.
@@ -10,6 +10,7 @@ function ClaraTabIcon({ width = 20 }: { width?: number | string }) {
 export const NAV_ITEMS = [
   { href: "/", label: "Overview", Icon: VisitIcon },
   { href: "/ask", label: "Ask Clarah", Icon: ClaraTabIcon },
+  { href: "/library", label: "Library", Icon: LibraryIcon },
   { href: "/profile", label: "My profile", Icon: HomeIcon },
   { href: "/connections", label: "Sources", Icon: LinkIcon },
 ];
@@ -18,7 +19,7 @@ export const NAV_ITEMS = [
 export function BottomNav({ active }: { active: string }) {
   return (
     <nav aria-label="Main" className="sticky bottom-0 z-20 border-t border-line bg-white px-3 pb-4 lg:hidden">
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const current = href === active;
           return (

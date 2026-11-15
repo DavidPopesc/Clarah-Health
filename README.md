@@ -14,6 +14,21 @@ Clarah is an AI health companion. It reads a patient's MyChart (Epic) record and
 6. **Red flag:** try *"My BP is 184/122 and I have a bad headache."* Clarah skips the AI and shows a full-screen "Call 911".
 7. **Visit recap:** on **Overview** (the page Clarah opens on), tap "Hear a sample visit" (or, as the care team, "Record a visit"). Clarah turns the doctor–patient conversation into plain English, ties it to the record (A1c 7.4 → 7.1, blood pressure trend), and reads it aloud. Tap "Show transcript" to read along, copy or download it.
 
+## Health library (Typesense)
+
+The library indexes the Markdown references in `data/knowledge/upload/` as searchable documents and short passages. Search supports spelling tolerance, live prefixes, medical and everyday synonyms, category counts, highlighting, and keyword plus vector ranking. Typesense generates embeddings locally with `ts/all-MiniLM-L12-v2`.
+
+Start a Typesense server, then set `TYPESENSE_HOST`, `TYPESENSE_PORT` (default `443`), `TYPESENSE_PROTOCOL` (default `https`), and `TYPESENSE_ADMIN_KEY` for indexing. Set `TYPESENSE_SEARCH_KEY` to a key allowed to search and retrieve documents for the app; it falls back to the admin key for local development. Both keys stay server side. For a local server on port 8108, use `TYPESENSE_HOST=localhost`, `TYPESENSE_PORT=8108`, and `TYPESENSE_PROTOCOL=http`.
+
+```bash
+node scripts/knowledge/index_typesense.mjs --reset
+# If the server cannot load the embedding model:
+node scripts/knowledge/index_typesense.mjs --reset --no-embed
+# An alternate data folder can be passed as the positional argument.
+```
+
+Then open `/library`. Without Typesense configuration, the page shows a setup message.
+
 ## Visit recaps
 
 - **Care team records, patient listens.** On `/visits/new` the doctor or nurse confirms the patient's consent and records the conversation (up to 30 minutes), or types or pastes it. They can correct the transcript before Clarah explains it.

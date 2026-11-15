@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { DesktopNav } from "@/components/desktop-nav";
+import { Suspense } from "react";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"] });
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable} antialiased`}>
       <body className="font-sans">
-        <DesktopNav />
+        <Suspense fallback={null}><DesktopNav /></Suspense>
         <div className="mx-auto flex min-h-dvh w-full max-w-[460px] flex-col app-shell">
           {children}
         </div>

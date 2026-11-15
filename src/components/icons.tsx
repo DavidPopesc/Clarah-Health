@@ -111,3 +111,6 @@ export const SpeakerIcon = (p: P) => (
 export const VisitIcon = (p: P) => (
   <Icon {...p}><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></Icon>
 );
+export const LibraryIcon = (p: P) => (
+  <Icon {...p}><path d="M4 4.5h7a3 3 0 0 1 3 3V21H7a3 3 0 0 0-3 0zM20 4.5h-3a3 3 0 0 0-3 3V21h3a3 3 0 0 1 3 0z" /><path d="M7 9h4M7 13h4" /></Icon>
+);
