@@ -13,7 +13,7 @@ export const SAFETY_REFERENCES: SafetyReference[] = [
   {
     id: "ramadan-diabetes",
     title: "IDF-DAR Diabetes and Ramadan Practical Guidelines",
-    url: "https://www.daralliance.org/daralliance/idf-dar-practical-guidelines-2021/",
+    url: "https://idf.org/news-and-resources/resources/diabetes-and-ramadan-practical-guidelines-2021/",
     keywords: ["ramadan", "fast", "fasting", "iftar", "suhoor", "sehri", "religious fast", "lent", "yom kippur"],
     summary: [
       "Many people with type 2 diabetes can fast safely with a plan made with their clinician before the fast starts.",
