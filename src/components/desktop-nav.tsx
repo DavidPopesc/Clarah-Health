@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { NAV_ITEMS } from "./bottom-nav";
 import { ClaraLogo } from "./icons";
+import { CLARA_SPEAKING_EVENT } from "./use-clara-voice";
+import { ClaraAvatar } from "./visits/clara-avatar";
 
 // On a computer, the same navigation as the phone's bottom bar sits in a sidebar instead.
 export function DesktopNav() {
   const path = usePathname();
+  const [speaking, setSpeaking] = useState(false);
+  useEffect(() => {
+    const onSpeaking = (e: Event) => setSpeaking((e as CustomEvent<boolean>).detail);
+    window.addEventListener(CLARA_SPEAKING_EVENT, onSpeaking);
+    return () => window.removeEventListener(CLARA_SPEAKING_EVENT, onSpeaking);
+  }, []);
   // Overview lives at "/"; its recording page (/visits/new) belongs to it too.
   const isActive = (href: string) =>
     href === "/" ? path === "/" || path.startsWith("/visits") : path === href || path.startsWith(`${href}/`);
@@ -44,12 +53,15 @@ export function DesktopNav() {
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-2 border-t border-line px-6 py-5 text-[11px] leading-snug text-subtle">
-        <p>Clara explains and informs. It does not diagnose or replace your care team.</p>
-        <p className="flex gap-3 font-semibold">
-          <Link href="/terms" className="text-teal hover:underline">Terms</Link>
-          <Link href="/privacy" className="text-teal hover:underline">Privacy</Link>
-        </p>
+      {/* Clara herself, big, at the foot of the sidebar. She talks along when an answer is read aloud. */}
+      <div className="mt-auto flex flex-col items-center gap-3 px-6 pb-6">
+        <Link href="/ask" className="clara-bubble relative rounded-2xl border border-line bg-white px-4 py-2 text-[13px] font-semibold text-teal-dark shadow-sm">
+          {speaking ? "Here's what I found…" : "Hi! Ask me anything."}
+        </Link>
+        <Link href="/ask" aria-label="Ask Clara" className="clara-float transition-transform hover:scale-105">
+          <ClaraAvatar size={168} speaking={speaking} />
+        </Link>
+        <p className="text-center text-[11px] leading-snug text-subtle">Clara explains and informs. It does not diagnose or replace your care team.</p>
       </div>
     </aside>
   );

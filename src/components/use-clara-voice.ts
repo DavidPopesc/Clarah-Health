@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { loadRate, saveRate, speechParts } from "@/lib/voice";
 
+export const CLARA_SPEAKING_EVENT = "clara-speaking";
+
 // Reads text aloud in Clara's voice (the same Gemini voice as the Overview player), one short
 // part at a time, fetching the next part while the current one plays. If the AI voice isn't
 // available, the device's own voice takes over. Only one thing is read at a time.
+
 export function useClaraVoice() {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +35,15 @@ export function useClaraVoice() {
       clipMap.forEach((p) => p.then(URL.revokeObjectURL, () => {}));
     };
   }, []);
+
+  // Tell the rest of the page (the big Clara in the sidebar) when she's talking.
+  useEffect(() => {
+    const talking = speakingId !== null && !loading;
+    window.dispatchEvent(new CustomEvent(CLARA_SPEAKING_EVENT, { detail: talking }));
+    return () => {
+      if (talking) window.dispatchEvent(new CustomEvent(CLARA_SPEAKING_EVENT, { detail: false }));
+    };
+  }, [speakingId, loading]);
 
   function clip(key: string, text: string): Promise<string> {
     let p = clips.current.get(key);

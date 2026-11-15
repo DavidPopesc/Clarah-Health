@@ -206,6 +206,26 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   95% { transform: scaleY(0.1); }
 }
 
+/* The big Clara in the sidebar bobs gently, with a speech bubble pointing down at her. */
+.clara-float { animation: clara-float 3.6s ease-in-out infinite; }
+@keyframes clara-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -6px; }
+}
+.clara-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  translate: -50% 0;
+  rotate: 45deg;
+  background: #fff;
+  border-right: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sheet-3d, .stream-caret, .clara-speaking, .clara-mouth-talk, .clara-eyes { animation: none; }
+  .sheet-3d, .stream-caret, .clara-speaking, .clara-mouth-talk, .clara-eyes, .clara-float { animation: none; }
 }

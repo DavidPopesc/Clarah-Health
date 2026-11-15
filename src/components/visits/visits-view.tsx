@@ -213,9 +213,7 @@ export function VisitsView() {
       </Link>
 
       <p className="text-[11px] leading-snug text-subtle">
-        Clara explains what your care team said; it doesn&apos;t add advice of its own or replace your care team. Recaps are saved only on this device.{" "}
-        <Link href="/privacy" className="font-semibold text-teal">Privacy</Link> ·{" "}
-        <Link href="/terms" className="font-semibold text-teal">Terms</Link>
+        Clara explains what your care team said; it doesn&apos;t add advice of its own or replace your care team. Recaps are saved only on this device.
       </p>
       </aside>
     </div>
