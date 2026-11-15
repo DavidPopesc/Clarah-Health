@@ -4,7 +4,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { AttentionList } from "@/components/home/attention-list";
 import { Documents } from "@/components/home/documents";
 import { UploadTile } from "@/components/home/upload-tile";
-import { CheckIcon, ChevronIcon, RecordIcon, WatchIcon } from "@/components/icons";
+import { CheckIcon, ChevronIcon, ClaraLogo, RecordIcon, WatchIcon } from "@/components/icons";
 import { medInfoFor, medlinePlusSearch } from "@/lib/med-info";
 import { assessHealth } from "@/lib/attention";
 import { connectionStatus, getRecord, getWearable } from "@/lib/data";
@@ -59,7 +59,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         <header className="bg-eucalyptus px-5 py-4 text-white lg:py-8">
           <div className="desk">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="clinical-label text-[#dfe8d8]">Clara health record</span>
+              <span className="clinical-label flex items-center gap-1.5 text-[#dfe8d8]"><ClaraLogo width={14} height={14} className="text-white" />Clara health record</span>
               <span className="text-[11px] text-[#dfe8d8]">{today}{record.source === "demo" && " · Demo"}</span>
             </div>
             <div className="flex items-end justify-between gap-4">

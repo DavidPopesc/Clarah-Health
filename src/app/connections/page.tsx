@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BottomNav } from "@/components/bottom-nav";
 import { HeroHeart } from "@/components/hero-heart";
 import { Tilt } from "@/components/tilt";
-import { AnonIcon, CheckIcon, HeartIcon, LockIcon, RecordIcon, TrashIcon, WatchIcon } from "@/components/icons";
+import { AnonIcon, CheckIcon, ClaraLogo, LockIcon, RecordIcon, TrashIcon, WatchIcon } from "@/components/icons";
 import { connectionStatus } from "@/lib/data";
 import { epicEnabled } from "@/lib/epic";
 import { fitbitEnabled } from "@/lib/fitbit";
@@ -73,7 +73,7 @@ export default async function ConnectPage({ searchParams }: PageProps<"/connecti
         <div className="bg-eucalyptus px-5 pt-10 pb-5 text-white lg:py-7">
           <div className="desk flex items-center gap-3">
             <div className="flex size-10 items-center justify-center border border-white/30 bg-white/10">
-              <HeartIcon />
+              <ClaraLogo width={24} height={24} />
             </div>
             <div>
               <span className="clinical-label block text-[#dfe8d8]">Data access</span>

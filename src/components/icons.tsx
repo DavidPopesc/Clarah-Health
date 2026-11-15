@@ -21,8 +21,11 @@ function Icon({ children, ...props }: SVGProps<SVGSVGElement>) {
 
 type P = SVGProps<SVGSVGElement>;
 
-export const HeartIcon = (p: P) => (
-  <Icon {...p}><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10z" /></Icon>
+// Clara's hand-drawn heart logo. Also used as the favicon (src/app/icon.svg).
+export const CLARA_LOGO_PATH =
+  "M34 32C33.5 22 31 7.5 25 6.5C18 5.5 12 12 11.5 23C11 32 13 39 17 45C23 54 30 63 35 69C38 61 44 52 51 43C57 34 59.5 25 57.5 15C55.5 7 48 8 44 13C40 18 36 26 34 32";
+export const ClaraLogo = (p: P) => (
+  <Icon viewBox="6 2 58 72" strokeWidth={6.5} {...p}><path d={CLARA_LOGO_PATH} /></Icon>
 );
 export const RecordIcon = (p: P) => (
   <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M9 13h6M9 17h4" /></Icon>
