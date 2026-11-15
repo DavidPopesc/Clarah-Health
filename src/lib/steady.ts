@@ -43,6 +43,8 @@ export interface SteadyPayload {
   };
   warning: null | { risk: "moderate" | "high"; message: string; t: number };
   events: { t: number; kind: string; detail: string }[];
+  /** The last ~10 s of acceleration in g (axes averaged, peak magnitude), for the live graph. */
+  motion?: null | { hz: number; t_end: number | null; x: number[]; y: number[]; z: number[]; mag: number[] };
 }
 
 export interface SteadyReading {
@@ -135,7 +137,55 @@ export function sanitizePayload(input: unknown): SteadyPayload | null {
       const r = obj(x);
       return { t: num(r.t) ?? 0, kind: str(r.kind, 40), detail: str(r.detail) };
     }),
+    motion: sanitizeMotion(p.motion),
   };
+}
+
+function sanitizeMotion(input: unknown): SteadyPayload["motion"] {
+  if (!input) return null;
+  const m = obj(input);
+  const series = (v: unknown) => list(v, 200).map((n) => Math.max(-4, Math.min(4, num(n) ?? 0)));
+  const mag = series(m.mag);
+  if (!mag.length) return null;
+  return { hz: num(m.hz) ?? 10, t_end: num(m.t_end), x: series(m.x), y: series(m.y), z: series(m.z), mag };
+}
+
+/** A plain-language line for an event from the board, which sometimes sends bare codes. */
+export function eventLabel(kind: string, detail: string): string {
+  switch (kind) {
+    case "fall_suspected": return "Possible fall, checking";
+    case "fall_detected": return detail.includes("harsh") ? "Hard fall detected" : detail.includes("test") ? "Fall alarm test" : "Fall detected";
+    case "fall_dismissed": return "Not a fall: movement looked normal afterwards";
+    case "fall_cancelled": return "Wearer said they're OK after a fall alarm";
+    case "help_pressed": return "Help button pressed";
+    case "help_cancelled": return "Help request cancelled";
+    case "emergency":
+      return detail === "harsh_fall" ? "Emergency: no response after a hard fall" : detail === "help" ? "Emergency: help requested" : "Emergency: no response after a fall";
+    case "resolved": return detail === "button" ? "Alarm resolved with the device button" : detail === "app" ? "Alarm resolved from the dashboard" : "Alarm resolved";
+    case "silenced": return "Buzzer silenced";
+    case "sensor_ok": return "Accelerometer connected";
+    case "sensor_missing": return "Accelerometer not detected";
+    case "simulated_911": return "Simulated 911 call (no real call placed)";
+    default:
+      return detail.includes(" ") ? detail : (detail || kind).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+  }
+}
+
+/** Synthetic walking motion for demo readings: steps at ~1.8 Hz, a little sway. */
+function demoMotion(unsteady: boolean): NonNullable<SteadyPayload["motion"]> {
+  const n = 100, hz = 10;
+  const x: number[] = [], y: number[] = [], z: number[] = [], mag: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / hz;
+    const step = Math.sin(2 * Math.PI * 1.8 * t);
+    const wobble = unsteady ? 0.12 * Math.sin(2 * Math.PI * 0.4 * t + 1) : 0.03 * Math.sin(2 * Math.PI * 0.3 * t);
+    const xi = +(0.08 * step + wobble).toFixed(2);
+    const yi = +(0.05 * Math.cos(2 * Math.PI * 0.9 * t) + wobble / 2).toFixed(2);
+    const zi = +(1 + 0.22 * step * (unsteady ? 1.3 : 1)).toFixed(2);
+    x.push(xi); y.push(yi); z.push(zi);
+    mag.push(+Math.sqrt(xi * xi + yi * yi + zi * zi).toFixed(2));
+  }
+  return { hz, t_end: null, x, y, z, mag };
 }
 
 // ---------------------------------------------------------------- store
@@ -219,6 +269,7 @@ export function demoReading(patientId: string, mode: SteadyMode = "fall_preventi
     alert: null,
     emergency: { active: false, reason: null, since: null, simulated_911: false, simulated_911_at: null },
     prosthetic: null,
+    motion: demoMotion(declining),
     warning: declining
       ? {
           risk: "moderate",

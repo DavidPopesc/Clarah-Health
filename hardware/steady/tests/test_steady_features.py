@@ -78,3 +78,15 @@ class SyncTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MotionTraceTest(unittest.TestCase):
+    def test_downsamples_to_ten_hz_and_keeps_peaks(self):
+        from sync import motion_trace
+        pts = [(i / 50, 0.0, 0.0, 1.0) for i in range(500)]
+        pts[250] = (5.0, 1.4, 1.4, 1.0)  # one sharp jolt
+        trace = motion_trace(pts, 50)
+        self.assertEqual(len(trace["mag"]), 100)
+        self.assertEqual(trace["hz"], 10)
+        self.assertAlmostEqual(max(trace["mag"]), 2.22, places=2)
+        self.assertAlmostEqual(trace["z"][0], 1.0)

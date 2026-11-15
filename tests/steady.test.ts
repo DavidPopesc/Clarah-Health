@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { demoReading, isStale, sanitizePayload, summarizeForAgent, WORSENING_ADVICE } from "../src/lib/steady.ts";
+import { demoReading, eventLabel, isStale, sanitizePayload, summarizeForAgent, WORSENING_ADVICE } from "../src/lib/steady.ts";
 
 const board = {
   v: 1,
@@ -67,4 +67,22 @@ test("readings go stale after two minutes", () => {
   assert.equal(isStale(r, r.receivedAt + 60_000), false);
   assert.equal(isStale(r, r.receivedAt + 3 * 60_000), true);
   assert.equal(isStale(null), true);
+});
+
+test("board event codes read as plain sentences", () => {
+  assert.equal(eventLabel("resolved", "button"), "Alarm resolved with the device button");
+  assert.equal(eventLabel("fall_cancelled", "app"), "Wearer said they're OK after a fall alarm");
+  assert.equal(eventLabel("emergency", "harsh_fall"), "Emergency: no response after a hard fall");
+  assert.equal(eventLabel("settings_saved", "Doctor sharing off"), "Doctor sharing off");
+  assert.equal(eventLabel("history_cleared", ""), "History cleared");
+});
+
+test("motion traces are kept, clamped and capped", () => {
+  const motion = { hz: 10, t_end: 1, x: [0, 9], y: [0, -9], z: [1, 1], mag: Array.from({ length: 300 }, () => 1) };
+  const p = sanitizePayload({ ...board, motion })!;
+  assert.equal(p.motion?.mag.length, 200);
+  assert.deepEqual(p.motion?.x, [0, 4]);
+  assert.deepEqual(p.motion?.y, [0, -4]);
+  assert.equal(sanitizePayload({ ...board, motion: { mag: [] } })!.motion, null);
+  assert.equal(demoReading("grace").payload.motion?.mag.length, 100);
 });

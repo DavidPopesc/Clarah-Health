@@ -22,3 +22,22 @@ def build_payload(settings, balance, daily, device, alert, emergency, prosthetic
         "warning": warning,
         "events": [{k: e.get(k) for k in ("t", "kind", "detail")} for e in events[-20:]],
     }
+
+
+def motion_trace(samples, fs, seconds=10, hz=10, clock_offset=0.0):
+    """The last `seconds` of acceleration, averaged down to `hz`, for Clarah's live motion graph.
+
+    `samples` are (t, x, y, z) in g at `fs` Hz. Each output point averages the axes over its
+    slot but keeps the slot's peak magnitude, so a sharp jolt still shows.
+    """
+    pts = list(samples)[-int(seconds * fs):]
+    step = max(1, int(round(fs / hz)))
+    out = {"hz": fs / step, "t_end": None, "x": [], "y": [], "z": [], "mag": []}
+    for i in range(0, len(pts) - step + 1, step):
+        chunk = pts[i:i + step]
+        for axis, k in (("x", 1), ("y", 2), ("z", 3)):
+            out[axis].append(round(sum(p[k] for p in chunk) / len(chunk), 2))
+        out["mag"].append(round(max((p[1] ** 2 + p[2] ** 2 + p[3] ** 2) ** 0.5 for p in chunk), 2))
+    if pts:
+        out["t_end"] = round(pts[-1][0] + clock_offset, 2)
+    return out

@@ -667,10 +667,17 @@ def api_summary():
 ui.expose_api("GET", "/api/summary", api_summary)
 
 
+SYNC_INTERVAL_S = float(os.environ.get("STEADY_SYNC_INTERVAL_S", "5"))
+
+
 def ingest_payload():
     with lock:
-        return sync.build_payload(settings, balance, daily_summary(), status_payload()["device"],
-                                  active_alert, dict(emergency), prosthetic_payload(), events, now())
+        payload = sync.build_payload(settings, balance, daily_summary(), status_payload()["device"],
+                                     active_alert, dict(emergency), prosthetic_payload(), events, now())
+        pts = list(samples)
+    fresh = pts and time.time() - device["last_imu"] < 3
+    payload["motion"] = sync.motion_trace(pts, gait.FS, clock_offset=now() - time.time()) if fresh else None
+    return payload
 
 
 def sync_loop():
@@ -678,7 +685,7 @@ def sync_loop():
     if not token:
         return
     while True:
-        sync_requested.wait(30)
+        sync_requested.wait(SYNC_INTERVAL_S)
         sync_requested.clear()
         try:
             req = urllib.request.Request(
@@ -687,8 +694,9 @@ def sync_loop():
                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as response:
                 response.read()
+            if sync_status.get("state") != "ok":
+                log.info("Clarah sync succeeded")
             sync_status.update({"state": "ok", "at": now(), "error": None})
-            log.info("Clarah sync succeeded")
         except Exception as e:
             sync_status.update({"state": "error", "at": now(), "error": str(e)[:160]})
             log.warning(f"Clarah sync failed: {e}")

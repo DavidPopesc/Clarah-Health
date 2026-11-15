@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckIcon, PhoneIcon, WarningIcon } from "@/components/icons";
 import {
   ADAPTATION_LABEL,
+  eventLabel,
   RISK_LABEL,
   WORSENING_ADVICE,
   type SteadyMode,
@@ -100,6 +101,51 @@ function DailyLine({ values, days, reference, referenceLabel, unit, color }: {
       <text x={padX} y={h - 3} fontSize="11" fill="#616d66">{days[0]?.slice(5)}</text>
       <text x={x(last)} y={h - 3} textAnchor="end" fontSize="11" fill="#616d66">{days[last]?.slice(5)}</text>
     </svg>
+  );
+}
+
+const AXES = [
+  { key: "x", label: "Side to side", color: "#2a78d6" },
+  { key: "y", label: "Front to back", color: "#eb6834" },
+  { key: "z", label: "Up and down", color: "#1baf7a" },
+] as const;
+
+/** The last ~10 s of acceleration on each axis, in g. */
+function LiveMotion({ motion, live }: { motion: NonNullable<SteadyPayload["motion"]>; live: boolean }) {
+  const w = 640, h = 170, padL = 30, padR = 6, padT = 10, padB = 18;
+  const n = Math.max(motion.x.length, 2);
+  const lo = -1.6, hi = 1.6;
+  const x = (i: number) => padL + (i / (n - 1)) * (w - padL - padR);
+  const y = (v: number) => padT + (1 - (v - lo) / (hi - lo)) * (h - padT - padB);
+  const path = (vals: number[]) => vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const peak = Math.max(...motion.mag);
+  const seconds = Math.round(motion.mag.length / (motion.hz || 10));
+  return (
+    <section aria-labelledby="motion-heading">
+      <div className="flex items-end justify-between border-b border-line pb-2">
+        <h3 id="motion-heading" className="clinical-label text-muted">Live motion · last {seconds} seconds</h3>
+        <span className="clinical-label text-subtle">{live ? "refreshes every 5 s" : "demo"}</span>
+      </div>
+      <svg viewBox={`0 0 ${w} ${h}`} className="h-auto w-full" role="img" aria-label={`Acceleration over the last ${seconds} seconds, peak ${peak.toFixed(2)} g`}>
+        {[-1, 0, 1].map((g) => (
+          <g key={g}>
+            <line x1={padL} x2={w - padR} y1={y(g)} y2={y(g)} stroke={g === 0 ? "#c9d2bd" : "#e6ebdf"} />
+            <text x={padL - 6} y={y(g) + 4} textAnchor="end" fontSize="11" fill="#616d66">{g > 0 ? `+${g}` : g} g</text>
+          </g>
+        ))}
+        {AXES.map((a) => (
+          <path key={a.key} d={path(motion[a.key])} fill="none" stroke={a.color} strokeWidth="2" strokeLinejoin="round" />
+        ))}
+        <text x={padL} y={h - 3} fontSize="11" fill="#616d66">−{seconds} s</text>
+        <text x={w - padR} y={h - 3} textAnchor="end" fontSize="11" fill="#616d66">now</text>
+      </svg>
+      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted">
+        {AXES.map((a) => (
+          <span key={a.key} className="flex items-center gap-1.5"><i className="inline-block size-2.5 rounded-sm" style={{ background: a.color }} />{a.label}</span>
+        ))}
+        <span className="ml-auto font-mono text-[12px] text-body">peak {peak.toFixed(2)} g</span>
+      </div>
+    </section>
   );
 }
 
@@ -301,10 +347,10 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
             <span className={`rounded-md px-3 py-1.5 text-[13px] font-semibold ${RISK_TINT[p.balance.risk]}`}>{RISK_LABEL[p.balance.risk]}</span>
           </section>
 
-          {(p.warning || p.balance.risk === "moderate" || p.balance.risk === "high") && (
+          {(p.balance.risk === "moderate" || p.balance.risk === "high") && (
             <section role="status" className="border-l-4 border-amber bg-amber-soft px-4 py-3 text-[14px] text-amber-ink">
               <strong className="block">Your walking is less steady than usual</strong>
-              {p.warning?.message.replace(WORSENING_ADVICE, "").trim() || "Take it slow, use handrails, and sit down if you feel unsteady."}
+              {(p.warning?.risk === p.balance.risk && p.warning.message.replace(WORSENING_ADVICE, "").trim()) || (p.balance.risk === "high" ? "Please slow down, hold on to something or sit and rest." : "Take it slow, use handrails, and sit down if you feel unsteady.")}
               <strong className="mt-2 block">{WORSENING_ADVICE}</strong>
               {careTeamPhone && <a href={`tel:${careTeamPhone}`} className="mt-2 inline-block font-semibold underline">Call my doctor</a>}
             </section>
@@ -319,13 +365,15 @@ export function SteadyView({ initial, initialStale, demo, careTeamPhone }: Props
         </>
       )}
 
+      {p.motion && p.motion.mag.length > 1 && <LiveMotion motion={p.motion} live={live} />}
+
       {p.events.length > 0 && (
         <section aria-labelledby="events-heading">
           <h3 id="events-heading" className="clinical-label border-b border-line pb-2 text-muted">Recent activity</h3>
           <ul className="divide-y divide-line">
             {[...p.events].reverse().slice(0, 6).map((e) => (
               <li key={`${e.t}-${e.kind}`} className="flex justify-between gap-3 py-2.5 text-[13px]">
-                <span className="text-body">{e.detail || e.kind.replace(/_/g, " ")}</span>
+                <span className="text-body">{eventLabel(e.kind, e.detail)}</span>
                 <span className="shrink-0 font-mono text-[11px] text-subtle">{ago(now - (e.t * 1000 + offsetMs))}</span>
               </li>
             ))}
