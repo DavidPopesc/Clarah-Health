@@ -101,6 +101,11 @@ def append_jsonl(path: str, item: dict):
 
 
 settings = load_settings()
+# Offline the board boots with a stale clock (Dec 2025) and the dashboard corrects it.
+# Once Wi-Fi has set the real time, a saved correction would push everything ahead.
+CLOCK_PLAUSIBLE = 1_790_000_000  # Sep 2026
+if time.time() > CLOCK_PLAUSIBLE:
+    settings["clock_offset"] = 0.0
 save_settings()
 
 
@@ -434,7 +439,7 @@ def public_settings() -> dict:
 
 def on_hello(sid, data):
     client_ms = (data or {}).get("now")
-    if client_ms:
+    if client_ms and time.time() < CLOCK_PLAUSIBLE:
         offset = client_ms / 1000 - time.time()
         if abs(offset - settings.get("clock_offset", 0.0)) > 30:
             settings["clock_offset"] = offset
