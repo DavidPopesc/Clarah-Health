@@ -75,6 +75,8 @@ def save_settings():
     tmp = SETTINGS_PATH + ".tmp"
     with open(tmp, "w") as f:
         json.dump(settings, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())  # survive the board losing power
     os.replace(tmp, SETTINGS_PATH)
 
 
@@ -98,6 +100,8 @@ def read_jsonl(path: str, limit: int | None = None) -> list[dict]:
 def append_jsonl(path: str, item: dict):
     with open(path, "a") as f:
         f.write(json.dumps(item) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
 
 
 settings = load_settings()

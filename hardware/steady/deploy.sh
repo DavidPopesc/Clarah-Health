@@ -22,10 +22,15 @@ fi
 echo "==> Copying app to the board"
 "$ADB" shell "mkdir -p $APP/data"
 for d in app.yaml python assets; do "$ADB" push "$d" "$APP/" >/dev/null; done
+# Flush to storage now: the board is often unplugged without a shutdown, and freshly
+# pushed files that are still only in memory come back empty.
+"$ADB" shell sync
 
 echo "==> (Re)starting the Python container"
+# Mount /run rather than the router's socket file: at boot Docker can start before the
+# router has made its socket, and binding a missing file path would make a directory there.
 "$ADB" shell "docker rm -f clarah-steady >/dev/null 2>&1; docker run -d --name clarah-steady --restart unless-stopped \
-  -v $APP:/app -v /var/run/arduino-router.sock:/var/run/arduino-router.sock \
+  -v $APP:/app -v /run:/host-run -e APP_SOCKET=unix:///host-run/arduino-router.sock \
   -p 7000:7000 $IMAGE >/dev/null"
 
 LOCAL_PORT="${LOCAL_PORT:-7070}"
