@@ -1,3 +1,5 @@
+"use client";
+
 import { useId } from "react";
 
 // Clara as a friendly nurse: cap with a blue cross, eucalyptus scrubs and a stethoscope, in the
