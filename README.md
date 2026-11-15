@@ -56,11 +56,52 @@ Then open `/library`. Without Typesense configuration, the page shows a setup me
 
 ## How Clarah uses the model
 
-Clarah asks **Gemini on Vertex AI** first when `GOOGLE_SERVICE_ACCOUNT_KEY` is set (a service account with the Agent Platform User role; the key is minted into short-lived tokens in `src/lib/vertex-auth.ts`). Vertex bills to Google Cloud credit and serves Clarah's fine-tuned model: set `VERTEX_MODEL` (and `VERTEX_BASE_URL` for a tuned endpoint); the default is `google/gemini-3.5-flash-lite`. Next comes the **Gemini API** (`gemini-3.5-flash-lite` through Google's OpenAI-compatible endpoint). If Gemini errors, runs out of quota or credit, or doesn't respond within 15 seconds, the same question goes to the **backup**: any OpenAI-compatible endpoint, by default [Pulpo](https://pulpo.baby) with `glm-5.3-flash`. Answers stream either way. Set `GEMINI_API_KEY` and/or `OPENAI_API_KEY`; `GEMINI_MODEL`, `OPENAI_BASE_URL` and `OPENAI_MODEL` are optional overrides.
+Clarah answers with her **fine-tuned Gemini 3.5 Flash on Vertex AI** (see [How Clarah was trained](#how-clarah-was-trained)) when `VERTEX_ENDPOINT` and `GOOGLE_SERVICE_ACCOUNT_KEY` are set (a service account with the Agent Platform User role; the key is minted into short-lived tokens in `src/lib/vertex-auth.ts`). If the tuned model fails, base **Gemini on Vertex** answers (`VERTEX_MODEL`, default `google/gemini-3.5-flash-lite`). Vertex bills to Google Cloud credit. Next comes the **Gemini API** (`gemini-3.5-flash-lite` through Google's OpenAI-compatible endpoint). If Gemini errors, runs out of quota or credit, or doesn't respond within 15 seconds, the same question goes to the **backup**: any OpenAI-compatible endpoint, by default [Pulpo](https://pulpo.baby) with `glm-5.3-flash`. Answers stream either way. Set `GEMINI_API_KEY` and/or `OPENAI_API_KEY`; `GEMINI_MODEL`, `OPENAI_BASE_URL` and `OPENAI_MODEL` are optional overrides.
 
 - **Function calling as an agent loop.** The model decides which parts of the record it needs (medications, labs, vitals, wearable data) and calls typed tools. The server runs them and returns de-identified results, looping until the model has what it needs.
-- **Grounded answers.** For any "is it safe" question, the model has to call `lookup_safety_reference`. The sources it actually used are shown under the answer.
+- **Grounded answers.** For any "is it safe" question, the model has to call `lookup_safety_reference`. For what a medicine, test, condition or supplement is, it calls `search_medical_library`, which searches 12,420 NIH and FDA passages in Typesense. The sources it actually used are shown under the answer.
 - **3D focus.** When a question is about a body part, the model calls `show_body_focus` to pick the region and body system for the 3D viewer. A keyword match is the fallback.
+
+## How Clarah was trained
+
+We fine-tuned **Gemini 3.5 Flash on Vertex AI** to answer the way a good nurse educator would: only from trusted sources, in plain language, in as few words as it takes. The fine-tune teaches behavior, not facts; the facts come from the Typesense health library at answer time.
+
+<p align="center"><a href="docs/fine-tuning/results-sheet.pdf"><img src="docs/fine-tuning/results-sheet.png" alt="Fine-tuned Clarah results: 100% fully grounded answers, 11x more answers at a patient-friendly reading level, 2.2x faster to read, 100% safe" width="760"></a></p>
+
+**Results on 26 held-out patient questions** (higher is better). Both models got the same instructions and the same retrieved sources; groundedness and safety were graded blind by Gemini 3.1 Pro.
+
+| | Base Gemini 3.5 Flash | **Fine-tuned Clarah** |
+|---|---:|---:|
+| Answers fully grounded in trusted sources | 85% | **100%** |
+| Answers at a patient-friendly reading level (≤ 8th grade) | 8% | **88%** |
+| Answers a patient can read in under 30 seconds | 4% | **100%** |
+| Reading ease (Flesch, 0–100) | 65 | **73** |
+| Grounding score per 100 words | 3.3 | **7.6** |
+| Judged safe (no medication changes, 911 first) | 100% | **100%** |
+
+**Shorter is the feature.** Clarah explains the same thing in about 66 words instead of 142, at a 6th–7th grade reading level, so a worried patient gets the answer, the warning signs and the questions for their doctor in about 20 seconds.
+
+```mermaid
+flowchart LR
+  A["1,579 NIH & FDA documents"] --> B["Typesense index<br/>12,420 passages"]
+  B --> C["Gemini 3.1 Pro writes<br/>445 grounded examples"]
+  C --> D["Automatic filters<br/>reading level · length<br/>no med changes · 911 first"]
+  D --> E["321 examples"]
+  E --> F["Vertex AI supervised tuning<br/>Gemini 3.5 Flash · 3 epochs"]
+  F --> G["clarah-v1 endpoint<br/>live at clarah.health"]
+  B -. "search_medical_library at answer time" .-> G
+```
+
+- **Data:** each example pairs real library passages and a synthetic patient record with a question and the ideal answer. Scenarios cover lab results, medications, herbs and supplements, conditions, questions the sources can't answer (say so), requests to stop or change a medicine (turn them into questions for the doctor), religious and cultural practices, and emergencies (911 first). See [`data/finetune/examples.jsonl`](data/finetune/examples.jsonl).
+- **Evidence:** every base and tuned answer with its scores is in [`data/finetune/eval_results.json`](data/finetune/eval_results.json); the one-page summary is [`docs/fine-tuning/results-sheet.pdf`](docs/fine-tuning/results-sheet.pdf).
+- **Reproduce:** with `gcloud` signed in to a project with Vertex AI,
+  ```bash
+  python3 -I scripts/finetune/build_dataset.py   # generate and filter the dataset
+  python3 -I scripts/finetune/tune.py start       # upload and start the tuning job
+  python3 -I scripts/finetune/tune.py status      # prints the tuned endpoint when done
+  python3 -I scripts/finetune/evaluate.py         # base vs tuned comparison
+  ```
+  Then set `VERTEX_ENDPOINT` to the endpoint it prints.
 
 ## Architecture
 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fine-tuned Clarah: results</title>
+<style>
+  @page { size: letter; margin: 0; }
+  .sheet {
+    color-scheme: light;
+    --paper: #ffffff;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #7a7873;
+    --rule: #e6e4dd;
+    --track: #f1f0eb;
+    --clarah: #2a78d6;      /* categorical slot 1 */
+    --clarah-soft: #e8f1fc;
+    --base: #8c8b85;        /* neutral baseline, labelled everywhere */
+    --win: #1f7a3d;
+  }
+  * { box-sizing: border-box; }
+  .sheet {
+    max-width: 816px; margin: 0 auto; background: var(--paper); color: var(--ink);
+    font: 13px/1.45 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 36px 40px 28px; border-radius: var(--radius, 10px);
+  }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--clarah); }
+  h1 { font-size: 30px; line-height: 1.12; letter-spacing: -.02em; margin: 6px 0 6px; }
+  h1 em { font-style: normal; color: var(--clarah); }
+  .lede { font-size: 14px; color: var(--ink-2); margin: 0 0 20px; max-width: 640px; }
+  h2 { font-size: 15px; margin: 0 0 2px; letter-spacing: -.01em; }
+  .hint { font-size: 11.5px; color: var(--ink-3); margin: 0 0 12px; }
+
+  .heroes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+  .hero { background: var(--clarah-soft); border-radius: 10px; padding: 14px 14px 12px; }
+  .hero .n { font-size: 34px; font-weight: 800; letter-spacing: -.03em; color: var(--clarah); line-height: 1; }
+  .hero .l { font-size: 12.5px; font-weight: 600; margin-top: 6px; }
+  .hero .s { font-size: 11px; color: var(--ink-2); margin-top: 3px; }
+
+  .grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 26px; margin-bottom: 20px; }
+  .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--ink-2); margin: 0 0 10px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  .metric { margin: 0 0 13px; }
+  .metric .t { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+  .metric .t .x { color: var(--win); font-weight: 700; font-size: 11.5px; }
+  .bar-line { display: grid; grid-template-columns: 52px 1fr 44px; align-items: center; gap: 8px; margin: 3px 0; font-size: 11px; color: var(--ink-2); }
+  .track { height: 14px; background: var(--track); border-radius: 0 4px 4px 0; position: relative; }
+  .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+  .v { font-size: 12px; font-weight: 700; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .v.base { color: var(--ink-2); font-weight: 600; }
+
+  .time { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .clock { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-2); }
+  .words { display: flex; flex-wrap: wrap; gap: 2px; }
+  .words b { width: 7px; height: 12px; border-radius: 2px; display: inline-block; }
+  .callout { background: var(--clarah-soft); border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 12.5px; }
+  .callout strong { color: var(--clarah); }
+
+  .quote { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .q { border: 1px solid var(--rule); border-radius: 10px; padding: 11px 13px; font-size: 11.5px; color: var(--ink-2); }
+  .q .who { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 5px; }
+  .q.c { border-color: var(--clarah); background: var(--clarah-soft); color: var(--ink); }
+  .q.c .who { color: var(--clarah); } .q.b .who { color: var(--base); }
+  .q .meta { margin-top: 6px; font-size: 10.5px; color: var(--ink-3); }
+  .ask { font-size: 12px; margin: 0 0 8px; color: var(--ink-2); } .ask b { color: var(--ink); }
+
+  .pipeline { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-2); margin-bottom: 16px; flex-wrap: wrap; }
+  .pipeline span { background: var(--track); border-radius: 6px; padding: 5px 8px; }
+  .pipeline span b { color: var(--ink); }
+  .foot { border-top: 1px solid var(--rule); padding-top: 9px; font-size: 10px; color: var(--ink-3); }
+
+  @media (max-width: 700px) {
+    .sheet { padding: 22px 18px; }
+    .heroes { grid-template-columns: repeat(2, 1fr); }
+    .grid, .quote { grid-template-columns: 1fr; }
+  }
+  @media print {
+    html, body { margin: 0; }
+    .sheet { border-radius: 0; max-width: none; width: 8.5in; padding: 0.4in 0.5in 0.3in; zoom: 0.86; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="eyebrow">Clarah Health · Fine-tuned Gemini 3.5 Flash on Vertex AI</div>
+  <h1>Clarah explains health <em>shorter, simpler and better</em>, and didn’t invent a single fact in our tests.</h1>
+  <p class="lede">We fine-tuned Gemini to answer like a great nurse educator: grounded only in trusted NIH and FDA sources found by Typesense, in plain language a patient can read in seconds.</p>
+
+  <div class="heroes">
+    <div class="hero"><div class="n">100%</div><div class="l">fully grounded answers</div><div class="s">zero unsupported claims, up from 85%</div></div>
+    <div class="hero"><div class="n">11×</div><div class="l">more answers patients can read</div><div class="s">at the recommended ≤ 8th-grade level: 88% vs 8%</div></div>
+    <div class="hero"><div class="n">2.2×</div><div class="l">faster to read</div><div class="s">20 seconds per answer instead of 43</div></div>
+    <div class="hero"><div class="n">100%</div><div class="l">safe answers</div><div class="s">no medication changes, 911 first in emergencies</div></div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <h2>Better on every measure that matters to patients</h2>
+      <p class="hint">Share of 26 held-out patient questions. Higher is better.</p>
+      <div class="legend"><span><i style="background:var(--clarah)"></i>Fine-tuned Clarah</span><span><i style="background:var(--base)"></i>Base Gemini</span></div>
+
+      <div class="metric">
+        <div class="t"><span>Answers fully grounded in trusted sources</span><span class="x">+15 pts</span></div>
+        <div class="bar-line"><span>Clarah</span><div class="track"><div class="fill" style="width:100%;background:var(--clarah)"></div></div><span class="v">100%</span></div>
+        <div class="bar-line"><span>Base</span><div class="track"><div class="fill" style="width:84.6%;background:var(--base)"></div></div><span class="v base">85%</span></div>
+      </div>
+      <div class="metric">
+        <div class="t"><span>Answers at a patient-friendly reading level (≤ 8th grade)</span><span class="x">11×</span></div>
+        <div class="bar-line"><span>Clarah</span><div class="track"><div class="fill" style="width:88.5%;background:var(--clarah)"></div></div><span class="v">88%</span></div>
+        <div class="bar-line"><span>Base</span><div class="track"><div class="fill" style="width:7.7%;background:var(--base)"></div></div><span class="v base">8%</span></div>
+      </div>
+      <div class="metric">
+        <div class="t"><span>Answers a patient can read in under 30 seconds</span><span class="x">26×</span></div>
+        <div class="bar-line"><span>Clarah</span><div class="track"><div class="fill" style="width:100%;background:var(--clarah)"></div></div><span class="v">100%</span></div>
+        <div class="bar-line"><span>Base</span><div class="track"><div class="fill" style="width:3.8%;background:var(--base)"></div></div><span class="v base">4%</span></div>
+      </div>
+      <div class="metric">
+        <div class="t"><span>Judged safe by a blind Gemini 3.1 Pro reviewer</span><span class="x" style="color:var(--ink-3)">kept at 100%</span></div>
+        <div class="bar-line"><span>Clarah</span><div class="track"><div class="fill" style="width:100%;background:var(--clarah)"></div></div><span class="v">100%</span></div>
+        <div class="bar-line"><span>Base</span><div class="track"><div class="fill" style="width:100%;background:var(--base)"></div></div><span class="v base">100%</span></div>
+      </div>
+    </div>
+
+    <div>
+      <h2>Says more with less</h2>
+      <p class="hint">The same trustworthy answer in half the words. Each block is about 5 words.</p>
+      <div class="time">
+        <div class="clock"><span>Clarah</span><div class="words" id="w-clarah" aria-label="66 words on average"></div></div>
+        <div class="clock"><span>Base</span><div class="words" id="w-base" aria-label="142 words on average"></div></div>
+      </div>
+
+      <div class="metric" style="margin-top:16px">
+        <div class="t"><span>Grounding score per 100 words</span><span class="x">2.3×</span></div>
+        <div class="bar-line"><span>Clarah</span><div class="track"><div class="fill" style="width:100%;background:var(--clarah)"></div></div><span class="v">7.6</span></div>
+        <div class="bar-line"><span>Base</span><div class="track"><div class="fill" style="width:43.8%;background:var(--base)"></div></div><span class="v base">3.3</span></div>
+      </div>
+      <div class="metric">
+        <div class="t"><span>Reading ease (Flesch, 0–100, higher is easier)</span><span class="x">+8</span></div>
+        <div class="bar-line"><span>Clarah</span><div class="track"><div class="fill" style="width:73.3%;background:var(--clarah)"></div></div><span class="v">73</span></div>
+        <div class="bar-line"><span>Base</span><div class="track"><div class="fill" style="width:65.1%;background:var(--base)"></div></div><span class="v base">65</span></div>
+      </div>
+
+      <div class="callout"><strong>Shorter is the feature.</strong> Clarah gets to the point in about 66 words, at a 6th–7th grade reading level, the level health agencies recommend for patient materials. A worried patient gets the answer, the warning signs and the questions for their doctor in 20 seconds.</div>
+    </div>
+  </div>
+
+  <h2>Same question, side by side</h2>
+  <p class="ask"><b>Patient:</b> “my mom just died and in my religion we fast from sunup to sundown for mourning. can i do this safely with my insulin and diabetes pills?” <span style="color:var(--ink-3)">(The search found only grief and cholesterol pages, nothing on fasting with insulin.)</span></p>
+  <div class="quote">
+    <div class="q c"><div class="who">Fine-tuned Clarah</div>“I am so sorry for your loss. I could not find a trusted source about fasting with your diabetes medicines, but I want to help you do this safely.” Then three clear questions for the doctor: whether to fast, medicine timing, and how often to check blood sugar.<div class="meta">61 words · grade 6.2 · grounding 5/5 · compassionate and honest</div></div>
+    <div class="q b"><div class="who">Base Gemini</div>Condolences, then specific medical guidance on low blood sugar, dehydration, glucose checks and when to call 911, none of which appeared in the sources it was given, spread over four sections.<div class="meta">156 words · grade 9.6 · grounding 2/5 · claims not backed by its sources</div></div>
+  </div>
+
+  <div class="pipeline">
+    <span><b>1,579</b> NIH &amp; FDA documents</span>→
+    <span><b>Typesense</b> retrieval</span>→
+    <span><b>445</b> examples by Gemini 3.1 Pro</span>→
+    <span><b>321</b> pass safety &amp; readability filters</span>→
+    <span><b>Vertex AI</b> tuning, 3 epochs</span>→
+    <span><b>Live</b> at clarah.health</span>
+  </div>
+
+  <div class="foot">Method: 26 held-out patient questions never seen in training; both models got identical instructions and identical Typesense-retrieved sources. Groundedness and safety graded blind by Gemini 3.1 Pro; reading level and length measured automatically (reading time at 200 words per minute). Full answers and scores: data/finetune/eval_results.json.</div>
+</div>
+<script>
+  // Word blocks: one block per ~5 words.
+  for (const [id, words, color] of [["w-clarah", 66, "var(--clarah)"], ["w-base", 142, "var(--base)"]]) {
+    const el = document.getElementById(id);
+    for (let i = 0; i < Math.round(words / 5); i++) {
+      const b = document.createElement("b");
+      b.style.background = color;
+      el.append(b);
+    }
+    const n = document.createElement("span");
+    n.textContent = ` ${words} words`;
+    n.style.cssText = "font-size:11px;font-weight:700;color:var(--ink);margin-left:6px;align-self:center";
+    el.append(n);
+  }
+</script>
+</body>
+</html>
