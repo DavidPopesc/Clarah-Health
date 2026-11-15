@@ -175,6 +175,9 @@ uint32_t stateAt = 0;
 String emergencyReason = "";
 
 uint32_t fallCountdownMs = 30000;
+uint32_t harshCountdownMs = 10000;
+bool harshFall = false, hadFreefall = false;
+int harshRun = 0;
 const uint32_t HELP_COUNTDOWN_MS = 5000;
 const uint32_t FALL_CHECK_MS = 3000;
 
@@ -189,6 +192,9 @@ const float HARD_IMPACT_G = 2.3f;  // two or three axes saturated at once
 const uint32_t FREEFALL_TO_IMPACT_MS = 1000;
 const float FALL_ANGLE_DEG = 50.0f;
 const float STILL_STD_G = 0.15f;  // someone who has fallen lies fairly still afterwards
+const float HARSH_AXIS_G = 1.40f;
+const float HARSH_MAG_G = 2.40f;
+const int HARSH_SAMPLES = 3;  // 60 ms at 50 Hz, on 2+ saturated axes
 
 float gLP[3] = {0, 0, 1};    // slow gravity estimate
 float refG[3] = {0, 0, 1};   // posture before the event
@@ -222,6 +228,9 @@ float angleBetween(const float a[3], const float b[3]) {
 
 void processSample(const float a[3]) {
   float mag = sqrtf(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+  int saturatedAxes = 0;
+  for (int i = 0; i < 3; i++) if (fabsf(a[i]) >= HARSH_AXIS_G) saturatedAxes++;
+  bool harshSample = mag >= HARSH_MAG_G && saturatedAxes >= 2;
 
   if (state == NORMAL) {
     for (int i = 0; i < 3; i++) gLP[i] += 0.02f * (a[i] - gLP[i]);
@@ -239,6 +248,9 @@ void processSample(const float a[3]) {
     if ((mag >= IMPACT_G && recentFreefall) || mag >= HARD_IMPACT_G) {
       if (!recentFreefall) memcpy(refG, gLP, sizeof(refG));
       impactPeak = mag;
+      hadFreefall = recentFreefall;
+      harshRun = harshSample ? 1 : 0;
+      harshFall = false;
       postN = 0;
       postSum[0] = postSum[1] = postSum[2] = 0;
       postMagSum = postMagSq = 0;
@@ -250,6 +262,8 @@ void processSample(const float a[3]) {
     uint32_t t = millis() - stateAt;
     if (t < 400) {
       if (mag > impactPeak) impactPeak = mag;
+      harshRun = harshSample ? harshRun + 1 : 0;
+      if (hadFreefall && harshRun >= HARSH_SAMPLES) harshFall = true;
     } else if (t > 1000) {
       // Average posture once the bounce has settled.
       for (int i = 0; i < 3; i++) postSum[i] += a[i];
@@ -264,6 +278,7 @@ void processSample(const float a[3]) {
       float sd = postN ? sqrtf(fmaxf(0, postMagSq / postN - mean * mean)) : 1;
       String detail = "angle=" + String(angle, 0) + " peak=" + String(impactPeak, 2) + " still=" + String(sd, 2);
       if (angle >= FALL_ANGLE_DEG && sd <= STILL_STD_G) {
+        detail += harshFall ? " harsh" : "";
         sendEvent("fall_detected", detail);
         setState(FALL_COUNTDOWN);
       } else {
@@ -333,7 +348,9 @@ void fg_cmd(String cmd) {
   } else if (cmd == "silence") {
     buzzerSilenced = true; digitalWrite(PIN_BUZZER, LOW);
   } else if (cmd == "test_fall") {
-    if (state == NORMAL) { sendEvent("fall_detected", "test"); setState(FALL_COUNTDOWN); }
+    if (state == NORMAL) { harshFall = false; sendEvent("fall_detected", "test"); setState(FALL_COUNTDOWN); }
+  } else if (cmd == "test_harsh_fall") {
+    if (state == NORMAL) { harshFall = true; sendEvent("fall_detected", "test harsh"); setState(FALL_COUNTDOWN); }
   } else if (cmd == "warn") {
     if (state == NORMAL) PLAY(PAT_WARN, false);
   } else if (cmd == "locate") {
@@ -346,6 +363,9 @@ void fg_cmd(String cmd) {
   } else if (cmd.startsWith("countdown=")) {
     uint32_t s = cmd.substring(10).toInt();
     if (s >= 5 && s <= 120) fallCountdownMs = s * 1000;
+  } else if (cmd.startsWith("harsh_countdown=")) {
+    uint32_t s = cmd.substring(16).toInt();
+    if (s >= 5 && s <= 30) harshCountdownMs = s * 1000;
   }
 }
 
@@ -386,9 +406,9 @@ void updateStateMachineTimers() {
       if (t >= HELP_COUNTDOWN_MS) { emergencyReason = "help"; sendEvent("emergency", "help"); setState(EMERGENCY); }
       break;
     case FALL_COUNTDOWN:
-      if (fallCountdownMs - t < 10000) PLAY(PAT_COUNTDOWN_FAST, true);
+      if (harshFall || t >= fallCountdownMs || fallCountdownMs - t < 10000) PLAY(PAT_COUNTDOWN_FAST, true);
       else PLAY(PAT_COUNTDOWN, true);
-      if (t >= fallCountdownMs) { emergencyReason = "fall"; sendEvent("emergency", "fall"); setState(EMERGENCY); }
+      if (t >= (harshFall ? harshCountdownMs : fallCountdownMs)) { emergencyReason = harshFall ? "harsh_fall" : "fall"; sendEvent("emergency", emergencyReason); setState(EMERGENCY); }
       break;
     case EMERGENCY:
       PLAY(PAT_SOS, true);

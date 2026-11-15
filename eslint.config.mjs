@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The Steady board's dashboard: plain browser scripts and a vendored socket.io build.
+    "hardware/**",
   ]),
 ]);
 

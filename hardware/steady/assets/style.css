@@ -22,6 +22,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -140,7 +141,7 @@ h2 { font-size: 1.05rem; margin: 0; color: var(--eucalyptus-dark); }
 
 .form { display: grid; gap: 0.85rem; }
 .form label { display: grid; gap: 0.25rem; font-size: 0.85rem; color: var(--body); font-weight: 500; }
-.form input:not([type=checkbox]) {
+.form input:not([type=checkbox]), .form select {
   padding: 0.6rem 0.7rem; border: 1px solid var(--line); background: #fffdf7; color: var(--ink); font-size: 1rem; border-radius: 0;
 }
 .form input[name$=topic] { font-family: var(--mono); font-size: 0.9rem; }
@@ -177,6 +178,15 @@ footer { padding: 1.25rem 1.25rem 2.5rem; font-size: 0.8rem; color: var(--muted)
 .ov-notify { font-size: 0.9rem; margin: 0.5rem 0; }
 .ov-notify:empty { display: none; }
 .ov-actions { display: grid; gap: 0.6rem; margin-top: 1rem; }
+.simulation { margin: 0.8rem 0; padding: 0.8rem; background: var(--alert-soft); border-left: 4px solid var(--alert); }
+.simulation ol { padding-left: 1.3rem; margin: 0.4rem 0; }
+.simulation li { opacity: .5; }
+.simulation li.active, .simulation li.done { opacity: 1; font-weight: 600; }
+.simulation p { margin: .5rem 0 0; font-weight: 700; font-size: .8rem; }
+.prosthetic-history { overflow-x: auto; font-size: .78rem; }
+.prosthetic-history table { border-collapse: collapse; width: 100%; }
+.prosthetic-history th, .prosthetic-history td { padding: .35rem; border-bottom: 1px solid var(--line); text-align: right; }
+.prosthetic-history th:first-child, .prosthetic-history td:first-child { text-align: left; }
 
 @media (min-width: 720px) {
   .shell { max-width: 46rem; }

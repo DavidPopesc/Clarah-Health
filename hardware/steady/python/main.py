@@ -23,6 +23,8 @@ from arduino.app_utils import App, Bridge, Logger
 from arduino.app_bricks.web_ui import WebUI
 
 import gait
+import prosthetic
+import sync
 
 log = Logger("steady")
 
@@ -31,6 +33,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
 HISTORY_PATH = os.path.join(DATA_DIR, "history.jsonl")
 EVENTS_PATH = os.path.join(DATA_DIR, "events.jsonl")
+PROSTHETIC_PATH = os.path.join(DATA_DIR, "prosthetic.jsonl")
 
 COUNTS_PER_G = 21.33
 WARN_COOLDOWN_S = 15 * 60
@@ -43,6 +46,10 @@ lock = threading.RLock()
 DEFAULT_SETTINGS = {
     "patient_name": "",
     "countdown_s": 30,
+    "harsh_countdown_s": 10,
+    "mode": "fall_prevention",
+    "device_id": "uno-q",
+    "clarah_url": "https://www.clarah.health",
     "share_with_doctor": False,  # opt-in: the doctor only hears about balance if the patient asks
     "doctor_name": "",
     "doctor_phone": "",
@@ -123,6 +130,7 @@ def now() -> float:
 samples: deque = deque(maxlen=int(gait.FS * 60))  # (t, x, y, z) in g
 history: list[dict] = read_jsonl(HISTORY_PATH)
 events: list[dict] = read_jsonl(EVENTS_PATH, limit=300)
+prosthetic_minutes: list[dict] = read_jsonl(PROSTHETIC_PATH)
 outbox: list[dict] = []
 
 device = {"state": "unknown", "last_seen": 0.0, "sensor": "unknown", "last_imu": 0.0}
@@ -131,6 +139,9 @@ balance = {"score": None, "smoothed": None, "risk": "unknown", "slope": None, "p
 last_warn_at = {"moderate": 0.0, "high": 0.0}
 last_doctor_at = 0.0
 active_alert: dict | None = None  # the fall / help episode in progress
+emergency = {"active": False, "reason": None, "since": None, "simulated_911": False, "simulated_911_at": None}
+sync_status = {"state": "no_token" if not os.environ.get("STEADY_INGEST_TOKEN") else "pending", "at": None, "error": None}
+sync_requested = threading.Event()
 last_seq = None
 dropped = 0
 
@@ -245,7 +256,9 @@ def on_mcu_event(name: str, detail: str):
         add_event(name, detail)
         threading.Timer(3.0, lambda: _attach_trace()).start()
     elif name == "fall_detected":
-        active_alert = {"kind": "fall", "t": now(), "detail": detail, "countdown_s": settings["countdown_s"]}
+        harsh = "harsh" in detail.split()
+        active_alert = {"kind": "harsh_fall" if harsh else "fall", "t": now(), "detail": detail,
+                        "countdown_s": settings["harsh_countdown_s"] if harsh else settings["countdown_s"]}
         add_event(name, detail)
     elif name in ("fall_dismissed", "fall_cancelled", "help_cancelled", "silenced", "sensor_ok", "sensor_missing"):
         if name in ("fall_cancelled", "help_cancelled"):
@@ -258,13 +271,19 @@ def on_mcu_event(name: str, detail: str):
         add_event(name, detail)
     elif name == "emergency":
         reason = detail or "help"
-        active_alert = {"kind": reason, "t": now(), "emergency": True}
+        active_alert = {**(active_alert or {}), "kind": reason, "t": now(), "emergency": True}
         add_event("emergency", reason)
+        emergency.update({"active": True, "reason": reason, "since": now(),
+                          "simulated_911": reason == "harsh_fall", "simulated_911_at": now() if reason == "harsh_fall" else None})
+        if reason == "harsh_fall":
+            add_event("simulated_911", "SIMULATION: no real call was placed")
         if settings.get("alert_contact", True):
-            if reason == "fall":
+            if reason in ("fall", "harsh_fall"):
                 notify("contact", f"{who()} may have fallen",
-                       f"Clarah Steady detected a fall at {clock_str(now())} and got no response for "
-                       f"{settings['countdown_s']} seconds. Call them now. If you can't reach them, call 911.",
+                       f"Clarah Steady detected a {'hard ' if reason == 'harsh_fall' else ''}fall at {clock_str(now())} and got no response for "
+                       f"{settings['harsh_countdown_s'] if reason == 'harsh_fall' else settings['countdown_s']} seconds."
+                       + (" (simulated 911 call placed)" if reason == "harsh_fall" else "")
+                       + " Call them now. If you can't reach them, call 911.",
                        priority="urgent", tags="rotating_light")
             else:
                 notify("contact", f"{who()} pressed the help button",
@@ -275,10 +294,13 @@ def on_mcu_event(name: str, detail: str):
             notify("contact", f"{who()} is OK", f"The alert from {clock_str(active_alert['t'])} was marked resolved.",
                    priority="default", tags="white_check_mark")
         active_alert = None
+        emergency.update({"active": False, "reason": None, "since": None, "simulated_911": False, "simulated_911_at": None})
         add_event(name, detail)
     else:
         add_event(name, detail)
     push_status()
+    if name in ("fall_detected", "fall_cancelled", "help_pressed", "help_cancelled", "emergency", "resolved"):
+        sync_requested.set()
 
 
 def _attach_trace():
@@ -297,6 +319,8 @@ def on_mcu_state(state: str):
     device["last_seen"] = time.time()
     if prev != state:
         push_status()
+        if state in ("fall_check", "fall_countdown", "help_countdown", "emergency", "normal"):
+            sync_requested.set()
 
 
 def on_imu(seq: int, data: str):
@@ -323,8 +347,10 @@ def on_imu(seq: int, data: str):
 
 def recompute_trend():
     """Update smoothed score, baseline, slope and risk from the stored history."""
-    walk = [h for h in history if h.get("walking")]
+    walk = [h for h in history if h.get("walking") and h.get("mode", "fall_prevention") == settings["mode"]]
     if not walk:
+        balance.update({"score": None, "smoothed": None, "baseline": None, "slope": None,
+                        "projected": None, "risk": "unknown", "last_window": None})
         return
     recent = [h for h in walk if h["t"] > now() - 30 * 60][-36:]
     alpha = 0.3
@@ -342,6 +368,8 @@ def recompute_trend():
             save_settings()
     slope = gait.trend([(h["t"], h["score"]) for h in recent])
     balance.update({
+        "score": walk[-1]["score"],
+        "last_window": walk[-1],
         "smoothed": round(smoothed, 1),
         "baseline": settings.get("baseline"),
         "slope": None if slope is None else round(slope, 2),
@@ -359,8 +387,9 @@ def check_risk(prev_risk: str):
     if order[risk] > order.get(prev_risk, 0) and order[risk] >= 1 and t - last_warn_at[risk] > WARN_COOLDOWN_S:
         last_warn_at[risk] = t
         cmd("warn")
+        advice = " If you feel your walking is getting worse, call your doctor."
         msg = ("Your steadiness has dropped a lot. Please slow down, hold on to something or sit and rest."
-               if risk == "high" else "Your walking is getting less steady. Take it slow.")
+               if risk == "high" else "Your walking is getting less steady. Take it slow.") + advice
         add_event("balance_warning", msg, risk=risk, score=balance["smoothed"], slope=balance["slope"])
     if risk == "high" and settings.get("share_with_doctor") and t - last_doctor_at > DOCTOR_COOLDOWN_S:
         last_doctor_at = t
@@ -374,7 +403,7 @@ def check_risk(prev_risk: str):
             + (f", trending {balance['slope']:+.1f} points per minute of walking" if balance["slope"] is not None else "")
             + f". Trunk sway {w.get('sway') or 0:.0f} degrees, jolt {w.get('jolt') or 0:.2f} g"
             + (f", cadence {w['cadence']:.0f} steps/min" if w.get("cadence") else "")
-            + ". Sent at the patient's request.",
+            + ". If you feel your walking is getting worse, call your doctor. Sent at the patient's request.",
             priority="high", tags="chart_with_downwards_trend",
         )
         add_event("doctor_alerted", f"Shared balance trend with {settings.get('doctor_name') or 'the doctor'}")
@@ -396,17 +425,43 @@ def analysis_loop():
             prev_risk = balance["risk"]
             if w.walking:
                 d = w.to_dict()
+                d["mode"] = settings["mode"]
                 balance["score"] = round(w.score, 1)
                 balance["last_window"] = d
                 with lock:
                     history.append(d)
                     append_jsonl(HISTORY_PATH, d)
                 recompute_trend()
-                check_risk(prev_risk)
+                if settings["mode"] == "fall_prevention":
+                    check_risk(prev_risk)
                 cmd(f"score={int(balance['smoothed'])},{balance['risk'][0]}")
             push_balance()
         except Exception as e:
             log.exception(f"analysis failed: {e}")
+
+
+def prosthetic_loop():
+    """Persist one non-overlapping movement estimate per minute in prosthetic mode."""
+    while True:
+        time.sleep(60)
+        if settings["mode"] != "prosthetic" or device["state"] != "normal" or time.time() - device["last_imu"] > 3:
+            continue
+        with lock:
+            pts = list(samples)[-int(gait.FS * 60):]
+        if len(pts) < gait.FS * 50:
+            continue
+        arr = np.array([p[1:] for p in pts])
+        walking = any(h.get("walking") and h.get("mode") == "prosthetic" and h["t"] >= now() - 60
+                      for h in history[-20:])
+        m = {"t": now(), **prosthetic.minute_features(arr, walking)}
+        if any(e["kind"] == "fall_detected" and e["t"] >= m["t"] - 60 for e in events[-20:]):
+            m["stumbles"] = 0
+        with lock:
+            prosthetic_minutes.append(m)
+            append_jsonl(PROSTHETIC_PATH, m)
+        if m["stumbles"]:
+            add_event("stumble", f"{m['stumbles']} sharp jolt(s) while walking")
+        push_balance()
 
 
 # ---------------------------------------------------------------- dashboard messages
@@ -415,7 +470,7 @@ def analysis_loop():
 def daily_summary(days: int = 14) -> list[dict]:
     by_day: dict[str, list[float]] = {}
     for h in history:
-        if h.get("walking"):
+        if h.get("walking") and h.get("mode", "fall_prevention") == settings["mode"]:
             day = local_dt(h["t"]).strftime("%Y-%m-%d")
             by_day.setdefault(day, []).append(h["score"])
     out = [{"day": d, "score": round(float(np.median(v)), 1), "windows": len(v)} for d, v in sorted(by_day.items())]
@@ -423,8 +478,14 @@ def daily_summary(days: int = 14) -> list[dict]:
 
 
 def balance_payload() -> dict:
-    walk = [h for h in history if h.get("walking") and h["t"] > now() - 3 * 3600][-120:]
-    return {**balance, "recent": walk, "daily": daily_summary()}
+    walk = [h for h in history if h.get("walking") and h.get("mode", "fall_prevention") == settings["mode"] and h["t"] > now() - 3 * 3600][-120:]
+    return {**balance, "recent": walk, "daily": daily_summary(), "mode": settings["mode"], "prosthetic": prosthetic_payload()}
+
+
+def prosthetic_payload():
+    if settings["mode"] != "prosthetic":
+        return None
+    return prosthetic.summarize(prosthetic_minutes, history, now(), settings.get("tz_offset_min", 0))
 
 
 def push_balance():
@@ -440,6 +501,8 @@ def status_payload() -> dict:
         "device": {**device, "sensor": sensor, "online": online, "dropped": dropped},
         "alert": active_alert,
         "now": now(),
+        "emergency": dict(emergency),
+        "sync": dict(sync_status),
     }
 
 
@@ -480,10 +543,21 @@ def on_save_settings(sid, data=None):
         settings["countdown_s"] = max(10, min(120, int(settings["countdown_s"])))
     except (TypeError, ValueError):
         settings["countdown_s"] = 30
+    try:
+        settings["harsh_countdown_s"] = max(5, min(30, int(settings["harsh_countdown_s"])))
+    except (TypeError, ValueError):
+        settings["harsh_countdown_s"] = 10
+    if settings["mode"] not in ("fall_prevention", "prosthetic"):
+        settings["mode"] = "fall_prevention"
+    settings["clarah_url"] = str(settings["clarah_url"]).rstrip("/")
     save_settings()
     cmd(f"countdown={settings['countdown_s']}")
+    cmd(f"harsh_countdown={settings['harsh_countdown_s']}")
+    recompute_trend()
     add_event("settings_saved", "Doctor sharing " + ("on" if settings["share_with_doctor"] else "off"))
     ui.send_message("settings", public_settings())
+    push_balance()
+    sync_requested.set()
 
 
 def on_set_baseline(sid, data=None):
@@ -506,6 +580,31 @@ def on_seed_demo(sid, data=None):
     """Sample history: two weeks of walking with balance slipping in the last few days."""
     rng = np.random.default_rng(3)
     base_t = now()
+    if settings["mode"] == "prosthetic":
+        with lock:
+            for day in range(13, -1, -1):
+                t = base_t - day * 86400
+                walk_min = 15 + (13 - day) * 4
+                wear_min = 125 + (13 - day) * 16
+                for minute in range(wear_min):
+                    m = {"t": t - (t % 86400) + 9 * 3600 + minute * 60,
+                         "worn": True, "walking": minute < walk_min,
+                         "stumbles": 1 if minute == 4 and day > 9 else 0}
+                    prosthetic_minutes.append(m)
+                    append_jsonl(PROSTHETIC_PATH, m)
+                for k in range(walk_min // 5):
+                    d = {"t": t - (t % 86400) + 9 * 3600 + k * 300, "walking": True,
+                         "score": round(55 + (13 - day) * 2.1 + rng.normal(0, 2), 1),
+                         "mode": "prosthetic", "sample": True}
+                    history.append(d)
+                    append_jsonl(HISTORY_PATH, d)
+            history.sort(key=lambda h: h["t"])
+            prosthetic_minutes.sort(key=lambda m: m["t"])
+        add_event("sample_data", "Loaded two weeks of prosthetic sample data")
+        recompute_trend()
+        push_balance()
+        sync_requested.set()
+        return
     with lock:
         for day in range(14, 0, -1):
             level = 84 - max(0, 6 - day) * 4.5  # steady, then slipping over the last 5 days
@@ -530,6 +629,8 @@ def on_clear_history(sid, data=None):
     with lock:
         history.clear()
         open(HISTORY_PATH, "w").close()
+        prosthetic_minutes.clear()
+        open(PROSTHETIC_PATH, "w").close()
     settings["baseline"] = None
     save_settings()
     balance.update({"score": None, "smoothed": None, "risk": "unknown", "slope": None, "projected": None,
@@ -545,7 +646,8 @@ def simple(command: str):
 
 
 for name, c in (("cancel", "cancel"), ("resolve", "resolve"), ("help", "help"),
-                ("test_fall", "test_fall"), ("locate", "locate"), ("silence", "silence")):
+                ("test_fall", "test_fall"), ("test_harsh_fall", "test_harsh_fall"),
+                ("locate", "locate"), ("silence", "silence")):
     ui.on_message(name, simple(c))
 ui.on_message("hello", on_hello)
 ui.on_message("save_settings", on_save_settings)
@@ -563,6 +665,34 @@ def api_summary():
 
 
 ui.expose_api("GET", "/api/summary", api_summary)
+
+
+def ingest_payload():
+    with lock:
+        return sync.build_payload(settings, balance, daily_summary(), status_payload()["device"],
+                                  active_alert, dict(emergency), prosthetic_payload(), events, now())
+
+
+def sync_loop():
+    token = os.environ.get("STEADY_INGEST_TOKEN")
+    if not token:
+        return
+    while True:
+        sync_requested.wait(30)
+        sync_requested.clear()
+        try:
+            req = urllib.request.Request(
+                settings["clarah_url"].rstrip("/") + "/api/steady/ingest",
+                data=json.dumps(ingest_payload()).encode(), method="POST",
+                headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                response.read()
+            sync_status.update({"state": "ok", "at": now(), "error": None})
+            log.info("Clarah sync succeeded")
+        except Exception as e:
+            sync_status.update({"state": "error", "at": now(), "error": str(e)[:160]})
+            log.warning(f"Clarah sync failed: {e}")
+        push_status()
 
 try:
     from fastapi.middleware.cors import CORSMiddleware
@@ -583,6 +713,7 @@ def status_loop():
         online = time.time() - device["last_seen"] < 3
         if online and not sent_countdown:
             cmd(f"countdown={settings['countdown_s']}")
+            cmd(f"harsh_countdown={settings['harsh_countdown_s']}")
             if balance.get("smoothed") is not None:
                 cmd(f"score={int(balance['smoothed'])},{balance['risk'][0]}")
             sent_countdown = True
@@ -612,6 +743,8 @@ def net_probe_loop():
 recompute_trend()
 threading.Thread(target=net_probe_loop, daemon=True).start()
 threading.Thread(target=analysis_loop, daemon=True).start()
+threading.Thread(target=prosthetic_loop, daemon=True).start()
 threading.Thread(target=status_loop, daemon=True).start()
+threading.Thread(target=sync_loop, daemon=True).start()
 
 App.run()

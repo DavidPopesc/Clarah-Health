@@ -10,10 +10,15 @@ let events = [];
 let liveMags = [];
 const relayed = new Set();
 let lastWarningAt = 0;
+let lastStatusReceivedAt = Date.now();
+let lastStatusNow = 0;
+const DOCTOR_ADVICE = "If you feel your walking is getting worse, call your doctor.";
 
 const EVENT_INFO = {
   fall_suspected: ["Hard movement, checking for a fall", "warn"],
   fall_detected: ["Fall detected", "alert"],
+  simulated_911: ["Simulated 911 call", "alert"],
+  stumble: ["Stumble while walking", "warn"],
   fall_dismissed: ["Not a fall: still upright", "ok"],
   fall_cancelled: ["Fall alarm cancelled: “I'm OK”", "ok"],
   help_pressed: ["Help button pressed", "warn"],
@@ -40,8 +45,8 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const hello = () => ({ now: Date.now(), tz_offset_min: -new Date().getTimezoneOffset() });
 socket.on("connect", () => socket.emit("hello", hello()));
 socket.on("disconnect", () => renderPill());
-socket.on("settings", (s) => { settings = s; fillSettings(); });
-socket.on("status", (s) => { status = s; renderPill(); renderOverlay(); });
+socket.on("settings", (s) => { settings = s; fillSettings(); renderBalance(); });
+socket.on("status", (s) => { status = s; lastStatusReceivedAt = Date.now(); lastStatusNow = s.now; renderPill(); renderOverlay(); renderSync(); });
 socket.on("balance", (b) => { balance = b; renderBalance(); });
 socket.on("events", (m) => { events = m.items; renderEvents(); });
 socket.on("event", (ev) => { events.push(ev); renderEvents(); if (ev.kind === "balance_warning") showWarning(ev); });
@@ -65,11 +70,19 @@ function renderPill() {
 function renderBalance() {
   const b = balance;
   if (!b) return;
+  const isProsthetic = settings.mode === "prosthetic";
+  $("score-label").textContent = isProsthetic ? "Steadiness score" : "Balance score";
+  $("risk-label").textContent = isProsthetic ? "Adaptation" : "Fall risk";
+  $("walking-heading").textContent = isProsthetic ? "Steadiness while walking" : "Balance while walking";
+  $("daily-label").textContent = isProsthetic ? "Daily steadiness" : "Daily median";
+  $("prosthetic-metrics").hidden = !isProsthetic;
+  $("prosthetic-history").hidden = !isProsthetic;
   const score = b.smoothed ?? b.score;
   $("score").textContent = score == null ? "—" : Math.round(score);
   const risk = $("risk");
-  risk.className = "risk risk-" + (b.risk || "unknown");
-  risk.textContent = { low: "Low", moderate: "Moderate", high: "High" }[b.risk] || "Not enough walking yet";
+  risk.className = "risk risk-" + (isProsthetic ? "low" : (b.risk || "unknown"));
+  risk.textContent = isProsthetic ? ({ adapting: "Adapting", adjusting: "Adjusting", struggling: "Struggling" }[b.prosthetic?.adaptation] || "Building a starting picture")
+    : ({ low: "Low", moderate: "Moderate", high: "High" }[b.risk] || "Not enough walking yet");
 
   let text;
   if (score == null) text = "Walk for about 30 seconds with the device clipped at your waist to get a score.";
@@ -87,7 +100,7 @@ function renderBalance() {
     }
     text = parts.join(" ") || "Keep walking to see your trend.";
   }
-  $("trend-text").textContent = text;
+  $("trend-text").textContent = isProsthetic ? (b.prosthetic?.adaptation_note || "Keep walking to see how you're adapting.") : text;
   $("walking-state").textContent = b.walking ? "Walking now" : "Not walking";
 
   const w = b.last_window || {};
@@ -103,6 +116,13 @@ function renderBalance() {
 
   drawTrend(b);
   drawDaily(b.daily || []);
+  if (isProsthetic && b.prosthetic) {
+    const p = b.prosthetic;
+    for (const [id, value] of [["p-wear", p.wear_min_today], ["p-walk", p.walking_min_today],
+      ["p-bouts", p.bouts_today], ["p-longest", p.longest_bout_min], ["p-stumbles", p.stumbles_today]]) $(id).textContent = value;
+    $("prosthetic-history").innerHTML = `<table><thead><tr><th>Day</th><th>Wear</th><th>Walk</th><th>Bouts</th><th>Stumbles</th><th>Steadiness</th></tr></thead><tbody>${p.daily.map(d =>
+      `<tr><td>${esc(d.day.slice(5))}</td><td>${d.wear_min}m</td><td>${d.walking_min}m</td><td>${d.bouts}</td><td>${d.stumbles}</td><td>${d.score ?? "—"}</td></tr>`).join("")}</tbody></table>`;
+  }
 }
 
 // ------------------------------------------------------------------ charts
@@ -223,9 +243,11 @@ function renderEvents() {
   $("events-empty").hidden = shown.length > 0;
   $("event-count").textContent = shown.length ? `${shown.length} recent` : "";
   list.innerHTML = shown.map((e) => {
-    const [title, cls] = EVENT_INFO[e.kind] || [e.kind, ""];
+    let [title, cls] = EVENT_INFO[e.kind] || [e.kind, ""];
+    if (e.kind === "fall_detected" && e.detail?.split(" ").includes("harsh")) title = "Hard fall detected";
     let detail = e.detail || "";
-    if (e.kind === "emergency") detail = e.detail === "fall" ? "Possible fall with no response" : "Help button";
+    if (e.kind === "balance_warning" && !detail.includes(DOCTOR_ADVICE)) detail += ` ${DOCTOR_ADVICE}`;
+    if (e.kind === "emergency") detail = e.detail === "harsh_fall" ? "Hard fall with no response" : e.detail === "fall" ? "Possible fall with no response" : "Help button";
     else if (/^(peak|angle)=/.test(detail)) detail = humanDetail(detail);
     else if (detail === "button" || detail === "app") detail = detail === "button" ? "From the device button" : "From the dashboard";
     const day = new Date(e.t * 1000).toDateString() === new Date().toDateString() ? "" : fmtDay(e.t) + " ";
@@ -250,7 +272,8 @@ function showWarning(ev) {
   box.hidden = false;
   box.classList.toggle("high", ev.risk === "high");
   $("warning-title").textContent = ev.risk === "high" ? "Your balance has dropped a lot" : "Your walking is getting less steady";
-  $("warning-text").textContent = ev.detail + (settings.share_with_doctor && ev.risk === "high" ? " Your doctor is being told, as you asked." : "");
+  $("warning-text").textContent = ev.detail + (ev.detail.includes(DOCTOR_ADVICE) ? "" : ` ${DOCTOR_ADVICE}`)
+    + (settings.share_with_doctor && ev.risk === "high" ? " Your doctor is being told, as you asked." : "");
 }
 
 // ------------------------------------------------------------------ alert overlay
@@ -262,14 +285,15 @@ function renderOverlay() {
   const contact = settings.contact_name || "your emergency contact";
   const actions = [];
   let kicker = "", title = "", count = "", text = "", emergency = false;
+  const harsh = alert?.kind === "harsh_fall";
 
   // fall_check (a hard bump being looked at for ~3 s) stays quiet; most turn out fine.
   if (state === "fall_countdown" || state === "help_countdown") {
     const isFall = state === "fall_countdown";
     const total = isFall ? (alert?.countdown_s || settings.countdown_s || 30) : 5;
     const left = alert ? Math.max(0, Math.ceil(total - (status.now - alert.t))) : "";
-    kicker = isFall ? "Fall detected" : "Help requested";
-    title = isFall ? "Are you OK?" : "Asking for help";
+    kicker = isFall ? (harsh ? "Hard fall detected" : "Fall detected") : "Help requested";
+    title = isFall ? (harsh ? "Hard fall detected. Are you OK?" : "Are you OK?") : "Asking for help";
     count = String(left);
     text = isFall
       ? `If you don't respond, Steady will alert ${contact}. Press the button on the device or tap below if you're fine.`
@@ -280,7 +304,7 @@ function renderOverlay() {
   } else if (state === "emergency") {
     emergency = true;
     kicker = "Emergency";
-    title = alert?.kind === "fall" ? "Possible fall, no response" : "Help requested";
+    title = harsh ? "Hard fall, no response" : alert?.kind === "fall" ? "Possible fall, no response" : "Help requested";
     text = "If you are hurt or can't get up, call 911 now.";
     actions.push(link("Call 911", "tel:911", "btn-danger btn-big"));
     if (settings.contact_phone) actions.push(link(`Call ${settings.contact_name || "contact"}`, `tel:${settings.contact_phone}`, "btn-outline btn-big"));
@@ -296,6 +320,14 @@ function renderOverlay() {
   $("ov-count").textContent = count;
   $("ov-text").textContent = text;
   $("ov-notify").innerHTML = emergency ? notifyStatusHtml() : "";
+  const simulation = $("ov-simulation");
+  simulation.hidden = !(emergency && harsh);
+  if (!simulation.hidden) {
+    const elapsed = Math.max(0, status.now - (status.emergency?.simulated_911_at || alert?.t || status.now));
+    const step = Math.min(3, Math.floor(elapsed / 2));
+    const lines = ["Calling 911 (simulation)", "Dialing…", "Connected (simulated)", "Sharing fall details and location with the dispatcher (simulated)"];
+    $("simulation-steps").innerHTML = lines.map((line, i) => `<li class="${i < step ? "done" : i === step ? "active" : ""}">${esc(line)}</li>`).join("");
+  }
   const box = $("ov-actions");
   const key = actions.map((a) => a.textContent).join("|");
   if (box.dataset.key !== key) { box.replaceChildren(...actions); box.dataset.key = key; }
@@ -359,6 +391,22 @@ function fillSettings() {
     if (input.type === "checkbox") input.checked = !!settings[input.name];
     else input.value = settings[input.name] ?? "";
   }
+  renderMounting();
+}
+
+function renderMounting() {
+  $("mounting").textContent = $("settings").elements.mode.value === "prosthetic"
+    ? "Clip the sensor firmly to the prosthetic leg's socket or shank. Keep it attached while walking. Falls and the help button stay active."
+    : "Clip the sensor at your waist or lower back, in any orientation. Falls and the help button stay active.";
+}
+$("settings").elements.mode.addEventListener("change", renderMounting);
+
+function renderSync() {
+  const s = status?.sync;
+  if (!s) return;
+  $("sync-status").textContent = s.state === "no_token" ? "Not syncing: no token"
+    : s.state === "ok" ? `Synced to Clarah ${Math.max(0, Math.round(lastStatusNow + (Date.now() - lastStatusReceivedAt) / 1000 - s.at))} s ago`
+    : s.state === "error" ? `Clarah sync error: ${s.error}` : "Waiting to sync to Clarah…";
 }
 
 $("settings").addEventListener("submit", (e) => {
@@ -392,3 +440,4 @@ document.querySelector("[data-dismiss=warning]").addEventListener("click", () =>
 
 // Keep the countdown ticking between status messages.
 setInterval(() => { if (status?.alert) { status.now += 0.25; renderOverlay(); } }, 250);
+setInterval(renderSync, 1000);

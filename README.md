@@ -51,6 +51,16 @@ Clarah opens in **demo mode** with made-up patients (none are real people), each
 - **Device only.** Recaps, transcripts and voice audio are kept in the browser's IndexedDB, like uploaded documents.
 - Recording and the AI voice need `GEMINI_API_KEY`; the backup provider has no audio. `GEMINI_TRANSCRIBE_MODEL`, `GEMINI_TTS_MODEL` and `GEMINI_TTS_VOICE` are optional overrides.
 
+## Clarah Steady (wearable)
+
+Clarah Steady is a waist- or leg-worn sensor on an Arduino UNO Q ([`hardware/steady/`](hardware/steady/README.md)) that watches how steadily you walk. It runs on its own, and every 30 seconds (and right away when an alarm starts) it sends its reading to Clarah at `POST /api/steady/ingest` with a shared token. The latest reading per device is kept in Typesense; `/steady` shows it, and Clarah's chat reads it through `get_mobility_summary`.
+
+- **Fall prevention mode** (at the waist): a 0–100 steadiness score from trunk sway and jolt, your usual level, a two-week trend and fall risk. As balance slips, the device buzzes and Clarah warns you, always with: *"If you feel your walking is getting worse, call your doctor."*
+- **Prosthetic mode** (on a prosthetic leg): hours worn, walking minutes and bouts, stumbles and steadiness per day, summed up as *adapting*, *still adjusting* or *struggling* (the fit may need adjusting), for the patient's prosthetist.
+- **Falls, in every mode:** after a fall the device counts down 30 seconds. After a **hard fall** (free fall, then an impact that saturates the sensor on two axes for 3+ samples, then lying still) it counts down only 10 seconds. With no response it alerts the emergency contact. After a hard fall it also shows a **simulated 911 call** on the device dashboard and in Clarah, clearly labelled as a simulation: no real call is placed. Calling 911 is always one tap away for the person.
+- **Demo:** Grace's chemotherapy neuropathy, anemia and lorazepam show her steadiness sliding from 84 to 62. Every demo patient can preview prosthetic mode, and "Preview the hard-fall alert" shows the emergency flow without the device.
+- **Setup:** set `STEADY_INGEST_TOKEN` (the same value goes in `hardware/steady/.env.steady`, which `deploy.sh` passes to the board), and `TYPESENSE_STEADY_HOST` / `TYPESENSE_STEADY_KEY` (a key scoped to the `steady_devices` collection). Without a store, readings are kept in memory for local development.
+
 ## Safety design
 
 - **Emergency screen comes before the AI.** `src/lib/red-flags.ts` checks every message with fixed rules (severe BP with symptoms, stroke and heart attack signs, low blood sugar, crisis language → 988). A match shows an escalation screen, and the model is never called.

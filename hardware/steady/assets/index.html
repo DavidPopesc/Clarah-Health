@@ -22,11 +22,11 @@
 
       <div class="summary">
         <div class="score-block">
-          <div class="label">Balance score</div>
+          <div class="label" id="score-label">Balance score</div>
           <div class="score"><span id="score">—</span><small>/100</small></div>
         </div>
         <div class="risk-block">
-          <div class="label">Fall risk</div>
+          <div class="label" id="risk-label">Fall risk</div>
           <div id="risk" class="risk risk-unknown">Not enough walking yet</div>
           <p id="trend-text" class="trend-text">Walk for about 30 seconds with the device clipped at your waist to get a score.</p>
         </div>
@@ -42,7 +42,7 @@
     <main>
       <section>
         <div class="section-head">
-          <h2>Balance while walking</h2>
+          <h2 id="walking-heading">Balance while walking</h2>
           <span class="meta" id="walking-state">—</span>
         </div>
         <svg id="trend-chart" class="chart" viewBox="0 0 360 170" role="img" aria-label="Balance score over recent walking"></svg>
@@ -58,15 +58,23 @@
           <div><dt>Cadence</dt><dd id="m-cadence">—</dd><span>steps/min</span></div>
           <div><dt>Stride regularity</dt><dd id="m-reg">—</dd><span>0–1 · steady above 0.6</span></div>
         </dl>
+        <dl class="metrics prosthetic-metrics" id="prosthetic-metrics" hidden>
+          <div><dt>Wear today</dt><dd id="p-wear">—</dd><span>minutes</span></div>
+          <div><dt>Walking today</dt><dd id="p-walk">—</dd><span>minutes</span></div>
+          <div><dt>Walking bouts</dt><dd id="p-bouts">—</dd><span>today</span></div>
+          <div><dt>Longest bout</dt><dd id="p-longest">—</dd><span>minutes</span></div>
+          <div><dt>Stumbles today</dt><dd id="p-stumbles">—</dd><span>sharp jolts</span></div>
+        </dl>
       </section>
 
       <section>
         <div class="section-head">
           <h2>Last two weeks</h2>
-          <span class="meta">Daily median</span>
+          <span class="meta" id="daily-label">Daily median</span>
         </div>
         <svg id="daily-chart" class="chart chart-short" viewBox="0 0 360 120" role="img" aria-label="Daily balance score"></svg>
         <p id="daily-empty" class="empty">Daily scores appear here after a day of walking.</p>
+        <div id="prosthetic-history" class="prosthetic-history" hidden></div>
       </section>
 
       <section>
@@ -103,6 +111,8 @@
         <div class="section-head"><h2>Who gets alerted</h2></div>
         <form id="settings" class="form" autocomplete="off">
           <label>Your name<input name="patient_name" placeholder="e.g. Maria"></label>
+          <label>Mode<select name="mode"><option value="fall_prevention">Fall prevention</option><option value="prosthetic">Prosthetic adaptation</option></select></label>
+          <p class="hint" id="mounting">Clip the sensor at your waist or lower back, in any orientation.</p>
 
           <fieldset>
             <legend>Emergency contact</legend>
@@ -126,6 +136,9 @@
           </fieldset>
 
           <label>Seconds to respond after a fall<input name="countdown_s" type="number" min="10" max="120"></label>
+          <label>Seconds to respond after a hard fall<input name="harsh_countdown_s" type="number" min="5" max="30"></label>
+          <label>Clarah Health URL<input name="clarah_url" type="url" placeholder="https://www.clarah.health"></label>
+          <label>Device ID<input name="device_id" placeholder="uno-q"></label>
           <div class="actions">
             <button class="btn btn-primary" type="submit">Save</button>
             <span id="saved" class="meta" hidden>Saved</span>
@@ -139,11 +152,13 @@
         <div class="tools">
           <button class="btn btn-outline" data-cmd="locate">Beep to find it</button>
           <button class="btn btn-outline" data-cmd="test_fall">Test fall alarm</button>
+          <button class="btn btn-outline" data-cmd="test_harsh_fall">Test hard fall</button>
           <button class="btn btn-outline" data-cmd="set_baseline">Use current score as baseline</button>
           <button class="btn btn-outline" data-cmd="seed_demo">Load sample two weeks</button>
           <button class="btn btn-ghost" data-cmd="clear_history">Clear walking history</button>
         </div>
         <p class="hint">Set a new baseline after a hospital stay or a change in medication, so Steady compares you with how you walk now.</p>
+        <p class="hint" id="sync-status">Checking Clarah sync…</p>
       </section>
     </main>
 
@@ -159,11 +174,12 @@
       <div id="ov-count" class="ov-count"></div>
       <p id="ov-text"></p>
       <div id="ov-notify" class="ov-notify"></div>
+      <div id="ov-simulation" class="simulation" hidden><strong>Calling 911 (simulation)</strong><ol id="simulation-steps"></ol><p>SIMULATION: no real call was placed</p></div>
       <div class="ov-actions" id="ov-actions"></div>
     </div>
   </div>
 
   <script src="libs/socket.io.min.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

@@ -13,6 +13,18 @@ PORT="${PORT:-$(arduino-cli board list | awk '/arduino:zephyr:unoq/ {print $1; e
 APP=/home/arduino/ArduinoApps/steady
 IMAGE=ghcr.io/arduino/app-bricks/python-apps-base:0.5.0
 
+# Local deployment secret. Keep it out of logs and the app directory pushed to the board.
+if [[ -f .env.steady ]]; then
+  set -a
+  source .env.steady
+  set +a
+fi
+TOKEN_OPTION=""
+if [[ -n "${STEADY_INGEST_TOKEN:-}" ]]; then
+  printf -v QUOTED_TOKEN '%q' "$STEADY_INGEST_TOKEN"
+  TOKEN_OPTION="-e STEADY_INGEST_TOKEN=$QUOTED_TOKEN"
+fi
+
 if [[ "${1:-}" != "--python-only" ]]; then
   echo "==> Compiling and flashing sketch to $PORT"
   arduino-cli compile --profile default sketch
@@ -30,7 +42,7 @@ echo "==> (Re)starting the Python container"
 # Mount /run rather than the router's socket file: at boot Docker can start before the
 # router has made its socket, and binding a missing file path would make a directory there.
 "$ADB" shell "docker rm -f clarah-steady >/dev/null 2>&1; docker run -d --name clarah-steady --restart unless-stopped \
-  -v $APP:/app -v /run:/host-run -e APP_SOCKET=unix:///host-run/arduino-router.sock \
+  -v $APP:/app -v /run:/host-run -e APP_SOCKET=unix:///host-run/arduino-router.sock $TOKEN_OPTION \
   -p 7000:7000 $IMAGE >/dev/null"
 
 LOCAL_PORT="${LOCAL_PORT:-7070}"
